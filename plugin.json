@@ -12,5 +12,20 @@
   "sourceUrl": "",
   "donateUrl": "",
   "changelogUrl": "",
-  "modules": []
+  "modules": [
+    {
+			"slug": "Algomorph4",
+			"name": "Algomorph 4",
+			"description": "CV/Audio Router employing the FM algorithm concept, capable of morphing between 3 algorithms",
+			"tags": [
+				"Controller",
+        "Mixer",
+        "Multiple",
+        "Polyphonic",
+        "Quad",
+        "Utility",
+        "Visual"
+			]
+		}
+  ]
 }
