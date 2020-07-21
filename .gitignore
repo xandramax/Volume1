@@ -3,4 +3,8 @@
 /plugin.so
 /plugin.dylib
 /plugin.dll
+/.vscode
 .DS_Store
+res/old
+src/old
+.gitignore
