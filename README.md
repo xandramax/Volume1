@@ -7,6 +7,7 @@ It is intended for use with modules capable of linear through-zero FM, such as B
 
 Instructions:
 
+* To install a [pre-compiled build](https://github.com/anlexmatos/FM-Delexander/releases/tag/AzureCI), follow [these directions](https://vcvrack.com/manual/Installing#installing-plugins-not-available-on-the-vcv-library).
 * Connect the output of up to four operators to the Operator Inputs.  
 * Connect the same number of Modulation Outputs from Algomorph to the linear through-zero FM inputs of the operators.  
 * Connect the Sum output to your audio device or a mixer.  
