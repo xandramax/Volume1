@@ -26,7 +26,7 @@ struct Algomorph4 : Module {
         ENUMS(CONNECTION_LIGHTS, 16),
 		NUM_LIGHTS
 	};
-    bool opDestinations[3][4][4] = {false};
+    bool opDestinations[3][4][4];
     int currentScene = 1;
     int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
 
@@ -47,6 +47,14 @@ struct Algomorph4 : Module {
 			configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
 		}
         lightDivider.setDivision(16);
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    opDestinations[i][j][k] = false;
+                }
+            }
+        }
 	}
 
 	void process(const ProcessArgs& args) override {
