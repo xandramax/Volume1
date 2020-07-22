@@ -9,6 +9,7 @@ Instructions:
 
 * Connect the output of up to four operators to the Operator Inputs.  
 * Connect the same number of Modulation Outputs from Algomorph to the linear through-zero FM inputs of the operators.  
+* Connect the Sum output to your audio device or a mixer.  
 * Press an Operator Button followed by a Modulation Button to connect one operator to another. Repeat until you have built a desired algorithm.  
 * After you have finished building your algorithm, press Algorithm Button 1 or 2 to build a new algorithm.  
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
