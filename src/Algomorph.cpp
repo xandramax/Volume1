@@ -57,6 +57,18 @@ struct Algomorph4 : Module {
         }
 	}
 
+    void onReset() override {
+		for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    opDestinations[i][j][k] = false;
+                }
+            }
+        }
+        configMode = -1;
+        currentScene = 1;
+	}
+
 	void process(const ProcessArgs& args) override {
 		float in[16] = {0.f};
         float modOut[4][16] = {0.f};
@@ -66,7 +78,6 @@ struct Algomorph4 : Module {
                                 {true, true, true, true} };
 		int channels = 1;
         float morph = inputs[MORPH_CV].getVoltage() / 5.f + params[MORPH_KNOB].getValue();
-        printf("morph: %f\n", morph);
         clamp(morph, -1.f, 1.f);
 
         if (configMode == -1) {  //Display morph state
@@ -282,8 +293,46 @@ struct Algomorph4 : Module {
             outputs[SUM_OUTPUT].writeVoltages(sumOut);
         }
 	}
-};
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "Config Mode", json_integer(configMode));
+        json_object_set_new(rootJ, "Current Scene", json_integer(currentScene));
+        json_t* opDestinationsJ = json_array();
+		for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+			        json_t* destinationJ = json_object();
+			        json_object_set_new(destinationJ, "Destination", json_boolean(opDestinations[i][j][k]));
+			        json_array_append_new(opDestinationsJ, destinationJ);
+                }
+            }
+		}
+		json_object_set_new(rootJ, "Operator Destinations", opDestinationsJ);
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+		configMode = json_integer_value(json_object_get(rootJ, "Config Mode"));
+		currentScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
+		json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
+		json_t* destinationJ;
+		size_t destinationIndex;
+        int i = 0, j = 0, k = 0;
+		json_array_foreach(opDestinationsJ, destinationIndex, destinationJ) {
+            opDestinations[i][j][k] = json_boolean_value(json_object_get(destinationJ, "Destination"));
+            k++;
+            if (k > 3) {
+                k = 0;
+                j++;
+                if (j > 3) {
+                    j = 0;
+                    i++;
+                }
+            }
+		}
+	}
+};
 
 struct Algomorph4Widget : ModuleWidget {
     LineLight* createLineLight(Vec a, Vec b, engine::Module* module, int firstLightId) {
