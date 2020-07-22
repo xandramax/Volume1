@@ -29,6 +29,7 @@ struct Algomorph4 : Module {
     bool opDestinations[3][4][4];
     int currentScene = 1;
     int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
+    bool ringMorph = false;
 
     dsp::BooleanTrigger sceneTrigger[3];
     dsp::BooleanTrigger operatorTrigger[4];
@@ -245,6 +246,13 @@ struct Algomorph4 : Module {
                                 modOut[j][c] += in[c] * morph;
                             carrier[(currentScene + 1) % 3][i] = false;
                         }
+                        if (ringMorph) {
+                            if (opDestinations[(currentScene + 2) % 3][i][j]) {
+                                for (int c = 0; c < channels; c++)
+                                    modOut[j][c] += in[c] * (morph * -1.f);
+                                carrier[(currentScene + 2) % 3][i] = false;
+                            }
+                        }
                     }
 
                     if (carrier[currentScene][i]) {
@@ -254,6 +262,12 @@ struct Algomorph4 : Module {
                     if (carrier[(currentScene + 1) % 3][i]) {
                         for (int c = 0; c < channels; c++)
                             sumOut[c] += in[c] * morph;
+                    }
+                    if (ringMorph) {
+                        if (carrier[(currentScene + 2) % 3][i]) {
+                            for (int c = 0; c < channels; c++)
+                                sumOut[c] += in[c] * (morph * -1.f);
+                        }
                     }
                 }
                 else {
@@ -268,6 +282,13 @@ struct Algomorph4 : Module {
                                 modOut[j][c] += in[c] * (morph * -1.f);
                             carrier[(currentScene + 2) % 3][i] = false;
                         }
+                        if (ringMorph) {
+                            if (opDestinations[(currentScene + 1) % 3][i][j]) {
+                                for (int c = 0; c < channels; c++)
+                                    modOut[j][c] += in[c] * morph;
+                                carrier[(currentScene + 1) % 3][i] = false;
+                            }
+                        }
                     }
 
                     if (carrier[currentScene][i]) {
@@ -277,6 +298,12 @@ struct Algomorph4 : Module {
                     if (carrier[(currentScene + 2) % 3][i]) {
                         for (int c = 0; c < channels; c++)
                             sumOut[c] += in[c] * (morph * -1.f);
+                    }
+                    if (ringMorph) {
+                        if (carrier[(currentScene + 1) % 3][i]) {
+                            for (int c = 0; c < channels; c++)
+                                sumOut[c] += in[c] * morph;
+                        }
                     }
                 }
 			}			
@@ -298,6 +325,7 @@ struct Algomorph4 : Module {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "Config Mode", json_integer(configMode));
         json_object_set_new(rootJ, "Current Scene", json_integer(currentScene));
+        json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
         json_t* opDestinationsJ = json_array();
 		for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -315,6 +343,7 @@ struct Algomorph4 : Module {
     void dataFromJson(json_t* rootJ) override {
 		configMode = json_integer_value(json_object_get(rootJ, "Config Mode"));
 		currentScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
+		ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
 		json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
 		json_t* destinationJ;
 		size_t destinationIndex;
@@ -332,6 +361,13 @@ struct Algomorph4 : Module {
             }
 		}
 	}
+};
+
+struct RingMorphItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->ringMorph ^= true;
+    }
 };
 
 struct Algomorph4Widget : ModuleWidget {
@@ -430,6 +466,16 @@ struct Algomorph4Widget : ModuleWidget {
 		addParam(createParamCentered<TL1105>(ModButtonCenter[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
 		addParam(createParamCentered<TL1105>(ModButtonCenter[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
     }
+
+    void appendContextMenu(Menu* menu) override {
+		Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
+
+		menu->addChild(new MenuSeparator());
+
+		RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+		ringMorphItem->module = module;
+		menu->addChild(ringMorphItem);
+	}
 };
 
 
