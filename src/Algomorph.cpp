@@ -78,12 +78,13 @@ struct Algomorph4 : Module {
                                 {true, true, true, true},
                                 {true, true, true, true} };
 		int channels = 1;
-        float morph = inputs[MORPH_CV].getVoltage() / 5.f + params[MORPH_KNOB].getValue();
-        clamp(morph, -1.f, 1.f);
+        float morph[16];
+        morph[0] = inputs[MORPH_CV].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue();
+        morph[0] = clamp(morph[0], -1.f, 1.f);
 
         if (configMode == -1) {  //Display morph state
             //Set scene lights
-            if (morph == 0.f) {
+            if (morph[0] == 0.f) {
                 for (int i = 0; i < 3; i++) {
                     if (i == currentScene)
                         lights[SCENE_LIGHTS + i].setBrightness(1.f);
@@ -91,27 +92,27 @@ struct Algomorph4 : Module {
                         lights[SCENE_LIGHTS + i].setBrightness(0.f);
                 }
             }
-            else if (morph > 0.f) {
-                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - morph);
-                lights[SCENE_LIGHTS + (currentScene + 1) % 3].setBrightness(morph);
+            else if (morph[0] > 0.f) {
+                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - morph[0]);
+                lights[SCENE_LIGHTS + (currentScene + 1) % 3].setBrightness(morph[0]);
             }
             else {
-                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - (morph * -1.f));
-                lights[SCENE_LIGHTS + (currentScene + 2) % 3].setBrightness(morph * -1.f);
+                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - (morph[0] * -1.f));
+                lights[SCENE_LIGHTS + (currentScene + 2) % 3].setBrightness(morph[0] * -1.f);
             }
             //Set connection lights
-            if (morph == 0.f) {
+            if (morph[0] == 0.f) {
                 for (int i = 0; i < 16; i++)
                     lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[currentScene][i / 4][i % 4] ? 1.f : 0.f);
             }
-            else if (morph > 0.f) {
+            else if (morph[0] > 0.f) {
                 float brightness;
                 for (int i = 0; i < 16; i++) {
                     brightness = 0.f;
                     if (opDestinations[currentScene][i / 4][i % 4])
-                        brightness += 1.f - morph;
+                        brightness += 1.f - morph[0];
                     if (opDestinations[(currentScene + 1) % 3][i / 4][i % 4])
-                        brightness += morph;
+                        brightness += morph[0];
                     lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
                 }
             }
@@ -120,9 +121,9 @@ struct Algomorph4 : Module {
                 for (int i = 0; i < 16; i++) {
                     brightness = 0.f;
                     if (opDestinations[currentScene][i / 4][i % 4])
-                        brightness += 1.f - (morph * -1.f);
+                        brightness += 1.f - (morph[0] * -1.f);
                     if (opDestinations[(currentScene + 2) % 3][i / 4][i % 4])
-                        brightness += morph * -1.f;
+                        brightness += morph[0] * -1.f;
                     lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
                 }
             }
@@ -210,105 +211,103 @@ struct Algomorph4 : Module {
             }
         }
 
-        // Get operator input, route to modulation output, additionally route carriers to sum output
-		for (int i = 0; i < 4; i++) {
-			if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-				if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
-                    channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        //Determine polyphony count
+        for (int i = 0; i < 4; i++) {
+            if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
+                channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        }
 
-				inputs[OPERATOR_INPUTS + i].readVoltages(in);
-
-                if (morph == 0.f) {
-                    for (int j = 0; j < 4; j++) {
-                        if (opDestinations[currentScene][i][j]) {
-                            for (int c = 0; c < channels; c++) {
+        //Get operator input channel then route to modulation output channel or to sum output
+        for (int c = 0; c < channels; c++) {
+            //morph[0] is calculated earlier
+            if (c > 0) {
+                morph[c] = inputs[MORPH_CV].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
+                morph[c] = clamp(morph[c], -1.f, 1.f);
+            }
+  
+            for (int i = 0; i < 4; i++) {
+                if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                    in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
+                    //Simple case, do not check adjacent algorithms
+                    if (morph[c] == 0.f) {
+                        for (int j = 0; j < 4; j++) {
+                            if (opDestinations[currentScene][i][j]) {
                                 modOut[j][c] += in[c];
-                            }
-                            carrier[currentScene][i] = false;
-                        }
-                    }
-
-                    if (carrier[currentScene][i]) {
-                        for (int c = 0; c < channels; c++) {
-                            sumOut[c] += in[c];
-                        }
-                    }
-                }
-                else if (morph > 0.f) {
-                    for (int j = 0; j < 4; j++) {
-                        if (opDestinations[currentScene][i][j]) {
-                            for (int c = 0; c < channels; c++)
-                                modOut[j][c] += in[c] * (1.f - morph);
-                            carrier[currentScene][i] = false;
-                        }
-                        if (opDestinations[(currentScene + 1) % 3][i][j]) {
-                            for (int c = 0; c < channels; c++)
-                                modOut[j][c] += in[c] * morph;
-                            carrier[(currentScene + 1) % 3][i] = false;
-                        }
-                        if (ringMorph) {
-                            if (opDestinations[(currentScene + 2) % 3][i][j]) {
-                                for (int c = 0; c < channels; c++)
-                                    modOut[j][c] += in[c] * (morph * -1.f);
-                                carrier[(currentScene + 2) % 3][i] = false;
+                                carrier[currentScene][i] = false;
                             }
                         }
-                    }
-
-                    if (carrier[currentScene][i]) {
-                        for (int c = 0; c < channels; c++)
-                            sumOut[c] += in[c] * (1.f - morph);
-                    }
-                    if (carrier[(currentScene + 1) % 3][i]) {
-                        for (int c = 0; c < channels; c++)
-                            sumOut[c] += in[c] * morph;
-                    }
-                    if (ringMorph) {
-                        if (carrier[(currentScene + 2) % 3][i]) {
-                            for (int c = 0; c < channels; c++)
-                                sumOut[c] += in[c] * (morph * -1.f);
+                        if (carrier[currentScene][i]) {
+                                sumOut[c] += in[c];
                         }
                     }
-                }
-                else {
-                    for (int j = 0; j < 4; j++) {
-                        if (opDestinations[currentScene][i][j]) {
-                            for (int c = 0; c < channels; c++)
-                                modOut[j][c] += in[c] * (1.f - (morph * -1.f));
-                            carrier[currentScene][i] = false;
-                        }
-                        if (opDestinations[(currentScene + 2) % 3][i][j]) {
-                            for (int c = 0; c < channels; c++)
-                                modOut[j][c] += in[c] * (morph * -1.f);
-                            carrier[(currentScene + 2) % 3][i] = false;
-                        }
-                        if (ringMorph) {
+                    //Check current algorithm and the one to the right
+                    else if (morph[c] > 0.f) {
+                        for (int j = 0; j < 4; j++) {
+                            if (opDestinations[currentScene][i][j]) {
+                                modOut[j][c] += in[c] * (1.f - morph[c]);
+                                carrier[currentScene][i] = false;
+                            }
                             if (opDestinations[(currentScene + 1) % 3][i][j]) {
-                                for (int c = 0; c < channels; c++)
-                                    modOut[j][c] += in[c] * morph;
+                                modOut[j][c] += in[c] * morph[c];
                                 carrier[(currentScene + 1) % 3][i] = false;
                             }
+                            if (ringMorph) {
+                                //Also check algorithm to the left and invert its mod output
+                                if (opDestinations[(currentScene + 2) % 3][i][j]) {
+                                    modOut[j][c] += in[c] * (morph[c] * -1.f);
+                                    carrier[(currentScene + 2) % 3][i] = false;
+                                }
+                            }
                         }
-                    }
-
-                    if (carrier[currentScene][i]) {
-                        for (int c = 0; c < channels; c++)
-                            sumOut[c] += in[c] * (1.f - (morph * -1.f));
-                    }
-                    if (carrier[(currentScene + 2) % 3][i]) {
-                        for (int c = 0; c < channels; c++)
-                            sumOut[c] += in[c] * (morph * -1.f);
-                    }
-                    if (ringMorph) {
+                        if (carrier[currentScene][i]) {
+                            sumOut[c] += in[c] * (1.f - morph[c]);
+                        }
                         if (carrier[(currentScene + 1) % 3][i]) {
-                            for (int c = 0; c < channels; c++)
-                                sumOut[c] += in[c] * morph;
+                            sumOut[c] += in[c] * morph[c];
+                        }
+                        if (ringMorph) {
+                            //Also chekc algo to the left and invert its carrier output
+                            if (carrier[(currentScene + 2) % 3][i]) {
+                                sumOut[c] += in[c] * (morph[c] * -1.f);
+                            }
                         }
                     }
-                }
-			}			
-		}
-        // Set output
+                    //Check current algorithm and the one to the left
+                    else {
+                        for (int j = 0; j < 4; j++) {
+                            if (opDestinations[currentScene][i][j]) {
+                                modOut[j][c] += in[c] * (1.f - (morph[c] * -1.f));
+                                carrier[currentScene][i] = false;
+                            }
+                            if (opDestinations[(currentScene + 2) % 3][i][j]) {
+                                modOut[j][c] += in[c] * (morph[c] * -1.f);
+                                carrier[(currentScene + 2) % 3][i] = false;
+                            }
+                            if (ringMorph) {
+                                //Also check algorithm to the right and invert its mod output
+                                if (opDestinations[(currentScene + 1) % 3][i][j]) {
+                                    modOut[j][c] += in[c] * morph[c];
+                                    carrier[(currentScene + 1) % 3][i] = false;
+                                }
+                            }
+                        }
+                        if (carrier[currentScene][i]) {
+                            sumOut[c] += in[c] * (1.f - (morph[c] * -1.f));
+                        }
+                        if (carrier[(currentScene + 2) % 3][i]) {
+                            sumOut[c] += in[c] * (morph[c] * -1.f);
+                        }
+                        if (ringMorph) {
+                            //Also chekc algo to the right and invert its carrier output
+                            if (carrier[(currentScene + 1) % 3][i]) {
+                                sumOut[c] += in[c] * morph[c];
+                            }
+                        }
+                    }
+                }			
+            }
+        }
+        //Set outputs
         for (int i = 0; i < 4; i++) {
             if (outputs[MODULATOR_OUTPUTS + i].isConnected()) {
                 outputs[MODULATOR_OUTPUTS + i].setChannels(channels);
