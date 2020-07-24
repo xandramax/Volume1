@@ -26,10 +26,14 @@ struct Algomorph4 : Module {
         ENUMS(CONNECTION_LIGHTS, 16),
 		NUM_LIGHTS
 	};
-    bool opDestinations[3][4][4];
-    int currentScene = 1;
+    bool opDestinations[3][4][4];   //[scene][op][mod]
+    bool opDisabled[3][4];          //[scene][op]
+    int baseScene = 1;
     int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
+
+    //User settings
     bool ringMorph = false;
+    bool exitConfigOnConnect = true;
 
     dsp::BooleanTrigger sceneTrigger[3];
     dsp::BooleanTrigger operatorTrigger[4];
@@ -51,6 +55,7 @@ struct Algomorph4 : Module {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
+                opDisabled[i][j] = false;
                 for (int k = 0; k < 4; k++) {
                     opDestinations[i][j][k] = false;
                 }
@@ -61,13 +66,14 @@ struct Algomorph4 : Module {
     void onReset() override {
 		for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
+                opDisabled[i][j] = false;
                 for (int k = 0; k < 4; k++) {
                     opDestinations[i][j][k] = false;
                 }
             }
         }
         configMode = -1;
-        currentScene = 1;
+        baseScene = 1;
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -82,78 +88,98 @@ struct Algomorph4 : Module {
         morph[0] = inputs[MORPH_CV].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue();
         morph[0] = clamp(morph[0], -1.f, 1.f);
 
-        if (configMode == -1) {  //Display morph state
-            //Set scene lights
-            if (morph[0] == 0.f) {
-                for (int i = 0; i < 3; i++) {
-                    if (i == currentScene)
-                        lights[SCENE_LIGHTS + i].setBrightness(1.f);
-                    else
-                        lights[SCENE_LIGHTS + i].setBrightness(0.f);
-                }
-            }
-            else if (morph[0] > 0.f) {
-                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - morph[0]);
-                lights[SCENE_LIGHTS + (currentScene + 1) % 3].setBrightness(morph[0]);
-            }
-            else {
-                lights[SCENE_LIGHTS + currentScene].setBrightness(1.f - (morph[0] * -1.f));
-                lights[SCENE_LIGHTS + (currentScene + 2) % 3].setBrightness(morph[0] * -1.f);
-            }
-            //Set connection lights
-            if (morph[0] == 0.f) {
-                for (int i = 0; i < 16; i++)
-                    lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[currentScene][i / 4][i % 4] ? 1.f : 0.f);
-            }
-            else if (morph[0] > 0.f) {
-                float brightness;
-                for (int i = 0; i < 16; i++) {
-                    brightness = 0.f;
-                    if (opDestinations[currentScene][i / 4][i % 4])
-                        brightness += 1.f - morph[0];
-                    if (opDestinations[(currentScene + 1) % 3][i / 4][i % 4])
-                        brightness += morph[0];
-                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
-                }
-            }
-            else {
-                float brightness;
-                for (int i = 0; i < 16; i++) {
-                    brightness = 0.f;
-                    if (opDestinations[currentScene][i / 4][i % 4])
-                        brightness += 1.f - (morph[0] * -1.f);
-                    if (opDestinations[(currentScene + 2) % 3][i / 4][i % 4])
-                        brightness += morph[0] * -1.f;
-                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
-                }
-            }
-        }
-        else {  //Display current state without morph
+        if (configMode > -1 || morph[0] == 0.f) {  //Display state without morph
             //Set scene lights
             for (int i = 0; i < 3; i++) {
-                if (i == currentScene)
+                if (i == baseScene)
                     lights[SCENE_LIGHTS + i].setBrightness(1.f);
                 else
                     lights[SCENE_LIGHTS + i].setBrightness(0.f);
             }
             //Set connection lights
             for (int i = 0; i < 16; i++)
-                lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[currentScene][i / 4][i % 4] ? 1.f : 0.f);
+                lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 4][i % 4] ? 1.f : 0.f);
+            /* //Set op/mod lights
+            if (configMode == -1) {
+                for (int i = 0; i < 4; i++) {
+                    if (opDisabled[baseScene][i]) {
+                        lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
+                        lights[MODULATOR_LIGHTS + i].setBrightness(0.f);
+                    }
+                    else {
+                        lights[OPERATOR_LIGHTS + i].setBrightness(0.4f);
+                        lights[MODULATOR_LIGHTS + i].setBrightness(0.4f);
+                    }
+                }
+            } */
+        }
+        else {  //Display morphed state
+            float brightness;
+            if (morph[0] > 0.f) {
+                //Set scene lights
+                lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
+                lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
+                //Set connection lights
+                for (int i = 0; i < 16; i++) {
+                    brightness = 0.f;
+                    if (opDestinations[baseScene][i / 4][i % 4])
+                        brightness += 1.f - morph[0];
+                    if (opDestinations[(baseScene + 1) % 3][i / 4][i % 4])
+                        brightness += morph[0];
+                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                }
+                /* //Set op/mod lights
+                for (int i = 0; i < 4; i++) {
+                    brightness = 0.f;
+                    if (!opDisabled[baseScene][i])
+                        brightness += 1.f - morph[0];
+                    if (!opDisabled[(baseScene + 1) % 3][i])
+                        brightness += morph[0];
+                    brightness *= 0.4f;
+                    lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
+                    lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
+                } */
+            }
+            else {
+                //Set scene lights
+                lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
+                lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
+                //Set connection lights
+                for (int i = 0; i < 16; i++) {
+                    brightness = 0.f;
+                    if (opDestinations[baseScene][i / 4][i % 4])
+                        brightness += 1.f - (morph[0] * -1.f);
+                    if (opDestinations[(baseScene + 2) % 3][i / 4][i % 4])
+                        brightness += morph[0] * -1.f;
+                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                }
+                /* //Set op/mod lights
+                for (int i = 0; i < 4; i++) {
+                    brightness = 0.f;
+                    if (!opDisabled[baseScene][i])
+                        brightness += 1.f - (morph[0] * -1.f);
+                    if (!opDisabled[(baseScene + 2) % 3][i])
+                        brightness += morph[0] * -1.f;
+                    brightness *= 0.4f;
+                    lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
+                    lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
+                } */
+            }
         }
 
         //Check to change scene
         for (int i = 0; i < 3; i++) {
             if (sceneTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
                 //If changing to a new scene
-                if (currentScene == i) {
+                if (baseScene == i) {
                     //Reset scene morph knob
                     params[MORPH_KNOB].setValue(0.f);
                 }
                 else {
                     //Adjust scene lights
-                    lights[SCENE_LIGHTS + currentScene].setBrightness(0.f);
+                    lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
                     lights[SCENE_LIGHTS + i].setBrightness(1.f);
-                    currentScene = i;
+                    baseScene = i;
                     //Turn off config mode if necessary
                     if (configMode > -1) {
                         lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
@@ -164,7 +190,7 @@ struct Algomorph4 : Module {
                     }
                     //Adjust connection lights
                     for (int j = 0; j < 16; j++)
-                        lights[CONNECTION_LIGHTS + j].setBrightness(opDestinations[currentScene][j / 4][j % 4] ? 1.f : 0.f);
+                        lights[CONNECTION_LIGHTS + j].setBrightness(opDestinations[baseScene][j / 4][j % 4] ? 1.f : 0.f);
                     //Reset scene morph knob
                     params[MORPH_KNOB].setValue(0.f);
                 }
@@ -174,7 +200,7 @@ struct Algomorph4 : Module {
         //Check to enter config mode
         for (int i = 0; i < 4; i++) {
             if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
-			    if (configMode == i) {
+			    if (configMode == i) {  //Exit config mode
                     lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
                     for (int j = 0; j < 4; j++) {
                         lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
@@ -189,7 +215,7 @@ struct Algomorph4 : Module {
                     lights[OPERATOR_LIGHTS + configMode].setBrightness(1.f);
 
                     for (int j = 0; j < 4; j++) {
-                        lights[MODULATOR_LIGHTS + j].setBrightness(opDestinations[currentScene][configMode][j] ? 1.f : 0.f);
+                        lights[MODULATOR_LIGHTS + j].setBrightness(opDestinations[baseScene][configMode][j] ? 1.f : 0.f);
                     }
                 }
 
@@ -202,9 +228,20 @@ struct Algomorph4 : Module {
             for (int i = 0; i < 4; i++) {
                 if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
                     //Toggle the light before toggling the opDestination...?
-                    lights[MODULATOR_LIGHTS + i].setBrightness((opDestinations[currentScene][configMode][i]) ? 0.f : 1.f); 
+                    lights[MODULATOR_LIGHTS + i].setBrightness((opDestinations[baseScene][configMode][i]) ? 0.f : 1.f); 
 
-                    opDestinations[currentScene][configMode][i] = !opDestinations[currentScene][configMode][i];
+                    opDestinations[baseScene][configMode][i] ^= true;
+                    if (configMode == i) {  //Op is connected to itself
+                        opDisabled[baseScene][i] ^= true;
+                    }
+
+                    if (exitConfigOnConnect) {
+                        lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
+                        for (int j = 0; j < 4; j++) {
+                            lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
+                        }
+                        configMode = -1;
+                    }
 
                     break;
                 }
@@ -217,10 +254,9 @@ struct Algomorph4 : Module {
                 channels = inputs[OPERATOR_INPUTS + i].getChannels();
         }
 
-        //Get operator input channel then route to modulation output channel or to sum output
+        //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
-            //morph[0] is calculated earlier
-            if (c > 0) {
+            if (c > 0) {   //morph[0] is calculated earlier
                 morph[c] = inputs[MORPH_CV].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
                 morph[c] = clamp(morph[c], -1.f, 1.f);
             }
@@ -230,81 +266,83 @@ struct Algomorph4 : Module {
                     in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
                     //Simple case, do not check adjacent algorithms
                     if (morph[c] == 0.f) {
-                        for (int j = 0; j < 4; j++) {
-                            if (opDestinations[currentScene][i][j]) {
-                                modOut[j][c] += in[c];
-                                carrier[currentScene][i] = false;
+                        if (!opDisabled[baseScene][i]) {
+                            for (int j = 1; j < 4; j++) {  //Do not check an op's own mod output
+                                if (opDestinations[baseScene][i][(i + j) % 4]) {
+                                    modOut[(i + j) % 4][c] += in[c];
+                                    carrier[baseScene][i] = false;
+                                }
                             }
-                        }
-                        if (carrier[currentScene][i]) {
-                                sumOut[c] += in[c];
+                            if (carrier[baseScene][i]) {
+                                    sumOut[c] += in[c];
+                            }
                         }
                     }
                     //Check current algorithm and the one to the right
                     else if (morph[c] > 0.f) {
-                        for (int j = 0; j < 4; j++) {
-                            if (opDestinations[currentScene][i][j]) {
-                                modOut[j][c] += in[c] * (1.f - morph[c]);
-                                carrier[currentScene][i] = false;
+                        for (int j = 1; j < 4; j++) {  //Do not check an op's own mod output
+                            if (opDestinations[baseScene][i][(i + j) % 4] && !opDisabled[baseScene][i]) {
+                                modOut[(i + j) % 4][c] += in[c] * (1.f - morph[c]);
+                                carrier[baseScene][i] = false;
                             }
-                            if (opDestinations[(currentScene + 1) % 3][i][j]) {
-                                modOut[j][c] += in[c] * morph[c];
-                                carrier[(currentScene + 1) % 3][i] = false;
+                            if (opDestinations[(baseScene + 1) % 3][i][(i + j) % 4] && !opDisabled[(baseScene + 1) % 3][i]) {
+                                modOut[(i + j) % 4][c] += in[c] * morph[c];
+                                carrier[(baseScene + 1) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the left and invert its mod output
-                                if (opDestinations[(currentScene + 2) % 3][i][j]) {
-                                    modOut[j][c] += in[c] * (morph[c] * -1.f);
-                                    carrier[(currentScene + 2) % 3][i] = false;
+                                if (opDestinations[(baseScene + 2) % 3][i][(i + j) % 4] && !opDisabled[(baseScene + 2) % 3][i]) {
+                                    modOut[(i + j) % 4][c] += in[c] * (morph[c] * -1.f);
+                                    carrier[(baseScene + 2) % 3][i] = false;
                                 }
                             }
                         }
-                        if (carrier[currentScene][i]) {
+                        if (carrier[baseScene][i] && !opDisabled[baseScene][i]) {
                             sumOut[c] += in[c] * (1.f - morph[c]);
                         }
-                        if (carrier[(currentScene + 1) % 3][i]) {
+                        if (carrier[(baseScene + 1) % 3][i] && !opDisabled[(baseScene + 1) % 3][i]) {
                             sumOut[c] += in[c] * morph[c];
                         }
                         if (ringMorph) {
                             //Also chekc algo to the left and invert its carrier output
-                            if (carrier[(currentScene + 2) % 3][i]) {
+                            if (carrier[(baseScene + 2) % 3][i] && !opDisabled[(baseScene + 2) % 3][i]) {
                                 sumOut[c] += in[c] * (morph[c] * -1.f);
                             }
                         }
                     }
                     //Check current algorithm and the one to the left
                     else {
-                        for (int j = 0; j < 4; j++) {
-                            if (opDestinations[currentScene][i][j]) {
-                                modOut[j][c] += in[c] * (1.f - (morph[c] * -1.f));
-                                carrier[currentScene][i] = false;
+                        for (int j = 1; j < 4; j++) {  //Do not check an op's own mod output
+                            if (opDestinations[baseScene][i][(i + j) % 4] && !opDisabled[baseScene][i]) {
+                                modOut[(i + j) % 4][c] += in[c] * (1.f - (morph[c] * -1.f));
+                                carrier[baseScene][i] = false;
                             }
-                            if (opDestinations[(currentScene + 2) % 3][i][j]) {
-                                modOut[j][c] += in[c] * (morph[c] * -1.f);
-                                carrier[(currentScene + 2) % 3][i] = false;
+                            if (opDestinations[(baseScene + 2) % 3][i][(i + j) % 4] && !opDisabled[(baseScene + 2) % 3][i]) {
+                                modOut[(i + j) % 4][c] += in[c] * (morph[c] * -1.f);
+                                carrier[(baseScene + 2) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the right and invert its mod output
-                                if (opDestinations[(currentScene + 1) % 3][i][j]) {
-                                    modOut[j][c] += in[c] * morph[c];
-                                    carrier[(currentScene + 1) % 3][i] = false;
+                                if (opDestinations[(baseScene + 1) % 3][i][(i + j) % 4] && !opDisabled[(baseScene + 1) % 3][i]) {
+                                    modOut[(i + j) % 4][c] += in[c] * morph[c];
+                                    carrier[(baseScene + 1) % 3][i] = false;
                                 }
                             }
                         }
-                        if (carrier[currentScene][i]) {
+                        if (carrier[baseScene][i] && !opDisabled[baseScene][i]) {
                             sumOut[c] += in[c] * (1.f - (morph[c] * -1.f));
                         }
-                        if (carrier[(currentScene + 2) % 3][i]) {
+                        if (carrier[(baseScene + 2) % 3][i] && !opDisabled[(baseScene + 2) % 3][i]) {
                             sumOut[c] += in[c] * (morph[c] * -1.f);
                         }
                         if (ringMorph) {
                             //Also chekc algo to the right and invert its carrier output
-                            if (carrier[(currentScene + 1) % 3][i]) {
+                            if (carrier[(baseScene + 1) % 3][i] && !opDisabled[(baseScene + 1) % 3][i]) {
                                 sumOut[c] += in[c] * morph[c];
                             }
                         }
                     }
-                }			
+                }
             }
         }
         //Set outputs
@@ -323,7 +361,7 @@ struct Algomorph4 : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "Config Mode", json_integer(configMode));
-        json_object_set_new(rootJ, "Current Scene", json_integer(currentScene));
+        json_object_set_new(rootJ, "Current Scene", json_integer(baseScene));
         json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
         json_t* opDestinationsJ = json_array();
 		for (int i = 0; i < 3; i++) {
@@ -336,12 +374,21 @@ struct Algomorph4 : Module {
             }
 		}
 		json_object_set_new(rootJ, "Operator Destinations", opDestinationsJ);
+        json_t* opDisabledJ = json_array();
+		for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                json_t* disabledJ = json_object();
+                json_object_set_new(disabledJ, "Disabled Op", json_boolean(opDisabled[i][j]));
+                json_array_append_new(opDisabledJ, disabledJ);
+            }
+		}
+		json_object_set_new(rootJ, "Operators Disabled", opDisabledJ);
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
 		configMode = json_integer_value(json_object_get(rootJ, "Config Mode"));
-		currentScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
+		baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
 		ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
 		json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
 		json_t* destinationJ;
@@ -359,6 +406,18 @@ struct Algomorph4 : Module {
                 }
             }
 		}
+		json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
+		json_t* disabledOpJ;
+		size_t disabledOpIndex;
+        i = j = 0;
+		json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
+            opDisabled[i][j] = json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
+		}
 	}
 };
 
@@ -366,6 +425,13 @@ struct RingMorphItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
         module->ringMorph ^= true;
+    }
+};
+
+struct ExitConfigItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->exitConfigOnConnect ^= true;
     }
 };
 
@@ -474,6 +540,10 @@ struct Algomorph4Widget : ModuleWidget {
 		RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
 		ringMorphItem->module = module;
 		menu->addChild(ringMorphItem);
+		
+        ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Config Mode after Connection", CHECKMARK(module->exitConfigOnConnect));
+		exitConfigItem->module = module;
+		menu->addChild(exitConfigItem);
 	}
 };
 
