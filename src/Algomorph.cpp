@@ -88,82 +88,84 @@ struct Algomorph4 : Module {
         morph[0] = inputs[MORPH_CV].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue();
         morph[0] = clamp(morph[0], -1.f, 1.f);
 
-        if (configMode > -1 || morph[0] == 0.f) {  //Display state without morph
-            //Set scene lights
-            for (int i = 0; i < 3; i++) {
-                if (i == baseScene)
-                    lights[SCENE_LIGHTS + i].setBrightness(1.f);
-                else
-                    lights[SCENE_LIGHTS + i].setBrightness(0.f);
-            }
-            //Set connection lights
-            for (int i = 0; i < 16; i++)
-                lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 4][i % 4] ? 1.f : 0.f);
-            /* //Set op/mod lights
-            if (configMode == -1) {
-                for (int i = 0; i < 4; i++) {
-                    if (opDisabled[baseScene][i]) {
-                        lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
-                        lights[MODULATOR_LIGHTS + i].setBrightness(0.f);
-                    }
-                    else {
-                        lights[OPERATOR_LIGHTS + i].setBrightness(0.4f);
-                        lights[MODULATOR_LIGHTS + i].setBrightness(0.4f);
-                    }
-                }
-            } */
-        }
-        else {  //Display morphed state
-            float brightness;
-            if (morph[0] > 0.f) {
+        if (lightDivider.process()) {
+            if (configMode > -1 || morph[0] == 0.f) {  //Display state without morph
                 //Set scene lights
-                lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
-                lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
-                //Set connection lights
-                for (int i = 0; i < 16; i++) {
-                    brightness = 0.f;
-                    if (opDestinations[baseScene][i / 4][i % 4])
-                        brightness += 1.f - morph[0];
-                    if (opDestinations[(baseScene + 1) % 3][i / 4][i % 4])
-                        brightness += morph[0];
-                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                for (int i = 0; i < 3; i++) {
+                    if (i == baseScene)
+                        lights[SCENE_LIGHTS + i].setBrightness(1.f);
+                    else
+                        lights[SCENE_LIGHTS + i].setBrightness(0.f);
                 }
+                //Set connection lights
+                for (int i = 0; i < 16; i++)
+                    lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 4][i % 4] ? 1.f : 0.f);
                 /* //Set op/mod lights
-                for (int i = 0; i < 4; i++) {
-                    brightness = 0.f;
-                    if (!opDisabled[baseScene][i])
-                        brightness += 1.f - morph[0];
-                    if (!opDisabled[(baseScene + 1) % 3][i])
-                        brightness += morph[0];
-                    brightness *= 0.4f;
-                    lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
-                    lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
+                if (configMode == -1) {
+                    for (int i = 0; i < 4; i++) {
+                        if (opDisabled[baseScene][i]) {
+                            lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
+                            lights[MODULATOR_LIGHTS + i].setBrightness(0.f);
+                        }
+                        else {
+                            lights[OPERATOR_LIGHTS + i].setBrightness(0.4f);
+                            lights[MODULATOR_LIGHTS + i].setBrightness(0.4f);
+                        }
+                    }
                 } */
             }
-            else {
-                //Set scene lights
-                lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
-                lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
-                //Set connection lights
-                for (int i = 0; i < 16; i++) {
-                    brightness = 0.f;
-                    if (opDestinations[baseScene][i / 4][i % 4])
-                        brightness += 1.f - (morph[0] * -1.f);
-                    if (opDestinations[(baseScene + 2) % 3][i / 4][i % 4])
-                        brightness += morph[0] * -1.f;
-                    lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+            else {  //Display morphed state
+                float brightness;
+                if (morph[0] > 0.f) {
+                    //Set scene lights
+                    lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
+                    lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
+                    //Set connection lights
+                    for (int i = 0; i < 16; i++) {
+                        brightness = 0.f;
+                        if (opDestinations[baseScene][i / 4][i % 4])
+                            brightness += 1.f - morph[0];
+                        if (opDestinations[(baseScene + 1) % 3][i / 4][i % 4])
+                            brightness += morph[0];
+                        lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                    }
+                    /* //Set op/mod lights
+                    for (int i = 0; i < 4; i++) {
+                        brightness = 0.f;
+                        if (!opDisabled[baseScene][i])
+                            brightness += 1.f - morph[0];
+                        if (!opDisabled[(baseScene + 1) % 3][i])
+                            brightness += morph[0];
+                        brightness *= 0.4f;
+                        lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
+                        lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
+                    } */
                 }
-                /* //Set op/mod lights
-                for (int i = 0; i < 4; i++) {
-                    brightness = 0.f;
-                    if (!opDisabled[baseScene][i])
-                        brightness += 1.f - (morph[0] * -1.f);
-                    if (!opDisabled[(baseScene + 2) % 3][i])
-                        brightness += morph[0] * -1.f;
-                    brightness *= 0.4f;
-                    lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
-                    lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
-                } */
+                else {
+                    //Set scene lights
+                    lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
+                    lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
+                    //Set connection lights
+                    for (int i = 0; i < 16; i++) {
+                        brightness = 0.f;
+                        if (opDestinations[baseScene][i / 4][i % 4])
+                            brightness += 1.f - (morph[0] * -1.f);
+                        if (opDestinations[(baseScene + 2) % 3][i / 4][i % 4])
+                            brightness += morph[0] * -1.f;
+                        lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                    }
+                    /* //Set op/mod lights
+                    for (int i = 0; i < 4; i++) {
+                        brightness = 0.f;
+                        if (!opDisabled[baseScene][i])
+                            brightness += 1.f - (morph[0] * -1.f);
+                        if (!opDisabled[(baseScene + 2) % 3][i])
+                            brightness += morph[0] * -1.f;
+                        brightness *= 0.4f;
+                        lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
+                        lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
+                    } */
+                }
             }
         }
 
