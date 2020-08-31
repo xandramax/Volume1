@@ -586,7 +586,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                 char const *id = s.c_str();
                 nvgTextBounds(args.vg, graphs[module->baseScene].coords[i].x, graphs[module->baseScene].coords[i].y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = (textBounds[3] - textBounds[1]) / 2.75f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
                 if (module->debug)
                     int x = 0;
                 if (module->morph[0] == 0.f || module->configMode > -1)    //Display state without morph
