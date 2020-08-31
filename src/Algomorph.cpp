@@ -96,6 +96,9 @@ struct Algomorph4 : Module {
 			}
 		}
 
+        for (int i = 0; i < 4088; i++) {
+            nameIndex[i] = -1;
+        }
 		for (int i = 0; i < 1695; i++) {
 			nameIndex[(int)graphData[i][0]] = i;
 		}
@@ -564,8 +567,12 @@ struct AlgoScreenWidget : FramebufferWidget {
 					int debugB = module->nameIndex[module->algoName[i].to_ullong()];
 					std::printf("%lld, %d", debugA, debugB);
 				}
-				graphs[i] = alGraph(module->nameIndex[(int)module->algoName[i].to_ullong()]);
-			}
+                int name = module->nameIndex[module->algoName[i].to_ullong()];
+                if (name != -1)
+    				graphs[i] = alGraph(module->nameIndex[(int)module->algoName[i].to_ullong()]);
+                else
+                    graphs[i] = alGraph(0);
+    		}
 
             float stroke = 0.5f;
 			float radius = 8.35425f;
