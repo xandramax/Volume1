@@ -87,7 +87,7 @@ struct Algomorph4 : Module {
             nameIndex[i] = -1;
         }
 		for (int i = 0; i < 1695; i++) {
-			nameIndex[(int)nodeData[i][0]] = i;
+			nameIndex[(int)xNodeData[i][0]] = i;
 		}
 
         // for (int i = 0; i < 13560; i += 9) {
@@ -543,8 +543,12 @@ struct AlgoScreenWidget : FramebufferWidget {
         NVGcolor fillColor = nvgRGBA(149, 122, 172, 160);
         NVGcolor strokeColor = nvgRGB(26, 26, 26);
         NVGcolor edgeColor = nvgRGB(0x9a,0x9a,0x6f);
-        float stroke = 0.5f;
-        float edgeStroke = 1.5f;
+        float borderStroke = 0.45f;
+        float labelStroke = 0.5f;
+        float nodeStroke = 0.75f;
+        float edgeStroke = 0.925f;
+        static constexpr float arrowStroke1 = (2.65f/4.f) + (1.f/3.f);
+        static constexpr float arrowStroke2 = (7.65f/4.f) + (1.f/3.f);
 
         AlgoDrawWidget(MODULE* module) {
             this->module = module;
@@ -559,9 +563,10 @@ struct AlgoScreenWidget : FramebufferWidget {
         }
 
         void renderEdges(NVGcontext* ctx, alGraph mostEdges, alGraph leastEdges, float morph, bool flipped) {
-            nvgBeginPath(ctx);
             for (int i = 0; i < mostEdges.numEdges; i++) {
                 Edge edge[2];
+                Arrow arrow[2];
+                nvgBeginPath(ctx);
                 if (leastEdges.numEdges == 0) {
                     if (!flipped) {
                         edge[0] = mostEdges.edges[i];
@@ -577,6 +582,8 @@ struct AlgoScreenWidget : FramebufferWidget {
                         float debugA = edge[0].moveCoords.x, debugB = edge[0].moveCoords.y, debugC = xOrigin, debugD = yOrigin;
                         int x = 0;
                     }
+                    arrow[0] = mostEdges.arrows[i];
+                    arrow[1] = leastEdges.arrows[i];
                 }
                 else if (i < leastEdges.numEdges) {
                     if (!flipped) {
@@ -592,30 +599,44 @@ struct AlgoScreenWidget : FramebufferWidget {
                         float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
                         int x = 0;
                     }
+                    arrow[0] = mostEdges.arrows[i];
+                    arrow[1] = leastEdges.arrows[i];
                 }
                 else {
                     if (!flipped) {
-                       edge[0] = mostEdges.edges[i];
-                       edge[1] = leastEdges.edges[std::max(0, leastEdges.numEdges - 1)];
+                        edge[0] = mostEdges.edges[i];
+                        edge[1] = leastEdges.edges[std::max(0, leastEdges.numEdges - 1)];
                     }
                     else {
-                       edge[0] = leastEdges.edges[std::max(0, leastEdges.numEdges - 1)];
-                       edge[1] = mostEdges.edges[i];
+                        edge[0] = leastEdges.edges[std::max(0, leastEdges.numEdges - 1)];
+                        edge[1] = mostEdges.edges[i];
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
                     if (module->debug) {
                         float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
                         int x = 0;
                     }
+                    arrow[0] = mostEdges.arrows[i];
+                    arrow[1] = leastEdges.arrows[std::max(0, leastEdges.numEdges - 1)];
                 }
-                if (edge[0] >= edge[1]) 
+                if (edge[0] >= edge[1]) {
                     reticulateEdge(ctx, edge[0], edge[1], morph, false);
-                else
+                }
+                else {
                     reticulateEdge(ctx, edge[1], edge[0], morph, true);
+                }
+                nvgStrokeColor(ctx, edgeColor);
+                nvgStrokeWidth(ctx, edgeStroke);
+                nvgStroke(ctx);
+
+                nvgBeginPath(ctx);
+                reticulateArrow(ctx, arrow[0], arrow[1], morph, flipped);
+                nvgFillColor(ctx, edgeColor);
+                nvgFill(ctx);
+                nvgStrokeColor(ctx, edgeColor);
+                nvgStrokeWidth(ctx, arrowStroke1);
+                nvgStroke(ctx);
             }
-            nvgStrokeColor(ctx, edgeColor);
-            nvgStrokeWidth(ctx, edgeStroke);
-            nvgStroke(ctx);
         }
 
         void reticulateEdge(NVGcontext* ctx, Edge mostCurved, Edge leastCurved, float morph, bool flipped) {
@@ -704,6 +725,75 @@ struct AlgoScreenWidget : FramebufferWidget {
             }
         }
 
+        void reticulateArrow(NVGcontext* ctx, Arrow mostGregarious, Arrow leastGregarious, float morph, bool flipped) {
+            if (leastGregarious.moveCoords.x == 0) {
+                if (!flipped)
+                    nvgMoveTo(ctx, crossfade(mostGregarious.moveCoords.x, xOrigin, morph), crossfade(mostGregarious.moveCoords.y, yOrigin, morph));
+                else
+                    nvgMoveTo(ctx, crossfade(xOrigin, mostGregarious.moveCoords.x, morph), crossfade(yOrigin, mostGregarious.moveCoords.y, morph));
+                for (int j = 0; j < 9; j++) {
+                    if (!flipped)
+                        nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, xOrigin, morph), crossfade(mostGregarious.lines[j].y, yOrigin, morph));
+                    else
+                        nvgLineTo(ctx, crossfade(xOrigin, mostGregarious.lines[j].x, morph), crossfade(yOrigin, mostGregarious.lines[j].y, morph));
+                    if (module->debug) {
+                        float   debugA = mostGregarious.lines[j].x, 
+                                debugB = mostGregarious.lines[j].y,
+                                debugC = xOrigin,
+                                debugD = yOrigin,
+                                debugE = mostGregarious.lines[j].x,
+                                debugF = mostGregarious.lines[j].y,
+                                debugG = xOrigin,
+                                debugH = yOrigin,
+                                debugI = mostGregarious.lines[j].x,
+                                debugJ = mostGregarious.lines[j].y,
+                                debugK = xOrigin,
+                                debugL = yOrigin,
+                                debugM = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                                debugN = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
+                                debugO = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                                debugP = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
+                                debugQ = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                                debugR = crossfade(mostGregarious.lines[j].y, yOrigin, morph);
+                        int x = 0;
+                    }
+                }
+            }
+            else {
+                if (!flipped)
+                    nvgMoveTo(ctx, crossfade(mostGregarious.moveCoords.x, leastGregarious.moveCoords.x, morph), crossfade(mostGregarious.moveCoords.y, leastGregarious.moveCoords.y, morph));
+                else
+                    nvgMoveTo(ctx, crossfade(leastGregarious.moveCoords.x, mostGregarious.moveCoords.x, morph), crossfade(leastGregarious.moveCoords.y, mostGregarious.moveCoords.y, morph));
+                for (int j = 0; j < 9; j++) {
+                    if (!flipped)
+                        nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph), crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph));
+                    else
+                        nvgLineTo(ctx, crossfade(leastGregarious.lines[j].x, mostGregarious.lines[j].x, morph), crossfade(leastGregarious.lines[j].y, mostGregarious.lines[j].y, morph));
+                    if (module->debug) {
+                        float   debugA = mostGregarious.lines[j].x, 
+                                debugB = mostGregarious.lines[j].y,
+                                debugC = leastGregarious.lines[j].x,
+                                debugD = leastGregarious.lines[j].y,
+                                debugE = mostGregarious.lines[j].x,
+                                debugF = mostGregarious.lines[j].y,
+                                debugG = leastGregarious.lines[j].x,
+                                debugH = leastGregarious.lines[j].y,
+                                debugI = mostGregarious.lines[j].x,
+                                debugJ = mostGregarious.lines[j].y,
+                                debugK = leastGregarious.lines[j].x,
+                                debugL = leastGregarious.lines[j].y,
+                                debugM = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                                debugN = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
+                                debugO = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                                debugP = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
+                                debugQ = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                                debugR = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph);
+                        int x = 0;
+                    }
+                }
+            }
+        }
+
         void draw(const Widget::DrawArgs& args) override {
             if (!module) return;
 
@@ -732,9 +822,9 @@ struct AlgoScreenWidget : FramebufferWidget {
             if (module->morph[0] == 0.f || module->configMode > -1)
                 noMorph = true;
 
-            nvgStrokeWidth(args.vg, stroke);
 			nvgBeginPath(args.vg);
 			nvgRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y);
+            nvgStrokeWidth(args.vg, borderStroke);
 			nvgStroke(args.vg);
 
             // Draw node numbers
@@ -742,29 +832,30 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgFontSize(args.vg, 10.f);
             nvgFontFaceId(args.vg, font->handle);
             for (int i = 0; i < 4; i++) {
-                std::string s = std::to_string(i + 1);
+                std::string s = std::to_string(graphs[module->baseScene].nodes[i].id * -1);
                 char const *id = s.c_str();
-                nvgTextBounds(args.vg, graphs[module->baseScene].nodeCoords[i].x, graphs[module->baseScene].nodeCoords[i].y, id, id + 1, textBounds);
+                nvgTextBounds(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
                 float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
                 if (module->debug)
                     int x = 0;
                 if (module->morph[0] == 0.f || module->configMode > -1)    //Display state without morph
-                    nvgText(args.vg, graphs[module->baseScene].nodeCoords[i].x - xOffset, graphs[module->baseScene].nodeCoords[i].y + yOffset, id, id + 1);
+                    nvgText(args.vg, graphs[module->baseScene].nodes[i].coords.x - xOffset, graphs[module->baseScene].nodes[i].coords.y + yOffset, id, id + 1);
                 else {  //Display moprhed state
                     if (module->morph[0] > 0.f) {
-                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodeCoords[i].x, graphs[(module->baseScene + 1) % 3].nodeCoords[i].x, module->morph[0]) - xOffset,
-                                            crossfade(graphs[module->baseScene].nodeCoords[i].y, graphs[(module->baseScene + 1) % 3].nodeCoords[i].y, module->morph[0]) + yOffset,
+                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 1) % 3].nodes[i].coords.x, module->morph[0]) - xOffset,
+                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 1) % 3].nodes[i].coords.y, module->morph[0]) + yOffset,
                                             id, id + 1);
                     }
                     else {
-                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodeCoords[i].x, graphs[(module->baseScene + 2) % 3].nodeCoords[i].x, -module->morph[0]) - xOffset,
-                                            crossfade(graphs[module->baseScene].nodeCoords[i].y, graphs[(module->baseScene + 2) % 3].nodeCoords[i].y, -module->morph[0]) + yOffset,
+                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 2) % 3].nodes[i].coords.x, -module->morph[0]) - xOffset,
+                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 2) % 3].nodes[i].coords.y, -module->morph[0]) + yOffset,
                                             id, id + 1);
                     }
                 }
             }
             nvgStrokeColor(args.vg, strokeColor);
+            nvgStrokeWidth(args.vg, labelStroke);
             nvgStroke(args.vg);
             nvgFillColor(args.vg, fillColor);
             nvgFill(args.vg);
@@ -773,16 +864,16 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgBeginPath(args.vg);
             for (int i = 0; i < 4; i++) {
                 if (noMorph)    //Display state without morph
-                    nvgCircle(args.vg, graphs[module->baseScene].nodeCoords[i].x, graphs[module->baseScene].nodeCoords[i].y, radius);
+                    nvgCircle(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, radius);
                 else {  //Display moprhed state
                     if (module->morph[0] > 0.f) {
-                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodeCoords[i].x, graphs[(module->baseScene + 1) % 3].nodeCoords[i].x, module->morph[0]),
-                                            crossfade(graphs[module->baseScene].nodeCoords[i].y, graphs[(module->baseScene + 1) % 3].nodeCoords[i].y, module->morph[0]),
+                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 1) % 3].nodes[i].coords.x, module->morph[0]),
+                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 1) % 3].nodes[i].coords.y, module->morph[0]),
                                             radius);
                     }
                     else {
-                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodeCoords[i].x, graphs[(module->baseScene + 2) % 3].nodeCoords[i].x, -module->morph[0]),
-                                            crossfade(graphs[module->baseScene].nodeCoords[i].y, graphs[(module->baseScene + 2) % 3].nodeCoords[i].y, -module->morph[0]),
+                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 2) % 3].nodes[i].coords.x, -module->morph[0]),
+                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 2) % 3].nodes[i].coords.y, -module->morph[0]),
                                             radius);
                     }
                 }
@@ -790,10 +881,12 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgFillColor(args.vg, fillColor);
             nvgFill(args.vg);
             nvgStrokeColor(args.vg, strokeColor);
+            nvgStrokeWidth(args.vg, nodeStroke);
             nvgStroke(args.vg);
 
-            // Draw edges
+            // Draw edges +/ arrows
             if (noMorph) {
+                // Draw edges
                 nvgBeginPath(args.vg);
                 for (int i = 0; i < graphs[module->baseScene].numEdges; i++) {
                     Edge edge = graphs[module->baseScene].edges[i];
@@ -816,13 +909,34 @@ struct AlgoScreenWidget : FramebufferWidget {
                 nvgStrokeColor(args.vg, edgeColor);
                 nvgStrokeWidth(args.vg, edgeStroke);
                 nvgStroke(args.vg);
+                // Draw arrows
+                for (int i = 0; i < graphs[module->baseScene].numEdges; i++) {
+                    nvgBeginPath(args.vg);
+                    nvgMoveTo(args.vg, graphs[module->baseScene].arrows[i].moveCoords.x, graphs[module->baseScene].arrows[i].moveCoords.y);
+                    for (int j = 0; j < 9; j++) {
+                        nvgLineTo(args.vg, graphs[module->baseScene].arrows[i].lines[j].x, graphs[module->baseScene].arrows[i].lines[j].y);
+                        if (module->debug) {
+                            auto debugA = graphs[module->baseScene].arrows[i]; 
+                            int x = 0;
+                        }
+                    }
+                    // nvgStrokeColor(args.vg, strokeColor);
+                    // nvgStrokeWidth(args.vg, arrowStroke2);
+                    // nvgStroke(args.vg);
+                    nvgFillColor(args.vg, edgeColor);
+                    nvgFill(args.vg);
+                    nvgStrokeColor(args.vg, edgeColor);
+                    nvgStrokeWidth(args.vg, arrowStroke1);
+                    nvgStroke(args.vg);
+                }
             }
             else {
+                // Draw edges AND arrows
                 if (module->morph[0] > 0.f)
                     drawEdges(args.vg, graphs[module->baseScene], graphs[(module->baseScene + 1) % 3], module->morph[0]);
                 else
                     drawEdges(args.vg, graphs[module->baseScene], graphs[(module->baseScene + 2) % 3], -module->morph[0]);
-            }                 
+            }                
         }
     };
 
