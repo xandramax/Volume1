@@ -1,7 +1,11 @@
 # Algomorph
 Algomorph is a VCV Rack module which helps with the construction of user-defined FM algorithms and allows for morphing between up to 3 of those algorithms.  
 
-It is intended for use with modules capable of linear through-zero FM, such as Bogaudio FM-OP, Nysthi µOPERATOR/TZOP, and Squinky Labs Kitchen Sink.
+It is intended for use with modules capable of linear through-zero FM, such as:
+* Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
+* NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
+* Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
+* Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
 
 ![Algomorph](<res/Algomorph Components.png>)
 
