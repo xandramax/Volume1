@@ -11874,7 +11874,6 @@ constexpr float yPolygonData[1695][90] = {  {-2, -2, -2, -2, -2, -2, -2, -2, -2,
 
 struct Node {
     Vec coords;
-    int id;
 };
 
 struct Edge {
@@ -11912,15 +11911,15 @@ struct alGraph {
 
 	alGraph() {
 		for (int i = 0; i < 4; i++) {
-			nodes[i].coords = Vec(xNodeData[0][i*2 + 2], yNodeData[0][i*2+2]);
-            nodes[i].id = xNodeData[0][i*2+1];
+            int id = -xNodeData[0][i*2+1];
+			nodes[id - 1].coords = Vec(xNodeData[0][i*2 + 2], yNodeData[0][i*2+2]);
         }
 	}
 
 	alGraph(int graphId) {
 		for (int i = 0; i < 4; i++) {
-			nodes[i].coords = Vec(xNodeData[graphId][i * 2 + 2], yNodeData[graphId][i * 2 + 2]);
-            nodes[i].id = xNodeData[graphId][i*2+1];
+            int id = -xNodeData[graphId][i*2+1];
+			nodes[id - 1].coords = Vec(xNodeData[graphId][i * 2 + 2], yNodeData[graphId][i * 2 + 2]);
         }
         if (graphId != 0) {
             int curveDataIndex = 1;

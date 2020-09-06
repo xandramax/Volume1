@@ -832,7 +832,7 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgFontSize(args.vg, 10.f);
             nvgFontFaceId(args.vg, font->handle);
             for (int i = 0; i < 4; i++) {
-                std::string s = std::to_string(graphs[module->baseScene].nodes[i].id * -1);
+                std::string s = std::to_string(i + 1);
                 char const *id = s.c_str();
                 nvgTextBounds(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
