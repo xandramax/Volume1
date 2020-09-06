@@ -1,7 +1,7 @@
 # Algomorph
-Algomorph is a VCV Rack module which helps with the construction of user-defined FM algorithms and allows for morphing between up to 3 of those algorithms.  
+Algomorph is a VCV Rack module which helps with the construction of user-defined FM algorithms and allows for morphing between up to 3 of those algorithms. In addition, the algorithm is visualized as a directed graph on a built-in display. 
 
-It is intended for use with modules capable of linear through-zero FM, such as:
+It is intended for use with modules capable of linear through-zero FM or phase modulation, such as:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
@@ -19,5 +19,6 @@ Instructions:
 * After you have finished building your algorithm, press Algorithm Button 1 or 2 to build a new algorithm.  
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
 * The CV input can also be used instead of (or in addition to) the knob, accepting +/-5V.
+* Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
 
 ![Example](res/AlgomorphOperators.png)
