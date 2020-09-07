@@ -12,7 +12,8 @@ struct Algomorph4 : Module {
 	};
 	enum InputIds {
 		ENUMS(OPERATOR_INPUTS, 4),
-        MORPH_CV,
+        MORPH_INPUT,
+        SCENE_ADV_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -41,13 +42,16 @@ struct Algomorph4 : Module {
 	// alGraph graphHeap[1675];
     std::bitset<12> algoName[3];
 	int nameIndex[4088];
+    int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
 
     //User settings
     bool ringMorph = false;
     bool exitConfigOnConnect = false;
-    int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
+    bool ccwSceneSelection = true;
 
-    dsp::BooleanTrigger sceneTrigger[3];
+    dsp::BooleanTrigger sceneButtonTrigger[3];
+    dsp::BooleanTrigger sceneAdvButtonTrigger;
+    dsp::SchmittTrigger sceneAdvCVTrigger;
     dsp::BooleanTrigger operatorTrigger[4];
     dsp::BooleanTrigger modulatorTrigger[4];
 	// dsp::BooleanTrigger* opModTrigger[4][3]; // Operator-relative sets of modulatorTrigger outputs (i.e. those not belonging to the modulating operator) for graph indexing
@@ -89,15 +93,6 @@ struct Algomorph4 : Module {
 		for (int i = 0; i < 1695; i++) {
 			nameIndex[(int)xNodeData[i][0]] = i;
 		}
-
-        // for (int i = 0; i < 13560; i += 9) {
-        //     for (int j = 0; j < 4; j++) {
-        //         graphHeap[i/9].coords[j].x = graphData[i + 1 + j * 2];
-        //         graphHeap[i/9].coords[j].y = graphData[i + 2 + j * 2];
-        //     }
-		// 	std::bitset<16> debug = std::bitset<16>((long long)graphData[i]);
-        //     graphStore.insert({debug, &graphHeap[i/9]});
-        // }
 		
 		graphDirty = true;
 	}
@@ -125,7 +120,7 @@ struct Algomorph4 : Module {
                                 {true, true, true, true},
                                 {true, true, true, true} };
 		int channels = 1;
-        float newMorph0 = clamp(inputs[MORPH_CV].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue(), -1.f, 1.f);
+        float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue(), -1.f, 1.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
             graphDirty = true;
@@ -170,7 +165,7 @@ struct Algomorph4 : Module {
                 float brightness;
                 if (morph[0] > 0.f) {
                     //Set scene lights
-                    lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
+                    // lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
                     lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
                     //Set connection lights
                     for (int i = 0; i < 12; i++) {
@@ -204,7 +199,7 @@ struct Algomorph4 : Module {
                 }
                 else {
                     //Set scene lights
-                    lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
+                    // lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
                     lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
                     //Set connection lights
                     for (int i = 0; i < 12; i++) {
@@ -240,13 +235,22 @@ struct Algomorph4 : Module {
         }
 
         //Check to change scene
+        //Scene buttons
         for (int i = 0; i < 3; i++) {
-            if (sceneTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
+            if (sceneButtonTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
                 //If not changing to a new scene
                 if (baseScene == i) {
                     //Reset scene morph knob
                     params[MORPH_KNOB].setValue(0.f);
 					graphDirty = true;
+                    //Turn off config mode if necessary
+                    if (configMode > -1) {
+                        lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
+                        for (int j = 0; j < 4; j++) {
+                            lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
+                        }
+                        configMode = -1;
+                    }
                 }
                 else {
                     //Adjust scene lights
@@ -267,11 +271,26 @@ struct Algomorph4 : Module {
                     //Adjust disable lights
                     for (int j = 0; j < 4; j++)
                         lights[DISABLE_LIGHTS + j].setBrightness(opDisabled[baseScene][j] ? 1.f : 0.f);
-                    //Reset scene morph knob
-                    params[MORPH_KNOB].setValue(0.f);
 					graphDirty = true;
                 }
             }
+        }
+        //Scene advance button & trigger input
+        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+            //Adjust scene lights, advance base scene
+            lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
+            if (!ccwSceneSelection)
+               baseScene = (baseScene + 1) % 3;
+            else
+               baseScene = (baseScene + 2) % 3;
+            lights[SCENE_LIGHTS + baseScene].setBrightness(1.f);
+            //Adjust connection lights
+            for (int j = 0; j < 12; j++)
+                lights[CONNECTION_LIGHTS + j].setBrightness(opDestinations[baseScene][j / 3][j % 3] ? 1.f : 0.f);
+            //Adjust disable lights
+            for (int j = 0; j < 4; j++)
+                lights[DISABLE_LIGHTS + j].setBrightness(opDisabled[baseScene][j] ? 1.f : 0.f);
+            graphDirty = true;
         }
 
         //Check to enter config mode
@@ -350,7 +369,7 @@ struct Algomorph4 : Module {
         //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
             if (c > 0) {   //morph[0] is calculated earlier
-                morph[c] = inputs[MORPH_CV].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
+                morph[c] = inputs[MORPH_INPUT].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
                 morph[c] = clamp(morph[c], -1.f, 1.f);
             }
   
@@ -457,6 +476,7 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Current Scene", json_integer(baseScene));
         json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
         json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
+        json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
         json_t* opDestinationsJ = json_array();
 		for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -492,6 +512,7 @@ struct Algomorph4 : Module {
 		baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
 		ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
 		exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
+		ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
 		json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
 		json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
@@ -542,7 +563,7 @@ struct AlgoScreenWidget : FramebufferWidget {
    
         NVGcolor fillColor = nvgRGBA(149, 122, 172, 160);
         NVGcolor strokeColor = nvgRGB(26, 26, 26);
-        NVGcolor edgeColor = nvgRGB(0x9a,0x9a,0x6f);
+        NVGcolor edgeColor = nvgRGBA(0x9a,0x9a,0x6f,0xff);
         float borderStroke = 0.45f;
         float labelStroke = 0.5f;
         float nodeStroke = 0.75f;
@@ -572,11 +593,13 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[0] = mostEdges.edges[i];
                         edge[1] = leastEdges.edges[i];
                         nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, xOrigin, morph), crossfade(edge[0].moveCoords.y, yOrigin, morph));
+                        edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, crossfade(0xff, 0x00, morph));
                     }
                     else {
                         edge[0] = leastEdges.edges[i];
                         edge[1] = mostEdges.edges[i];
                         nvgMoveTo(ctx, crossfade(xOrigin, edge[1].moveCoords.x, morph), crossfade(yOrigin, edge[1].moveCoords.y, morph));
+                        edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, crossfade(0x00, 0xff, morph));
                     }
                     if (module->debug) {
                         float debugA = edge[0].moveCoords.x, debugB = edge[0].moveCoords.y, debugC = xOrigin, debugD = yOrigin;
@@ -595,6 +618,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[1] = mostEdges.edges[i];
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
+                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
                     if (module->debug) {
                         float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
                         int x = 0;
@@ -612,6 +636,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[1] = mostEdges.edges[i];
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
+                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
                     if (module->debug) {
                         float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
                         int x = 0;
@@ -625,6 +650,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                 else {
                     reticulateEdge(ctx, edge[1], edge[0], morph, true);
                 }
+
                 nvgStrokeColor(ctx, edgeColor);
                 nvgStrokeWidth(ctx, edgeStroke);
                 nvgStroke(ctx);
@@ -973,6 +999,13 @@ struct ExitConfigItem : MenuItem {
     }
 };
 
+struct CCWScenesItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->ccwSceneSelection ^= true;
+    }
+};
+
 struct DebugItem : MenuItem {
 	Algomorph4 *module;
 	void onAction(const event::Action &e) override {
@@ -992,7 +1025,7 @@ struct Algomorph4Widget : ModuleWidget {
 
 	Algomorph4Widget(Algomorph4* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph2.svg")));
 
         Vec OpButtonCenter[4] = {   {59.785, 247.736},
                                     {59.785, 278.458},
@@ -1013,29 +1046,26 @@ struct Algomorph4Widget : ModuleWidget {
         screenWidget->box.size = Vec(113.074f, 93.277f);
 		addChild(screenWidget);
 
-        addChild(createParamCentered<TL1105>(Vec(37.414, 163.627), module, Algomorph4::SCENE_BUTTONS + 0));
-        addChild(createParamCentered<TL1105>(Vec(62.755, 163.627), module, Algomorph4::SCENE_BUTTONS + 1));
-        addChild(createParamCentered<TL1105>(Vec(88.097, 163.627), module, Algomorph4::SCENE_BUTTONS + 2));
+        addChild(createParamCentered<TL1105>(Vec(37.414, 158.528), module, Algomorph4::SCENE_BUTTONS + 0));
+        addChild(createParamCentered<TL1105>(Vec(62.755, 158.528), module, Algomorph4::SCENE_BUTTONS + 1));
+        addChild(createParamCentered<TL1105>(Vec(88.097, 158.528), module, Algomorph4::SCENE_BUTTONS + 2));
 
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(37.414, 175.271), module, Algomorph4::SCENE_LIGHTS + 0));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(62.755, 175.271), module, Algomorph4::SCENE_LIGHTS + 1));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(88.097, 175.271), module, Algomorph4::SCENE_LIGHTS + 2));
+        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(37.414, 148.051), module, Algomorph4::SCENE_LIGHTS + 0));
+        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(62.755, 148.051), module, Algomorph4::SCENE_LIGHTS + 1));
+        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(88.097, 148.051), module, Algomorph4::SCENE_LIGHTS + 2));
 
-		addInput(createInput<DLXPortPoly>(Vec(30.234, 190.601), module, Algomorph4::MORPH_CV));
+		addInput(createInputCentered<DLXPortPoly>(Vec(125.350, 158.528), module, Algomorph4::SCENE_ADV_INPUT));
+
+		addInput(createInput<DLXPortPoly>(Vec(30.234, 190.601), module, Algomorph4::MORPH_INPUT));
 
 		addChild(createParam<DLXKnob>(Vec(65.580, 185.682), module, Algomorph4::MORPH_KNOB));
 
-        addOutput(createOutput<DLXPortPolyOut>(Vec(115.420, 171.305), module, Algomorph4::SUM_OUTPUT));
+        addOutput(createOutput<DLXPortPolyOut>(Vec(115.420, 190.601), module, Algomorph4::SUM_OUTPUT));
 
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 247.736), module, Algomorph4::OPERATOR_LIGHTS + 0));
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 278.458), module, Algomorph4::OPERATOR_LIGHTS + 1));
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 309.180), module, Algomorph4::OPERATOR_LIGHTS + 2));
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 339.902), module, Algomorph4::OPERATOR_LIGHTS + 3));
-
-        /* addChild(createLightCentered<TinyLight<TWhitePurpleLight>>(Vec(152.820, 247.736), module, Algomorph4::MODULATOR_0_LIGHTS + 0));
-        addChild(createLightCentered<TinyLight<TWhitePurpleLight>>(Vec(152.820, 278.458), module, Algomorph4::MODULATOR_0_LIGHTS + 1));
-        addChild(createLightCentered<TinyLight<TWhitePurpleLight>>(Vec(152.820, 309.180), module, Algomorph4::MODULATOR_0_LIGHTS + 2));
-        addChild(createLightCentered<TinyLight<TWhitePurpleLight>>(Vec(152.820, 339.902), module, Algomorph4::MODULATOR_0_LIGHTS + 3)); */
 
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 247.736), module, Algomorph4::MODULATOR_LIGHTS + 0));
         addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 278.458), module, Algomorph4::MODULATOR_LIGHTS + 1));
@@ -1097,6 +1127,10 @@ struct Algomorph4Widget : ModuleWidget {
 		exitConfigItem->module = module;
 		menu->addChild(exitConfigItem);
         
+        CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input advances counter-clockwise", CHECKMARK(module->ccwSceneSelection));
+		ccwScenesItem->module = module;
+		menu->addChild(ccwScenesItem);
+
 		DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
 		debugItem->module = module;
 		menu->addChild(debugItem);
