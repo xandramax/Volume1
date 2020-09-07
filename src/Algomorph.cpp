@@ -46,7 +46,7 @@ struct Algomorph4 : Module {
 
     //User settings
     bool ringMorph = false;
-    bool exitConfigOnConnect = false;
+    bool exitConfigOnConnect = true;
     bool ccwSceneSelection = true;
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
