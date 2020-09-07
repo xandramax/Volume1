@@ -36,7 +36,7 @@ struct Algomorph4 : Module {
     int baseScene = 1;
     bool graphDirty = true;
 
-	bool debug = false;
+	// bool debug = false;
 
     // std::map<std::bitset<16>, alGraph*, bitsetCompare> graphStore;
 	// alGraph graphHeap[1675];
@@ -126,8 +126,8 @@ struct Algomorph4 : Module {
             graphDirty = true;
         }
 
-		if (debug)
-			int x = 0;
+		// if (debug)
+		// 	int x = 0;
 
         if (lightDivider.process()) {
             if (configMode > -1 || morph[0] == 0.f) {  //Display state without morph
@@ -140,8 +140,8 @@ struct Algomorph4 : Module {
                 }
                 //Set connection lights
                 for (int i = 0; i < 12; i++) {
-					if (debug)
-						int debugA = i / 3, debugB = i % 3; 
+					// if (debug)
+					// 	int debugA = i / 3, debugB = i % 3; 
                     lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 3][i % 3] ? 1.f : 0.f);
 				}
                 //Set disable lights
@@ -338,8 +338,8 @@ struct Algomorph4 : Module {
 			else {
 				for (int i = 0; i < 3; i++) {
 					if (modulatorTrigger[opModIndex[configMode][i]].process(params[MODULATOR_BUTTONS + opModIndex[configMode][i]].getValue() > 0.f)) {
-						if (debug)
-							int x = 0;
+						// if (debug)
+						// 	int x = 0;
 						lights[MODULATOR_LIGHTS + opModIndex[configMode][i]].setBrightness((opDestinations[baseScene][configMode][i]) ? 0.f : 1.f); 
 
 						opDestinations[baseScene][configMode][i] ^= true;
@@ -601,10 +601,10 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgMoveTo(ctx, crossfade(xOrigin, edge[1].moveCoords.x, morph), crossfade(yOrigin, edge[1].moveCoords.y, morph));
                         edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, crossfade(0x00, 0xff, morph));
                     }
-                    if (module->debug) {
-                        float debugA = edge[0].moveCoords.x, debugB = edge[0].moveCoords.y, debugC = xOrigin, debugD = yOrigin;
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float debugA = edge[0].moveCoords.x, debugB = edge[0].moveCoords.y, debugC = xOrigin, debugD = yOrigin;
+                    //     int x = 0;
+                    // }
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[i];
                 }
@@ -619,10 +619,10 @@ struct AlgoScreenWidget : FramebufferWidget {
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
                     edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
-                    if (module->debug) {
-                        float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
+                    //     int x = 0;
+                    // }
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[i];
                 }
@@ -637,10 +637,10 @@ struct AlgoScreenWidget : FramebufferWidget {
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
                     edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
-                    if (module->debug) {
-                        float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
+                    //     int x = 0;
+                    // }
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[std::max(0, leastEdges.numEdges - 1)];
                 }
@@ -672,81 +672,81 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, xOrigin, morph), crossfade(mostCurved.curve[j][0].y, yOrigin, morph), crossfade(mostCurved.curve[j][1].x, xOrigin, morph), crossfade(mostCurved.curve[j][1].y, yOrigin, morph), crossfade(mostCurved.curve[j][2].x, xOrigin, morph), crossfade(mostCurved.curve[j][2].y, yOrigin, morph));
                     else
                         nvgBezierTo(ctx, crossfade(xOrigin, mostCurved.curve[j][0].x, morph), crossfade(yOrigin, mostCurved.curve[j][0].y, morph), crossfade(xOrigin, mostCurved.curve[j][1].x, morph), crossfade(yOrigin, mostCurved.curve[j][1].y, morph), crossfade(xOrigin, mostCurved.curve[j][2].x, morph), crossfade(yOrigin, mostCurved.curve[j][2].y, morph));
-                    if (module->debug) {
-                        float   debugA = mostCurved.curve[j][0].x, 
-                                debugB = mostCurved.curve[j][0].y,
-                                debugC = xOrigin,
-                                debugD = yOrigin,
-                                debugE = mostCurved.curve[j][1].x,
-                                debugF = mostCurved.curve[j][1].y,
-                                debugG = xOrigin,
-                                debugH = yOrigin,
-                                debugI = mostCurved.curve[j][2].x,
-                                debugJ = mostCurved.curve[j][2].y,
-                                debugK = xOrigin,
-                                debugL = yOrigin,
-                                debugM = crossfade(mostCurved.curve[j][0].x, xOrigin, morph),
-                                debugN = crossfade(mostCurved.curve[j][0].y, yOrigin, morph),
-                                debugO = crossfade(mostCurved.curve[j][1].x, xOrigin, morph),
-                                debugP = crossfade(mostCurved.curve[j][1].y, yOrigin, morph),
-                                debugQ = crossfade(mostCurved.curve[j][2].x, xOrigin, morph),
-                                debugR = crossfade(mostCurved.curve[j][2].y, yOrigin, morph);
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float   debugA = mostCurved.curve[j][0].x, 
+                    //             debugB = mostCurved.curve[j][0].y,
+                    //             debugC = xOrigin,
+                    //             debugD = yOrigin,
+                    //             debugE = mostCurved.curve[j][1].x,
+                    //             debugF = mostCurved.curve[j][1].y,
+                    //             debugG = xOrigin,
+                    //             debugH = yOrigin,
+                    //             debugI = mostCurved.curve[j][2].x,
+                    //             debugJ = mostCurved.curve[j][2].y,
+                    //             debugK = xOrigin,
+                    //             debugL = yOrigin,
+                    //             debugM = crossfade(mostCurved.curve[j][0].x, xOrigin, morph),
+                    //             debugN = crossfade(mostCurved.curve[j][0].y, yOrigin, morph),
+                    //             debugO = crossfade(mostCurved.curve[j][1].x, xOrigin, morph),
+                    //             debugP = crossfade(mostCurved.curve[j][1].y, yOrigin, morph),
+                    //             debugQ = crossfade(mostCurved.curve[j][2].x, xOrigin, morph),
+                    //             debugR = crossfade(mostCurved.curve[j][2].y, yOrigin, morph);
+                    //     int x = 0;
+                    // }
                 }
                 else if (j < leastCurved.curveLength) {
                     if (!flipped)
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, leastCurved.curve[j][0].x, morph), crossfade(mostCurved.curve[j][0].y, leastCurved.curve[j][0].y, morph), crossfade(mostCurved.curve[j][1].x, leastCurved.curve[j][1].x, morph), crossfade(mostCurved.curve[j][1].y, leastCurved.curve[j][1].y, morph), crossfade(mostCurved.curve[j][2].x, leastCurved.curve[j][2].x, morph), crossfade(mostCurved.curve[j][2].y, leastCurved.curve[j][2].y, morph));
                     else
                         nvgBezierTo(ctx, crossfade(leastCurved.curve[j][0].x, mostCurved.curve[j][0].x, morph), crossfade(leastCurved.curve[j][0].y, mostCurved.curve[j][0].y, morph), crossfade(leastCurved.curve[j][1].x, mostCurved.curve[j][1].x, morph), crossfade(leastCurved.curve[j][1].y, mostCurved.curve[j][1].y, morph), crossfade(leastCurved.curve[j][2].x, mostCurved.curve[j][2].x, morph), crossfade(leastCurved.curve[j][2].y, mostCurved.curve[j][2].y, morph));
-                    if (module->debug) {
-                        float   debugA = mostCurved.curve[j][0].x, 
-                                debugB = mostCurved.curve[j][0].y,
-                                debugC = leastCurved.curve[j][0].x,
-                                debugD = leastCurved.curve[j][0].y,
-                                debugE = mostCurved.curve[j][1].x,
-                                debugF = mostCurved.curve[j][1].y,
-                                debugG = leastCurved.curve[j][1].x,
-                                debugH = leastCurved.curve[j][1].y,
-                                debugI = mostCurved.curve[j][2].x,
-                                debugJ = mostCurved.curve[j][2].y,
-                                debugK = leastCurved.curve[j][2].x,
-                                debugL = leastCurved.curve[j][2].y,
-                                debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[j][0].x, morph),
-                                debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[j][0].y, morph),
-                                debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[j][1].x, morph),
-                                debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[j][1].y, morph),
-                                debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[j][2].x, morph),
-                                debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[j][2].y, morph);
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float   debugA = mostCurved.curve[j][0].x, 
+                    //             debugB = mostCurved.curve[j][0].y,
+                    //             debugC = leastCurved.curve[j][0].x,
+                    //             debugD = leastCurved.curve[j][0].y,
+                    //             debugE = mostCurved.curve[j][1].x,
+                    //             debugF = mostCurved.curve[j][1].y,
+                    //             debugG = leastCurved.curve[j][1].x,
+                    //             debugH = leastCurved.curve[j][1].y,
+                    //             debugI = mostCurved.curve[j][2].x,
+                    //             debugJ = mostCurved.curve[j][2].y,
+                    //             debugK = leastCurved.curve[j][2].x,
+                    //             debugL = leastCurved.curve[j][2].y,
+                    //             debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[j][0].x, morph),
+                    //             debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[j][0].y, morph),
+                    //             debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[j][1].x, morph),
+                    //             debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[j][1].y, morph),
+                    //             debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[j][2].x, morph),
+                    //             debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[j][2].y, morph);
+                    //     int x = 0;
+                    // }
                 }
                 else {
                     if (!flipped)
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, leastCurved.curve[leastCurved.curveLength - 1][0].x, morph), crossfade(mostCurved.curve[j][0].y, leastCurved.curve[leastCurved.curveLength - 1][0].y, morph), crossfade(mostCurved.curve[j][1].x, leastCurved.curve[leastCurved.curveLength - 1][1].x, morph), crossfade(mostCurved.curve[j][1].y, leastCurved.curve[leastCurved.curveLength - 1][1].y, morph), crossfade(mostCurved.curve[j][2].x, leastCurved.curve[leastCurved.curveLength - 1][2].x, morph), crossfade(mostCurved.curve[j][2].y, leastCurved.curve[leastCurved.curveLength - 1][2].y, morph));
                     else
                         nvgBezierTo(ctx, crossfade(leastCurved.curve[leastCurved.curveLength - 1][0].x, mostCurved.curve[j][0].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][0].y, mostCurved.curve[j][0].y, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][1].x, mostCurved.curve[j][1].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][1].y, mostCurved.curve[j][1].y, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][2].x, mostCurved.curve[j][2].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][2].y, mostCurved.curve[j][2].y, morph));
-                    if (module->debug) {
-                        float   debugA = mostCurved.curve[j][0].x,
-                                debugB = mostCurved.curve[j][0].y,
-                                debugC = leastCurved.curve[leastCurved.curveLength - 1][0].x,
-                                debugD = leastCurved.curve[leastCurved.curveLength - 1][0].y,
-                                debugE = mostCurved.curve[j][1].x,
-                                debugF = mostCurved.curve[j][1].y,
-                                debugG = leastCurved.curve[leastCurved.curveLength - 1][1].x,
-                                debugH = leastCurved.curve[leastCurved.curveLength - 1][1].y,
-                                debugI = mostCurved.curve[j][2].x,
-                                debugJ = mostCurved.curve[j][2].y,
-                                debugK = leastCurved.curve[leastCurved.curveLength - 1][2].x,
-                                debugL = leastCurved.curve[leastCurved.curveLength - 1][2].y,
-                                debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[leastCurved.curveLength - 1][0].x, morph),
-                                debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[leastCurved.curveLength - 1][0].y, morph),
-                                debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[leastCurved.curveLength - 1][1].x, morph),
-                                debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[leastCurved.curveLength - 1][1].y, morph),
-                                debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[leastCurved.curveLength - 1][2].x, morph),
-                                debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[leastCurved.curveLength - 1][2].y, morph);
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float   debugA = mostCurved.curve[j][0].x,
+                    //             debugB = mostCurved.curve[j][0].y,
+                    //             debugC = leastCurved.curve[leastCurved.curveLength - 1][0].x,
+                    //             debugD = leastCurved.curve[leastCurved.curveLength - 1][0].y,
+                    //             debugE = mostCurved.curve[j][1].x,
+                    //             debugF = mostCurved.curve[j][1].y,
+                    //             debugG = leastCurved.curve[leastCurved.curveLength - 1][1].x,
+                    //             debugH = leastCurved.curve[leastCurved.curveLength - 1][1].y,
+                    //             debugI = mostCurved.curve[j][2].x,
+                    //             debugJ = mostCurved.curve[j][2].y,
+                    //             debugK = leastCurved.curve[leastCurved.curveLength - 1][2].x,
+                    //             debugL = leastCurved.curve[leastCurved.curveLength - 1][2].y,
+                    //             debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[leastCurved.curveLength - 1][0].x, morph),
+                    //             debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[leastCurved.curveLength - 1][0].y, morph),
+                    //             debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[leastCurved.curveLength - 1][1].x, morph),
+                    //             debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[leastCurved.curveLength - 1][1].y, morph),
+                    //             debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[leastCurved.curveLength - 1][2].x, morph),
+                    //             debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[leastCurved.curveLength - 1][2].y, morph);
+                    //     int x = 0;
+                    // }
                 }
             }
         }
@@ -762,27 +762,27 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, xOrigin, morph), crossfade(mostGregarious.lines[j].y, yOrigin, morph));
                     else
                         nvgLineTo(ctx, crossfade(xOrigin, mostGregarious.lines[j].x, morph), crossfade(yOrigin, mostGregarious.lines[j].y, morph));
-                    if (module->debug) {
-                        float   debugA = mostGregarious.lines[j].x, 
-                                debugB = mostGregarious.lines[j].y,
-                                debugC = xOrigin,
-                                debugD = yOrigin,
-                                debugE = mostGregarious.lines[j].x,
-                                debugF = mostGregarious.lines[j].y,
-                                debugG = xOrigin,
-                                debugH = yOrigin,
-                                debugI = mostGregarious.lines[j].x,
-                                debugJ = mostGregarious.lines[j].y,
-                                debugK = xOrigin,
-                                debugL = yOrigin,
-                                debugM = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                                debugN = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
-                                debugO = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                                debugP = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
-                                debugQ = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                                debugR = crossfade(mostGregarious.lines[j].y, yOrigin, morph);
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float   debugA = mostGregarious.lines[j].x, 
+                    //             debugB = mostGregarious.lines[j].y,
+                    //             debugC = xOrigin,
+                    //             debugD = yOrigin,
+                    //             debugE = mostGregarious.lines[j].x,
+                    //             debugF = mostGregarious.lines[j].y,
+                    //             debugG = xOrigin,
+                    //             debugH = yOrigin,
+                    //             debugI = mostGregarious.lines[j].x,
+                    //             debugJ = mostGregarious.lines[j].y,
+                    //             debugK = xOrigin,
+                    //             debugL = yOrigin,
+                    //             debugM = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                    //             debugN = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
+                    //             debugO = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                    //             debugP = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
+                    //             debugQ = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
+                    //             debugR = crossfade(mostGregarious.lines[j].y, yOrigin, morph);
+                    //     int x = 0;
+                    // }
                 }
             }
             else {
@@ -795,27 +795,27 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph), crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph));
                     else
                         nvgLineTo(ctx, crossfade(leastGregarious.lines[j].x, mostGregarious.lines[j].x, morph), crossfade(leastGregarious.lines[j].y, mostGregarious.lines[j].y, morph));
-                    if (module->debug) {
-                        float   debugA = mostGregarious.lines[j].x, 
-                                debugB = mostGregarious.lines[j].y,
-                                debugC = leastGregarious.lines[j].x,
-                                debugD = leastGregarious.lines[j].y,
-                                debugE = mostGregarious.lines[j].x,
-                                debugF = mostGregarious.lines[j].y,
-                                debugG = leastGregarious.lines[j].x,
-                                debugH = leastGregarious.lines[j].y,
-                                debugI = mostGregarious.lines[j].x,
-                                debugJ = mostGregarious.lines[j].y,
-                                debugK = leastGregarious.lines[j].x,
-                                debugL = leastGregarious.lines[j].y,
-                                debugM = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                                debugN = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
-                                debugO = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                                debugP = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
-                                debugQ = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                                debugR = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph);
-                        int x = 0;
-                    }
+                    // if (module->debug) {
+                    //     float   debugA = mostGregarious.lines[j].x, 
+                    //             debugB = mostGregarious.lines[j].y,
+                    //             debugC = leastGregarious.lines[j].x,
+                    //             debugD = leastGregarious.lines[j].y,
+                    //             debugE = mostGregarious.lines[j].x,
+                    //             debugF = mostGregarious.lines[j].y,
+                    //             debugG = leastGregarious.lines[j].x,
+                    //             debugH = leastGregarious.lines[j].y,
+                    //             debugI = mostGregarious.lines[j].x,
+                    //             debugJ = mostGregarious.lines[j].y,
+                    //             debugK = leastGregarious.lines[j].x,
+                    //             debugL = leastGregarious.lines[j].y,
+                    //             debugM = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                    //             debugN = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
+                    //             debugO = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                    //             debugP = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
+                    //             debugQ = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
+                    //             debugR = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph);
+                    //     int x = 0;
+                    // }
                 }
             }
         }
@@ -830,11 +830,11 @@ struct AlgoScreenWidget : FramebufferWidget {
 			// 	auto search = module->graphStore.find(module->algoName[i]);
 			// 	if (search != module->graphStore.end())
 			// 		graphs[i] = search->second;
-				if (module->debug) {
-					long long debugA = module->algoName[i].to_ullong();
-					int debugB = module->nameIndex[module->algoName[i].to_ullong()];
-					std::printf("%lld, %d", debugA, debugB);
-				}
+				// if (module->debug) {
+				// 	long long debugA = module->algoName[i].to_ullong();
+				// 	int debugB = module->nameIndex[module->algoName[i].to_ullong()];
+				// 	std::printf("%lld, %d", debugA, debugB);
+				// }
                 int name = module->nameIndex[module->algoName[i].to_ullong()];
                 if (name != -1)
     				graphs[i] = alGraph(module->nameIndex[(int)module->algoName[i].to_ullong()]);
@@ -863,8 +863,8 @@ struct AlgoScreenWidget : FramebufferWidget {
                 nvgTextBounds(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
                 float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                if (module->debug)
-                    int x = 0;
+                // if (module->debug)
+                //     int x = 0;
                 if (module->morph[0] == 0.f || module->configMode > -1)    //Display state without morph
                     nvgText(args.vg, graphs[module->baseScene].nodes[i].coords.x - xOffset, graphs[module->baseScene].nodes[i].coords.y + yOffset, id, id + 1);
                 else {  //Display moprhed state
@@ -919,17 +919,17 @@ struct AlgoScreenWidget : FramebufferWidget {
                     nvgMoveTo(args.vg, edge.moveCoords.x, edge.moveCoords.y);
                     for (int j = 0; j < edge.curveLength; j++) {
                         nvgBezierTo(args.vg, edge.curve[j][0].x, edge.curve[j][0].y, edge.curve[j][1].x, edge.curve[j][1].y, edge.curve[j][2].x, edge.curve[j][2].y);
-                        if (module->debug) {
-                            float   debugA = edge.curve[j][0].x, 
-                                    debugB = edge.curve[j][1].x, 
-                                    debugC = edge.curve[j][2].x, 
-                                    debugD = edge.curve[j][0].y, 
-                                    debugE = edge.curve[j][1].y, 
-                                    debugF = edge.curve[j][2].y,
-                                    debugG = edge.moveCoords.x,
-                                    debugH = edge.moveCoords.y;
-                            int x = 0;
-                        }
+                        // if (module->debug) {
+                        //     float   debugA = edge.curve[j][0].x, 
+                        //             debugB = edge.curve[j][1].x, 
+                        //             debugC = edge.curve[j][2].x, 
+                        //             debugD = edge.curve[j][0].y, 
+                        //             debugE = edge.curve[j][1].y, 
+                        //             debugF = edge.curve[j][2].y,
+                        //             debugG = edge.moveCoords.x,
+                        //             debugH = edge.moveCoords.y;
+                        //     int x = 0;
+                        // }
                     }
                 }
                 nvgStrokeColor(args.vg, edgeColor);
@@ -941,10 +941,10 @@ struct AlgoScreenWidget : FramebufferWidget {
                     nvgMoveTo(args.vg, graphs[module->baseScene].arrows[i].moveCoords.x, graphs[module->baseScene].arrows[i].moveCoords.y);
                     for (int j = 0; j < 9; j++) {
                         nvgLineTo(args.vg, graphs[module->baseScene].arrows[i].lines[j].x, graphs[module->baseScene].arrows[i].lines[j].y);
-                        if (module->debug) {
-                            auto debugA = graphs[module->baseScene].arrows[i]; 
-                            int x = 0;
-                        }
+                        // if (module->debug) {
+                        //     auto debugA = graphs[module->baseScene].arrows[i]; 
+                        //     int x = 0;
+                        // }
                     }
                     // nvgStrokeColor(args.vg, strokeColor);
                     // nvgStrokeWidth(args.vg, arrowStroke2);
@@ -1006,12 +1006,12 @@ struct CCWScenesItem : MenuItem {
     }
 };
 
-struct DebugItem : MenuItem {
-	Algomorph4 *module;
-	void onAction(const event::Action &e) override {
-		module->debug ^= true;
-	}
-};
+// struct DebugItem : MenuItem {
+// 	Algomorph4 *module;
+// 	void onAction(const event::Action &e) override {
+// 		module->debug ^= true;
+// 	}
+// };
 
 struct Algomorph4Widget : ModuleWidget {
     template <typename TBase = GrayModuleLightWidget>
@@ -1131,9 +1131,9 @@ struct Algomorph4Widget : ModuleWidget {
 		ccwScenesItem->module = module;
 		menu->addChild(ccwScenesItem);
 
-		DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
-		debugItem->module = module;
-		menu->addChild(debugItem);
+		// DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+		// debugItem->module = module;
+		// menu->addChild(debugItem);
 	}
 };
 
