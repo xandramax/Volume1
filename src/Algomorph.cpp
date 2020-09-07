@@ -1025,7 +1025,7 @@ struct Algomorph4Widget : ModuleWidget {
 
 	Algomorph4Widget(Algomorph4* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph2.svg")));
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
 
         Vec OpButtonCenter[4] = {   {59.785, 247.736},
                                     {59.785, 278.458},
