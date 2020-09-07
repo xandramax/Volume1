@@ -276,7 +276,7 @@ struct Algomorph4 : Module {
             }
         }
         //Scene advance button & trigger input
-        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+        if (configMode == -1 && sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
             //Adjust scene lights, advance base scene
             lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
             if (!ccwSceneSelection)
