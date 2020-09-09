@@ -33,7 +33,7 @@ struct Algomorph4 : Module {
     bool opDisabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
     std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
-	int sixteenToTwelve[4088];      // Graph ID conversion
+	int sixteenToTwelve[4089];      // Graph ID conversion
                                     // The algorithm graph data are stored with IDs in 12-bit space:
                                     //       000 000 000 000 -> 111 111 111 000
                                     // Each set of 3 bits corresponds to an operator.
@@ -95,7 +95,7 @@ struct Algomorph4 : Module {
 		}
 
         // Initialize sixteenToTwelve[] to -1, then index 9-bit IDs by the 12-bit equivalents
-        for (int i = 0; i < 4088; i++) {
+        for (int i = 0; i < 4089; i++) {
             sixteenToTwelve[i] = -1;
         }
 		for (int i = 0; i < 1695; i++) {
