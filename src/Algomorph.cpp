@@ -29,20 +29,26 @@ struct Algomorph4 : Module {
 		ENUMS(DISABLE_LIGHTS, 4),
 		NUM_LIGHTS
 	};
-    float morph[16];
-    bool opDestinations[3][4][3];   //[scene][op][mod]
-    bool opDisabled[3][4];          //[scene][op]
-	int opModIndex[4][3];
-    int baseScene = 1;
+    float morph[16] = {0.f};        // Range -1.f -> 1.f
+    bool opDisabled[3][4];          // [scene][op]
+    bool opDestinations[3][4][3];   // [scene][op][legal mod]
+    std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
+	int sixteenToTwelve[4088];      // Graph ID conversion
+                                    // The algorithm graph data are stored with IDs in 12-bit space:
+                                    //       000 000 000 000 -> 111 111 111 000
+                                    // Each set of 3 bits corresponds to an operator.
+                                    // Each bit represents an oscillator's "legal" mod destinations.
+                                    // At least one operator is a carrier (no mod destinations, all bits zero).
+                                    // However, the algorithms are accessed via 16-bit IDs:
+                                    //       0000 0000 0000 0000 -> 1110 1101 1011 0000
+                                    // In 16-bit space, the the feedback destinations are included but never equal 1.  
+                                    // sixteenToTwelve is indexed by 16-bit ID and returns equivalent 12-bit ID.
+	int threeToFour[4][3];          // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
+    int configMode = -1;    // Set to 0-3 when configuring mod destinations for operators 1-4
+    int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
+
     bool graphDirty = true;
-
 	// bool debug = false;
-
-    // std::map<std::bitset<16>, alGraph*, bitsetCompare> graphStore;
-	// alGraph graphHeap[1675];
-    std::bitset<12> algoName[3];
-	int nameIndex[4088];
-    int configMode = -1;     //Set to 0-3 when configuring mod destinations for operators 1-4
 
     //User settings
     bool ringMorph = false;
@@ -54,7 +60,6 @@ struct Algomorph4 : Module {
     dsp::SchmittTrigger sceneAdvCVTrigger;
     dsp::BooleanTrigger operatorTrigger[4];
     dsp::BooleanTrigger modulatorTrigger[4];
-	// dsp::BooleanTrigger* opModTrigger[4][3]; // Operator-relative sets of modulatorTrigger outputs (i.e. those not belonging to the modulating operator) for graph indexing
 
     dsp::ClockDivider lightDivider;
 
@@ -70,6 +75,7 @@ struct Algomorph4 : Module {
 		}
         lightDivider.setDivision(16);
 
+        //  Initialize opDisabled[] and opDestinations[] to false;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 opDisabled[i][j] = false;
@@ -79,22 +85,26 @@ struct Algomorph4 : Module {
             }
         }
 
+        // Map 3-bit operator-relative mod output indices to 4-bit equivalents
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				if (i != j) {
-					opModIndex[i][i > j ? j : j - 1] = j;
+					threeToFour[i][i > j ? j : j - 1] = j;
 				}
 			}
 		}
 
+        // Initialize sixteenToTwelve[] to -1, then index 9-bit IDs by the 12-bit equivalents
         for (int i = 0; i < 4088; i++) {
-            nameIndex[i] = -1;
+            sixteenToTwelve[i] = -1;
         }
 		for (int i = 0; i < 1695; i++) {
-			nameIndex[(int)xNodeData[i][0]] = i;
+			sixteenToTwelve[(int)xNodeData[i][0]] = i;
 		}
 		
 		graphDirty = true;
+
+        onReset();
 	}
 
     void onReset() override {
@@ -120,6 +130,8 @@ struct Algomorph4 : Module {
                                 {true, true, true, true},
                                 {true, true, true, true} };
 		int channels = 1;
+
+        // Only redraw display if morph has changed
         float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue(), -1.f, 1.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
@@ -311,7 +323,7 @@ struct Algomorph4 : Module {
                     lights[OPERATOR_LIGHTS + configMode].setBrightness(1.f);
 
                     for (int j = 0; j < 3; j++) {
-                        lights[MODULATOR_LIGHTS + opModIndex[configMode][j]].setBrightness(opDestinations[baseScene][configMode][j] ? 1.f : 0.f);
+                        lights[MODULATOR_LIGHTS + threeToFour[configMode][j]].setBrightness(opDestinations[baseScene][configMode][j] ? 1.f : 0.f);
                     }
                 }
                 graphDirty = true;
@@ -337,10 +349,10 @@ struct Algomorph4 : Module {
 			}
 			else {
 				for (int i = 0; i < 3; i++) {
-					if (modulatorTrigger[opModIndex[configMode][i]].process(params[MODULATOR_BUTTONS + opModIndex[configMode][i]].getValue() > 0.f)) {
+					if (modulatorTrigger[threeToFour[configMode][i]].process(params[MODULATOR_BUTTONS + threeToFour[configMode][i]].getValue() > 0.f)) {
 						// if (debug)
 						// 	int x = 0;
-						lights[MODULATOR_LIGHTS + opModIndex[configMode][i]].setBrightness((opDestinations[baseScene][configMode][i]) ? 0.f : 1.f); 
+						lights[MODULATOR_LIGHTS + threeToFour[configMode][i]].setBrightness((opDestinations[baseScene][configMode][i]) ? 0.f : 1.f); 
 
 						opDestinations[baseScene][configMode][i] ^= true;
 						algoName[baseScene].flip(configMode * 3 + i);
@@ -381,7 +393,7 @@ struct Algomorph4 : Module {
                         if (!opDisabled[baseScene][i]) {
                             for (int j = 0; j < 3; j++) {
                                 if (opDestinations[baseScene][i][j]) {
-                                    modOut[opModIndex[i][j]][c] += in[c];
+                                    modOut[threeToFour[i][j]][c] += in[c];
                                     carrier[baseScene][i] = false;
                                 }
                             }
@@ -394,17 +406,17 @@ struct Algomorph4 : Module {
                     else if (morph[c] > 0.f) {
 						for (int j = 0; j < 3; j++) {
                             if (opDestinations[baseScene][i][j] && !opDisabled[baseScene][i]) {
-                                modOut[opModIndex[i][j]][c] += in[c] * (1.f - morph[c]);
+                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - morph[c]);
                                 carrier[baseScene][i] = false;
                             }
                             if (opDestinations[(baseScene + 1) % 3][i][j] && !opDisabled[(baseScene + 1) % 3][i]) {
-                                modOut[opModIndex[i][j]][c] += in[c] * morph[c];
+                                modOut[threeToFour[i][j]][c] += in[c] * morph[c];
                                 carrier[(baseScene + 1) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the left and invert its mod output
                                 if (opDestinations[(baseScene + 2) % 3][i][j] && !opDisabled[(baseScene + 2) % 3][i]) {
-                                    modOut[opModIndex[i][j]][c] += in[c] * (morph[c] * -1.f);
+                                    modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f);
                                     carrier[(baseScene + 2) % 3][i] = false;
                                 }
                             }
@@ -426,17 +438,17 @@ struct Algomorph4 : Module {
                     else {
 						for (int j = 0; j < 3; j++) {
                             if (opDestinations[baseScene][i][j] && !opDisabled[baseScene][i]) {
-                                modOut[opModIndex[i][j]][c] += in[c] * (1.f - (morph[c] * -1.f));
+                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - (morph[c] * -1.f));
                                 carrier[baseScene][i] = false;
                             }
                             if (opDestinations[(baseScene + 2) % 3][i][j] && !opDisabled[(baseScene + 2) % 3][i]) {
-                                modOut[opModIndex[i][j]][c] += in[c] * (morph[c] * -1.f);
+                                modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f);
                                 carrier[(baseScene + 2) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the right and invert its mod output
                                 if (opDestinations[(baseScene + 1) % 3][i][j] && !opDisabled[(baseScene + 1) % 3][i]) {
-                                    modOut[opModIndex[i][j]][c] += in[c] * morph[c];
+                                    modOut[threeToFour[i][j]][c] += in[c] * morph[c];
                                     carrier[(baseScene + 1) % 3][i] = false;
                                 }
                             }
@@ -529,9 +541,9 @@ struct Algomorph4 : Module {
             }
 		}
         json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
-        json_t* nameJ; size_t nameIndex;
-        json_array_foreach(algoNamesJ, nameIndex, nameJ) {
-            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
+        json_t* nameJ; size_t sixteenToTwelve;
+        json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
+            algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
         }
 		json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
 		json_t* disabledOpJ;
@@ -832,12 +844,12 @@ struct AlgoScreenWidget : FramebufferWidget {
 			// 		graphs[i] = search->second;
 				// if (module->debug) {
 				// 	long long debugA = module->algoName[i].to_ullong();
-				// 	int debugB = module->nameIndex[module->algoName[i].to_ullong()];
+				// 	int debugB = module->sixteenToTwelve[module->algoName[i].to_ullong()];
 				// 	std::printf("%lld, %d", debugA, debugB);
 				// }
-                int name = module->nameIndex[module->algoName[i].to_ullong()];
+                int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
                 if (name != -1)
-    				graphs[i] = alGraph(module->nameIndex[(int)module->algoName[i].to_ullong()]);
+    				graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
                 else
                     graphs[i] = alGraph(0);
     		}
