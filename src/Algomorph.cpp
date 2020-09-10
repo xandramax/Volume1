@@ -53,13 +53,15 @@ struct Algomorph4 : Module {
     //User settings
     bool ringMorph = false;
     bool exitConfigOnConnect = true;
-    bool ccwSceneSelection = true;
+    bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger sceneAdvButtonTrigger;
     dsp::SchmittTrigger sceneAdvCVTrigger;
     dsp::BooleanTrigger operatorTrigger[4];
     dsp::BooleanTrigger modulatorTrigger[4];
+
+    dsp::SlewLimiter disablementClickFilters[4];
 
     dsp::ClockDivider lightDivider;
 
@@ -73,7 +75,10 @@ struct Algomorph4 : Module {
 		for (int i = 0; i < 3; i++) {
 			configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
 		}
-        lightDivider.setDivision(16);
+        for (int i = 0; i < 4; i++) {
+            disablementClickFilters[i].setRiseFall(400.f, 400.f);
+        }
+        lightDivider.setDivision(512);
 
         //  Initialize opDisabled[] and opDestinations[] to false;
         for (int i = 0; i < 3; i++) {
@@ -85,7 +90,7 @@ struct Algomorph4 : Module {
             }
         }
 
-        // Map 3-bit operator-relative mod output indices to 4-bit equivalents
+        // Map 3-bit operator-relative mod output indices to 4-bit generalized equivalents
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				if (i != j) {
@@ -120,6 +125,9 @@ struct Algomorph4 : Module {
 		graphDirty = true;
         configMode = -1;
         baseScene = 1;
+        ringMorph = false;
+        exitConfigOnConnect = true;
+        ccwSceneSelection = true;
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -268,6 +276,7 @@ struct Algomorph4 : Module {
                     //Adjust scene lights
                     lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
                     lights[SCENE_LIGHTS + i].setBrightness(1.f);
+                    //Switch scene
                     baseScene = i;
                     //Turn off config mode if necessary
                     if (configMode > -1) {
@@ -387,82 +396,83 @@ struct Algomorph4 : Module {
   
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                    float gain[3];
+                    for (int j = 0; j < 3; j++)
+                        gain[j] = disablementClickFilters[i].process(args.sampleTime, !opDisabled[j][i]);
                     in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
                     //Simple case, do not check adjacent algorithms
                     if (morph[c] == 0.f) {
-                        if (!opDisabled[baseScene][i]) {
-                            for (int j = 0; j < 3; j++) {
-                                if (opDestinations[baseScene][i][j]) {
-                                    modOut[threeToFour[i][j]][c] += in[c];
-                                    carrier[baseScene][i] = false;
-                                }
+                        for (int j = 0; j < 3; j++) {
+                            if (opDestinations[baseScene][i][j]) {
+                                modOut[threeToFour[i][j]][c] += in[c] * gain[baseScene];
+                                carrier[baseScene][i] = false;
                             }
-                            if (carrier[baseScene][i]) {
-                                    sumOut[c] += in[c];
-                            }
+                        }
+                        if (carrier[baseScene][i]) {
+                                sumOut[c] += in[c] * gain[baseScene];
                         }
                     }
                     //Check current algorithm and the one to the right
                     else if (morph[c] > 0.f) {
 						for (int j = 0; j < 3; j++) {
-                            if (opDestinations[baseScene][i][j] && !opDisabled[baseScene][i]) {
-                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - morph[c]);
+                            if (opDestinations[baseScene][i][j]) {
+                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - morph[c]) * gain[baseScene];
                                 carrier[baseScene][i] = false;
                             }
-                            if (opDestinations[(baseScene + 1) % 3][i][j] && !opDisabled[(baseScene + 1) % 3][i]) {
-                                modOut[threeToFour[i][j]][c] += in[c] * morph[c];
+                            if (opDestinations[(baseScene + 1) % 3][i][j]) {
+                                modOut[threeToFour[i][j]][c] += in[c] * morph[c] * gain[(baseScene + 1) % 3];
                                 carrier[(baseScene + 1) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the left and invert its mod output
-                                if (opDestinations[(baseScene + 2) % 3][i][j] && !opDisabled[(baseScene + 2) % 3][i]) {
-                                    modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f);
+                                if (opDestinations[(baseScene + 2) % 3][i][j]) {
+                                    modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f) * gain[(baseScene + 2) % 3];
                                     carrier[(baseScene + 2) % 3][i] = false;
                                 }
                             }
                         }
-                        if (carrier[baseScene][i] && !opDisabled[baseScene][i]) {
-                            sumOut[c] += in[c] * (1.f - morph[c]);
+                        if (carrier[baseScene][i]) {
+                            sumOut[c] += in[c] * (1.f - morph[c]) * gain[baseScene];
                         }
-                        if (carrier[(baseScene + 1) % 3][i] && !opDisabled[(baseScene + 1) % 3][i]) {
-                            sumOut[c] += in[c] * morph[c];
+                        if (carrier[(baseScene + 1) % 3][i]) {
+                            sumOut[c] += in[c] * morph[c] * gain[(baseScene + 1) % 3];
                         }
                         if (ringMorph) {
-                            //Also chekc algo to the left and invert its carrier output
-                            if (carrier[(baseScene + 2) % 3][i] && !opDisabled[(baseScene + 2) % 3][i]) {
-                                sumOut[c] += in[c] * (morph[c] * -1.f);
+                            //Also check algorithm to the left and invert its carrier output
+                            if (carrier[(baseScene + 2) % 3][i]) {
+                                sumOut[c] += in[c] * (morph[c] * -1.f) * gain[(baseScene + 2) % 3];
                             }
                         }
                     }
                     //Check current algorithm and the one to the left
                     else {
 						for (int j = 0; j < 3; j++) {
-                            if (opDestinations[baseScene][i][j] && !opDisabled[baseScene][i]) {
-                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - (morph[c] * -1.f));
+                            if (opDestinations[baseScene][i][j]) {
+                                modOut[threeToFour[i][j]][c] += in[c] * (1.f - (morph[c] * -1.f)) * gain[baseScene];
                                 carrier[baseScene][i] = false;
                             }
-                            if (opDestinations[(baseScene + 2) % 3][i][j] && !opDisabled[(baseScene + 2) % 3][i]) {
-                                modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f);
+                            if (opDestinations[(baseScene + 2) % 3][i][j]) {
+                                modOut[threeToFour[i][j]][c] += in[c] * (morph[c] * -1.f) * gain[(baseScene + 2) % 3];
                                 carrier[(baseScene + 2) % 3][i] = false;
                             }
                             if (ringMorph) {
                                 //Also check algorithm to the right and invert its mod output
-                                if (opDestinations[(baseScene + 1) % 3][i][j] && !opDisabled[(baseScene + 1) % 3][i]) {
-                                    modOut[threeToFour[i][j]][c] += in[c] * morph[c];
+                                if (opDestinations[(baseScene + 1) % 3][i][j]) {
+                                    modOut[threeToFour[i][j]][c] += in[c] * morph[c] * gain[(baseScene + 1) % 3];
                                     carrier[(baseScene + 1) % 3][i] = false;
                                 }
                             }
                         }
-                        if (carrier[baseScene][i] && !opDisabled[baseScene][i]) {
-                            sumOut[c] += in[c] * (1.f - (morph[c] * -1.f));
+                        if (carrier[baseScene][i]) {
+                            sumOut[c] += in[c] * (1.f - (morph[c] * -1.f)) * gain[baseScene];
                         }
-                        if (carrier[(baseScene + 2) % 3][i] && !opDisabled[(baseScene + 2) % 3][i]) {
-                            sumOut[c] += in[c] * (morph[c] * -1.f);
+                        if (carrier[(baseScene + 2) % 3][i]) {
+                            sumOut[c] += in[c] * (morph[c] * -1.f) * gain[(baseScene + 2) % 3];
                         }
                         if (ringMorph) {
-                            //Also chekc algo to the right and invert its carrier output
-                            if (carrier[(baseScene + 1) % 3][i] && !opDisabled[(baseScene + 1) % 3][i]) {
-                                sumOut[c] += in[c] * morph[c];
+                            //Also check algorithm to the right and invert its carrier output
+                            if (carrier[(baseScene + 1) % 3][i]) {
+                                sumOut[c] += in[c] * morph[c] * gain[(baseScene + 1) % 3];
                             }
                         }
                     }
