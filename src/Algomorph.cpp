@@ -944,6 +944,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                         // }
                     }
                 }
+                edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
                 nvgStrokeColor(args.vg, edgeColor);
                 nvgStrokeWidth(args.vg, edgeStroke);
                 nvgStroke(args.vg);
@@ -961,6 +962,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                     // nvgStrokeColor(args.vg, strokeColor);
                     // nvgStrokeWidth(args.vg, arrowStroke2);
                     // nvgStroke(args.vg);
+                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
                     nvgFillColor(args.vg, edgeColor);
                     nvgFill(args.vg);
                     nvgStrokeColor(args.vg, edgeColor);
