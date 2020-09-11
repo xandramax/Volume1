@@ -420,13 +420,13 @@ struct Algomorph4 : Module {
 						for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
                                 float ringConnection = opDestinations[(baseScene + 2) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 2) % 3][i];
-                                carrier[(baseScene + 2) % 3][i] = ringConnection > 0.f ? false : carrier[baseScene][i];
+                                carrier[(baseScene + 2) % 3][i] = ringConnection > 0.f ? false : carrier[(baseScene + 2) % 3][i];
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                             }
                             float connectionA = opDestinations[baseScene][i][j]             * (1.f - morph[c])  * !opDisabled[baseScene][i];
                             float connectionB = opDestinations[(baseScene + 1) % 3][i][j]   * morph[c]          * !opDisabled[(baseScene + 1) % 3][i];
                             carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
-                            carrier[(baseScene + 1) % 3][i] = connectionB > 0.f ? false : carrier[baseScene][i];
+                            carrier[(baseScene + 1) % 3][i] = connectionB > 0.f ? false : carrier[(baseScene + 1) % 3][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
@@ -444,13 +444,13 @@ struct Algomorph4 : Module {
 						for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
                                 float ringConnection = opDestinations[(baseScene + 1) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 1) % 3][i];
-                                carrier[(baseScene + 1) % 3][i] = ringConnection > 0.f ? false : carrier[baseScene][i];
+                                carrier[(baseScene + 1) % 3][i] = ringConnection > 0.f ? false : carrier[(baseScene + 1) % 3][i];
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
                             }
                             float connectionA = opDestinations[baseScene][i][j]             * (1.f - (morph[c] * -1.f)) * !opDisabled[baseScene][i];
                             float connectionB = opDestinations[(baseScene + 2) % 3][i][j]   * (morph[c] * -1.f)         * !opDisabled[(baseScene + 2) % 3][i];
                             carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
-                            carrier[(baseScene + 2) % 3][i] = connectionB > 0.f ? false : carrier[baseScene][i];
+                            carrier[(baseScene + 2) % 3][i] = connectionB > 0.f ? false : carrier[(baseScene + 2) % 3][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
