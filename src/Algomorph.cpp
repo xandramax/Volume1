@@ -419,21 +419,23 @@ struct Algomorph4 : Module {
                     else if (morph[c] > 0.f) {
 						for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
-                                float ringConnection = opDisabled[(baseScene + 2) % 3][i] ? 0.f : opDestinations[(baseScene + 2) % 3][i][j] * morph[c];
+                                float ringConnection = opDestinations[(baseScene + 2) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 2) % 3][i];
                                 carrier[(baseScene + 2) % 3][i] = ringConnection > 0.f ? false : carrier[baseScene][i];
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                             }
-                            float connection = !opDisabled[baseScene][i] * opDestinations[baseScene][i][j] * (1.f - morph[c])
-                                                + !opDisabled[baseScene][i] * opDestinations[(baseScene + 1) % 3][i][j] * morph[c];
-                            carrier[baseScene][i] = connection > 0.f ? false : carrier[baseScene][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connection) : connection;
+                            float connectionA = opDestinations[baseScene][i][j]             * (1.f - morph[c])  * !opDisabled[baseScene][i];
+                            float connectionB = opDestinations[(baseScene + 1) % 3][i][j]   * morph[c]          * !opDisabled[(baseScene + 1) % 3][i];
+                            carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
+                            carrier[(baseScene + 1) % 3][i] = connectionB > 0.f ? false : carrier[baseScene][i];
+                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
                         if (ringMorph) {
-                            float ringSumQuantity = !opDisabled[(baseScene + 2) % 3][i] * carrier[(baseScene + 2) % 3][i] * morph[c];
+                            float ringSumQuantity = carrier[(baseScene + 2) % 3][i] * morph[c] * !opDisabled[(baseScene + 2) % 3][i];
                             gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumQuantity) : ringSumQuantity;
                         }
-                        float sumQuantity = !opDisabled[baseScene][i] * carrier[baseScene][i] * (1.f - morph[c]) + carrier[(baseScene + 1) % 3][i] * morph[c];
+                        float sumQuantity =     carrier[baseScene][i]           * (1.f - morph[c])  * !opDisabled[baseScene][i]
+                                            +   carrier[(baseScene + 1) % 3][i] * morph[c]          * !opDisabled[(baseScene + 1) % 3][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumQuantity) : sumQuantity;
                         sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
                     }
@@ -441,20 +443,23 @@ struct Algomorph4 : Module {
                     else {
 						for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
-                                float ringConnection = !opDisabled[(baseScene + 1) % 3][i] * opDestinations[(baseScene + 1) % 3][i][j] * morph[c];
+                                float ringConnection = opDestinations[(baseScene + 1) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 1) % 3][i];
                                 carrier[(baseScene + 1) % 3][i] = ringConnection > 0.f ? false : carrier[baseScene][i];
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
                             }
-                            float connection = !opDisabled[baseScene][i] * opDestinations[baseScene][i][j] * (1.f - (morph[c] * -1.f)) + opDestinations[(baseScene + 2) % 3][i][j] * (morph[c] * -1.f);
-                            carrier[baseScene][i] = connection > 0.f ? false : carrier[baseScene][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connection) : connection;
+                            float connectionA = opDestinations[baseScene][i][j]             * (1.f - (morph[c] * -1.f)) * !opDisabled[baseScene][i];
+                            float connectionB = opDestinations[(baseScene + 2) % 3][i][j]   * (morph[c] * -1.f)         * !opDisabled[(baseScene + 2) % 3][i];
+                            carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
+                            carrier[(baseScene + 2) % 3][i] = connectionB > 0.f ? false : carrier[baseScene][i];
+                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
                         if (ringMorph) {
-                            float ringSumQuantity = !opDisabled[(baseScene + 1) % 3][i] * carrier[(baseScene + 1) % 3][i] * morph[c];
+                            float ringSumQuantity = carrier[(baseScene + 1) % 3][i] * morph[c] * !opDisabled[(baseScene + 1) % 3][i];
                             gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumQuantity) : ringSumQuantity;
                         }
-                        float sumQuantity = !opDisabled[baseScene][i] * carrier[baseScene][i] * (1.f - (morph[c] * -1.f)) + carrier[(baseScene + 1) % 3][i] * (morph[c] * -1.f);
+                        float sumQuantity =     carrier[baseScene][i]           * (1.f - (morph[c] * -1.f)) * !opDisabled[baseScene][i]
+                                            +   carrier[(baseScene + 2) % 3][i] * (morph[c] * -1.f)         * !opDisabled[(baseScene + 2) % 3][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumQuantity) : sumQuantity;
                         sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
                     }
