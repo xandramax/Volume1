@@ -2,6 +2,8 @@
 #include "GraphData.hpp"
 #include <bitset>
 
+constexpr float BLINK_INTERVAL = 0.42857142857f;
+
 struct Algomorph4 : Module {
 	enum ParamIds {
 		ENUMS(OPERATOR_BUTTONS, 4),
@@ -30,7 +32,7 @@ struct Algomorph4 : Module {
 		NUM_LIGHTS
 	};
     float morph[16] = {0.f};        // Range -1.f -> 1.f
-    bool opDisabled[3][4];          // [scene][op]
+    bool opEnabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
     std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
 	int sixteenToTwelve[4089];      // Graph ID conversion
@@ -44,7 +46,9 @@ struct Algomorph4 : Module {
                                     // In 16-bit space, the the feedback destinations are included but never equal 1.  
                                     // sixteenToTwelve is indexed by 16-bit ID and returns equivalent 12-bit ID.
 	int threeToFour[4][3];          // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
-    int configMode = -1;    // Set to 0-3 when configuring mod destinations for operators 1-4
+    bool configMode = true;
+    int configOp = -1;      // Set to 0-3 when configuring mod destinations for operators 1-4
+    int configScene = 1;
     int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
 
     bool graphDirty = true;
@@ -53,7 +57,7 @@ struct Algomorph4 : Module {
     //User settings
     bool clickFilterEnabled = true;
     bool ringMorph = false;
-    bool exitConfigOnConnect = true;
+    bool exitConfigOnConnect = false;
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
@@ -65,6 +69,8 @@ struct Algomorph4 : Module {
     dsp::SlewLimiter clickFilters[2][4][4][16];    // [noRing/ring][op][legal mod][channel], [op][3] = Sum output
 
     dsp::ClockDivider lightDivider;
+    float blinkTimer = BLINK_INTERVAL;
+    bool shine = true;
 
 	Algomorph4() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -86,10 +92,10 @@ struct Algomorph4 : Module {
         }
         lightDivider.setDivision(512);
 
-        //  Initialize opDisabled[] and opDestinations[] to false;
+        //  Initialize opEnabled[] to true and opDestinations[] to false;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
-                opDisabled[i][j] = false;
+                opEnabled[i][j] = true;
                 for (int k = 0; k < 3; k++) {
                     opDestinations[i][j][k] = false;
                 }
@@ -120,20 +126,65 @@ struct Algomorph4 : Module {
 		for (int i = 0; i < 3; i++) {
             algoName[i].reset();
             for (int j = 0; j < 4; j++) {
-                opDisabled[i][j] = false;
+                opEnabled[i][j] = true;
                 for (int k = 0; k < 3; k++) {
                     opDestinations[i][j][k] = false;
                 }
             }
         }
-        configMode = -1;
+        configMode = false;
+        configOp = -1;
+        configScene = 1;
         baseScene = 1;
         clickFilterEnabled = true;
         ringMorph = false;
-        exitConfigOnConnect = true;
+        exitConfigOnConnect = false;
         ccwSceneSelection = true;
+        shine = true;
+        blinkTimer = BLINK_INTERVAL;
 		graphDirty = true;
 	}
+
+    void onRandomize() override {
+        bool carrier[3][4];
+        for (int i = 0; i < 3; i++) {
+            bool noCarrier = true;
+            algoName[i].reset();    //Initialize
+            for (int j = 0; j < 4; j++) {
+                opEnabled[i][j] = true;   //Initialize
+                if (random::uniform() > .5f) {
+                    carrier[i][j] = true;
+                    noCarrier = false;
+                }
+                if (!carrier[i][j])
+                    opEnabled[i][j] = random::uniform() > .5f;
+                for (int k = 0; k < 3; k++) {
+                    opDestinations[i][j][k] = false;    //Initialize
+                    if (!carrier[i][j] && opEnabled[i][j]) {
+                        if (random::uniform() > .5f) {
+                            opDestinations[i][j][k] = true;
+                            algoName[i].flip(j * 3 + k);    
+                        }
+                    }
+                }
+            }
+            if (noCarrier) {
+                int shortStraw = std::floor(random::uniform() * 4);
+                while (shortStraw == 4)
+                    shortStraw = std::floor(random::uniform() * 4);
+                carrier[i][shortStraw] = true;
+                opEnabled[i][shortStraw] = true;
+                for (int k = 0; k < 3; k++) {
+                    opDestinations[i][shortStraw][k] = false;
+                    algoName[i].set(shortStraw * 3 + k, false);
+                }
+            }
+        }
+        baseScene = 1;
+        ringMorph = random::uniform() > .5f;
+        graphDirty = true;
+        Module::onRandomize();
+    }
 
 	void process(const ProcessArgs& args) override {
 		float in[16] = {0.f};
@@ -152,110 +203,92 @@ struct Algomorph4 : Module {
             graphDirty = true;
         }
 
-		// if (debug)
-		// 	int x = 0;
-
         if (lightDivider.process()) {
-            if (configMode > -1 || morph[0] == 0.f) {  //Display state without morph
+            if (configMode) {   //Display state without morph, highlight configScene
                 //Set scene lights
                 for (int i = 0; i < 3; i++) {
-                    if (i == baseScene)
-                        lights[SCENE_LIGHTS + i].setBrightness(1.f);
-                    else
-                        lights[SCENE_LIGHTS + i].setBrightness(0.f);
+                    lights[SCENE_LIGHTS + i].setBrightness(configScene == i ? shine : 0.f);
                 }
+                //Set op lights
+                for (int i = 0; i < 4; i++)
+                    lights[OPERATOR_LIGHTS + i].setBrightness(configOp == i ? shine : 0.f);
+                //Check and update blink timer
+                if (blinkTimer > BLINK_INTERVAL / lightDivider.getDivision()) {
+                    shine ^= true;
+                    blinkTimer = 0.f;
+                }
+                blinkTimer += args.sampleTime;
                 //Set connection lights
-                for (int i = 0; i < 12; i++) {
-					// if (debug)
-					// 	int debugA = i / 3, debugB = i % 3; 
-                    lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 3][i % 3] ? 1.f : 0.f);
-				}
+                for (int i = 0; i < 12; i++)
+                    lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[configScene][i / 3][i % 3] ? 1.f : 0.f);
                 //Set disable lights
                 for (int i = 0; i < 4; i++)
-                    lights[DISABLE_LIGHTS + i].setBrightness(opDisabled[baseScene][i] ? 1.f : 0.f);
-                /* //Set op/mod lights
-                if (configMode == -1) {
-                    for (int i = 0; i < 4; i++) {
-                        if (opDisabled[baseScene][i]) {
-                            lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
-                            lights[MODULATOR_LIGHTS + i].setBrightness(0.f);
-                        }
-                        else {
-                            lights[OPERATOR_LIGHTS + i].setBrightness(0.4f);
-                            lights[MODULATOR_LIGHTS + i].setBrightness(0.4f);
-                        }
+                    lights[DISABLE_LIGHTS + i].setBrightness(opEnabled[configScene][i] ? 0.f : 1.f);
+                //Set mod lights
+                if (configOp > -1) {
+                    for (int i = 0; i < 3; i++) {
+                        lights[MODULATOR_LIGHTS + threeToFour[configOp][i]].setBrightness(opDestinations[configScene][configOp][i] ? 1.f : 0.f);
                     }
-                } */
-            }
-            else {  //Display morphed state
-                float brightness;
-                if (morph[0] > 0.f) {
-                    //Set scene lights
-                    // lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - morph[0]);
-                    lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
-                    //Set connection lights
-                    for (int i = 0; i < 12; i++) {
-                        brightness = 0.f;
-                        if (opDestinations[baseScene][i / 3][i % 3])
-                            brightness += 1.f - morph[0];
-                        if (opDestinations[(baseScene + 1) % 3][i / 3][i % 3])
-                            brightness += morph[0];
-                        lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
-                    }
-                    //Set disable lights
-                    for (int i = 0; i < 4; i++) {
-                        brightness = 0.f;
-                        if (opDisabled[baseScene][i])
-                            brightness += 1.f - morph[0];
-                        if (opDisabled[(baseScene + 1) % 3][i])
-                            brightness += morph[0];
-                        lights[DISABLE_LIGHTS + i].setBrightness(brightness);
-                    }
-                    /* //Set op/mod lights
-                    for (int i = 0; i < 4; i++) {
-                        brightness = 0.f;
-                        if (!opDisabled[baseScene][i])
-                            brightness += 1.f - morph[0];
-                        if (!opDisabled[(baseScene + 1) % 3][i])
-                            brightness += morph[0];
-                        brightness *= 0.4f;
-                        lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
-                        lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
-                    } */
                 }
-                else {
+            } 
+            else {
+                if (morph[0] == 0.f) {  //Display state without morph
                     //Set scene lights
-                    // lights[SCENE_LIGHTS + baseScene].setBrightness(1.f - (morph[0] * -1.f));
-                    lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
+                    for (int i = 0; i < 3; i++)
+                        lights[SCENE_LIGHTS + i].setBrightness(i == baseScene ? 1.f : 0.f);
                     //Set connection lights
-                    for (int i = 0; i < 12; i++) {
-                        brightness = 0.f;
-                        if (opDestinations[baseScene][i / 3][i % 3])
-                            brightness += 1.f - (morph[0] * -1.f);
-                        if (opDestinations[(baseScene + 2) % 3][i / 3][i % 3])
-                            brightness += morph[0] * -1.f;
-                        lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
-					}
+                    for (int i = 0; i < 12; i++)
+                        lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 3][i % 3] ? 1.f : 0.f);
                     //Set disable lights
-                    for (int i = 0; i < 4; i++) {
-                        brightness = 0.f;
-                        if (opDisabled[baseScene][i])
-                            brightness += 1.f - (morph[0] * -1.f);
-                        if (opDisabled[(baseScene + 2) % 3][i])
-                            brightness += morph[0] * -1.f;
-                        lights[DISABLE_LIGHTS + i].setBrightness(brightness);
+                    for (int i = 0; i < 4; i++)
+                        lights[DISABLE_LIGHTS + i].setBrightness(opEnabled[baseScene][i] ? 0.f : 1.f);
+                }
+                else {  //Display morphed state
+                    float brightness;
+                    if (morph[0] > 0.f) {
+                        //Set scene lights
+                        lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
+                        //Set connection lights
+                        for (int i = 0; i < 12; i++) {
+                            brightness = 0.f;
+                            if (opDestinations[baseScene][i / 3][i % 3])
+                                brightness += 1.f - morph[0];
+                            if (opDestinations[(baseScene + 1) % 3][i / 3][i % 3])
+                                brightness += morph[0];
+                            lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                        }
+                        //Set disable lights
+                        for (int i = 0; i < 4; i++) {
+                            brightness = 0.f;
+                            if (!opEnabled[baseScene][i])
+                                brightness += 1.f - morph[0];
+                            if (!opEnabled[(baseScene + 1) % 3][i])
+                                brightness += morph[0];
+                            lights[DISABLE_LIGHTS + i].setBrightness(brightness);
+                        }
                     }
-                    /* //Set op/mod lights
-                    for (int i = 0; i < 4; i++) {
-                        brightness = 0.f;
-                        if (!opDisabled[baseScene][i])
-                            brightness += 1.f - (morph[0] * -1.f);
-                        if (!opDisabled[(baseScene + 2) % 3][i])
-                            brightness += morph[0] * -1.f;
-                        brightness *= 0.4f;
-                        lights[OPERATOR_LIGHTS + i].setBrightness(brightness);
-                        lights[MODULATOR_LIGHTS + i].setBrightness(brightness);
-                    } */
+                    else {
+                        //Set scene lights
+                        lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
+                        //Set connection lights
+                        for (int i = 0; i < 12; i++) {
+                            brightness = 0.f;
+                            if (opDestinations[baseScene][i / 3][i % 3])
+                                brightness += 1.f - (morph[0] * -1.f);
+                            if (opDestinations[(baseScene + 2) % 3][i / 3][i % 3])
+                                brightness += morph[0] * -1.f;
+                            lights[CONNECTION_LIGHTS + i].setBrightness(brightness);
+                        }
+                        //Set disable lights
+                        for (int i = 0; i < 4; i++) {
+                            brightness = 0.f;
+                            if (!opEnabled[baseScene][i])
+                                brightness += 1.f - (morph[0] * -1.f);
+                            if (!opEnabled[(baseScene + 2) % 3][i])
+                                brightness += morph[0] * -1.f;
+                            lights[DISABLE_LIGHTS + i].setBrightness(brightness);
+                        }
+                    }
                 }
             }
         }
@@ -264,82 +297,64 @@ struct Algomorph4 : Module {
         //Scene buttons
         for (int i = 0; i < 3; i++) {
             if (sceneButtonTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
-                //If not changing to a new scene
-                if (baseScene == i) {
-                    //Reset scene morph knob
-                    params[MORPH_KNOB].setValue(0.f);
-					graphDirty = true;
-                    //Turn off config mode if necessary
-                    if (configMode > -1) {
-                        lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
-                        for (int j = 0; j < 4; j++) {
-                            lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
-                        }
-                        configMode = -1;
+                if (configMode) {
+                    //If not changing to a new scene
+                    if (configScene == i) {
+                        //Exit config mode
+                        configMode = false;
+                    }
+                    else {
+                        //Switch scene
+                        configScene = i;
                     }
                 }
                 else {
-                    //Adjust scene lights
-                    lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
-                    lights[SCENE_LIGHTS + i].setBrightness(1.f);
-                    //Switch scene
-                    baseScene = i;
-                    //Turn off config mode if necessary
-                    if (configMode > -1) {
-                        lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
-                        for (int j = 0; j < 4; j++) {
-                            lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
-                        }
-                        configMode = -1;
+                    //If not changing to a new scene
+                    if (baseScene == i) {
+                        //Reset morph knob
+                        params[MORPH_KNOB].setValue(0.f);
                     }
-                    //Adjust connection lights
-                    for (int j = 0; j < 12; j++)
-                        lights[CONNECTION_LIGHTS + j].setBrightness(opDestinations[baseScene][j / 3][j % 3] ? 1.f : 0.f);
-                    //Adjust disable lights
-                    for (int j = 0; j < 4; j++)
-                        lights[DISABLE_LIGHTS + j].setBrightness(opDisabled[baseScene][j] ? 1.f : 0.f);
-					graphDirty = true;
+                    else {
+                        //Switch scene
+                        baseScene = i;
+                            }
+                        }
+                        graphDirty = true;
+                    }
                 }
-            }
-        }
-        //Scene advance button & trigger input
-        if (configMode == -1 && sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
-            //Adjust scene lights, advance base scene
-            lights[SCENE_LIGHTS + baseScene].setBrightness(0.f);
+        //Scene advance trigger input
+        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+            //Advance base scene
             if (!ccwSceneSelection)
                baseScene = (baseScene + 1) % 3;
             else
                baseScene = (baseScene + 2) % 3;
-            lights[SCENE_LIGHTS + baseScene].setBrightness(1.f);
-            //Adjust connection lights
-            for (int j = 0; j < 12; j++)
-                lights[CONNECTION_LIGHTS + j].setBrightness(opDestinations[baseScene][j / 3][j % 3] ? 1.f : 0.f);
-            //Adjust disable lights
-            for (int j = 0; j < 4; j++)
-                lights[DISABLE_LIGHTS + j].setBrightness(opDisabled[baseScene][j] ? 1.f : 0.f);
             graphDirty = true;
         }
 
-        //Check to enter config mode
+        //Check to select/deselect operators
         for (int i = 0; i < 4; i++) {
             if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
-			    if (configMode == i) {  //Exit config mode
-                    lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
+			    if (!configMode) {
+                    configMode = true;
+                    if (morph[0] > .5f)
+                        configScene = (baseScene + 1) % 3;
+                    else if (morph[0] < -.5f)
+                        configScene = (baseScene + 2) % 3;
+                    else
+                        configScene = baseScene;
+                }
+                if (configOp == i) {  
+                    //Deselect operator
+                    lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
                     for (int j = 0; j < 4; j++) {
                         lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
                     }
-                    configMode = -1;
+                    configOp = -1;
+                    configMode = false;
                 }
                 else {
-                    if (configMode > -1)    //Turn off previous if switching from existing config mode
-                        lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
-
-                    configMode = i;
-                    lights[OPERATOR_LIGHTS + configMode].setBrightness(1.f);
-
-                    for (int j = 0; j < 3; j++) {
-                        lights[MODULATOR_LIGHTS + threeToFour[configMode][j]].setBrightness(opDestinations[baseScene][configMode][j] ? 1.f : 0.f);
-                    }
+                    configOp = i;
                 }
                 graphDirty = true;
                 break;
@@ -347,37 +362,35 @@ struct Algomorph4 : Module {
         }
 
         //Check for config mode destination selection
-        if (configMode > -1) {
-			if (modulatorTrigger[configMode].process(params[MODULATOR_BUTTONS + configMode].getValue() > 0.f)) {  //Op is connected to itself
-				lights[MODULATOR_LIGHTS + configMode].setBrightness(opDisabled[baseScene][configMode] ? 0.f : 1.f); 
-				opDisabled[baseScene][configMode] ^= true;
+        if (configMode && configOp > -1) {
+			if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
+				lights[MODULATOR_LIGHTS + configOp].setBrightness(opEnabled[configScene][configOp] ? 1.f : 0.f); 
+				opEnabled[configScene][configOp] ^= true;
 
 				if (exitConfigOnConnect) {
-					lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
+					lights[OPERATOR_LIGHTS + configOp].setBrightness(0.f);
 					for (int j = 0; j < 4; j++) {
 						lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
 					}
-					configMode = -1;
+					configMode = false;
 				}
                 
                 graphDirty = true;
 			}
 			else {
 				for (int i = 0; i < 3; i++) {
-					if (modulatorTrigger[threeToFour[configMode][i]].process(params[MODULATOR_BUTTONS + threeToFour[configMode][i]].getValue() > 0.f)) {
-						// if (debug)
-						// 	int x = 0;
-						lights[MODULATOR_LIGHTS + threeToFour[configMode][i]].setBrightness((opDestinations[baseScene][configMode][i]) ? 0.f : 1.f); 
+					if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
+						lights[MODULATOR_LIGHTS + threeToFour[configOp][i]].setBrightness((opDestinations[configScene][configOp][i]) ? 0.f : 1.f); 
 
-						opDestinations[baseScene][configMode][i] ^= true;
-						algoName[baseScene].flip(configMode * 3 + i);
+						opDestinations[configScene][configOp][i] ^= true;
+						algoName[configScene].flip(configOp * 3 + i);
 
 						if (exitConfigOnConnect) {
-							lights[OPERATOR_LIGHTS + configMode].setBrightness(0.f);
+							lights[OPERATOR_LIGHTS + configOp].setBrightness(0.f);
 							for (int j = 0; j < 4; j++) {
 								lights[MODULATOR_LIGHTS + j].setBrightness(0.f);
 							}
-							configMode = -1;
+							configMode = false;
 						}
 
 						graphDirty = true;
@@ -406,61 +419,48 @@ struct Algomorph4 : Module {
                     //Simple case, do not check adjacent algorithms
                     if (morph[c] == 0.f) {
                         for (int j = 0; j < 3; j++) {
-                            bool connected = opDestinations[baseScene][i][j] && !opDisabled[baseScene][i];
+                            bool connected = opDestinations[baseScene][i][j] && opEnabled[baseScene][i];
                             carrier[baseScene][i] = connected ? false : carrier[baseScene][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c];
                         }
-                        bool sumConnected = carrier[baseScene][i] && !opDisabled[baseScene][i];
+                        bool sumConnected = carrier[baseScene][i] && opEnabled[baseScene][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
                         sumOut[c] += in[c] * gain[0][i][3][c];
                     }
-                    //Check current algorithm and the one to the right
-                    else if (morph[c] > 0.f) {
-						for (int j = 0; j < 3; j++) {
+                    //Check current algorithm and morph target
+                    else {
+                        int forwardScene, backwardScene;
+                        float absMorph = morph[c];  //Absolute value of morph[c]
+                        if (morph[c] > 0.f) {
+                            forwardScene = (baseScene + 1) % 3;
+                            backwardScene = (baseScene + 2) % 3;
+                        }
+                        else {
+                            absMorph *= -1.f;
+                            forwardScene = (baseScene + 2) % 3;
+                            backwardScene = (baseScene + 1) % 3;
+                        }
+                        for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
-                                float ringConnection = opDestinations[(baseScene + 2) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 2) % 3][i];
-                                carrier[(baseScene + 2) % 3][i] = ringConnection > 0.f ? false : carrier[(baseScene + 2) % 3][i];
+                                float ringConnection = opDestinations[backwardScene][i][j] * absMorph * opEnabled[backwardScene][i];
+                                carrier[backwardScene][i] = ringConnection == 0.f && opEnabled[backwardScene][i] ? carrier[backwardScene][i] : false;
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                             }
-                            float connectionA = opDestinations[baseScene][i][j]             * (1.f - morph[c])  * !opDisabled[baseScene][i];
-                            float connectionB = opDestinations[(baseScene + 1) % 3][i][j]   * morph[c]          * !opDisabled[(baseScene + 1) % 3][i];
-                            carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
-                            carrier[(baseScene + 1) % 3][i] = connectionB > 0.f ? false : carrier[(baseScene + 1) % 3][i];
+                            float connectionA = opDestinations[baseScene][i][j]     * (1.f - absMorph)  * opEnabled[baseScene][i];
+                            float connectionB = opDestinations[forwardScene][i][j]  * absMorph          * opEnabled[forwardScene][i];
+                            carrier[baseScene][i]  = connectionA > 0.f ? false : carrier[baseScene][i];
+                            carrier[forwardScene][i] = connectionB > 0.f ? false : carrier[forwardScene][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
                         if (ringMorph) {
-                            float ringSumQuantity = carrier[(baseScene + 2) % 3][i] * morph[c] * !opDisabled[(baseScene + 2) % 3][i];
-                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumQuantity) : ringSumQuantity;
+                            float ringSumConnection = carrier[backwardScene][i] * absMorph * opEnabled[backwardScene][i];
+                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                         }
-                        float sumQuantity =     carrier[baseScene][i]           * (1.f - morph[c])  * !opDisabled[baseScene][i]
-                                            +   carrier[(baseScene + 1) % 3][i] * morph[c]          * !opDisabled[(baseScene + 1) % 3][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumQuantity) : sumQuantity;
-                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
-                    }
-                    //Check current algorithm and the one to the left
-                    else {
-						for (int j = 0; j < 3; j++) {
-                            if (ringMorph) {
-                                float ringConnection = opDestinations[(baseScene + 1) % 3][i][j] * morph[c] * !opDisabled[(baseScene + 1) % 3][i];
-                                carrier[(baseScene + 1) % 3][i] = ringConnection > 0.f ? false : carrier[(baseScene + 1) % 3][i];
-                                gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
-                            }
-                            float connectionA = opDestinations[baseScene][i][j]             * (1.f - (morph[c] * -1.f)) * !opDisabled[baseScene][i];
-                            float connectionB = opDestinations[(baseScene + 2) % 3][i][j]   * (morph[c] * -1.f)         * !opDisabled[(baseScene + 2) % 3][i];
-                            carrier[baseScene][i]           = connectionA > 0.f ? false : carrier[baseScene][i];
-                            carrier[(baseScene + 2) % 3][i] = connectionB > 0.f ? false : carrier[(baseScene + 2) % 3][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
-                        }
-                        if (ringMorph) {
-                            float ringSumQuantity = carrier[(baseScene + 1) % 3][i] * morph[c] * !opDisabled[(baseScene + 1) % 3][i];
-                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumQuantity) : ringSumQuantity;
-                        }
-                        float sumQuantity =     carrier[baseScene][i]           * (1.f - (morph[c] * -1.f)) * !opDisabled[baseScene][i]
-                                            +   carrier[(baseScene + 2) % 3][i] * (morph[c] * -1.f)         * !opDisabled[(baseScene + 2) % 3][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumQuantity) : sumQuantity;
+                        float sumConnection =     carrier[baseScene][i]     * (1.f - absMorph)  * opEnabled[baseScene][i]
+                                            +   carrier[forwardScene][i]    * absMorph          * opEnabled[forwardScene][i];
+                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
                         sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
                     }
                 }
@@ -481,7 +481,9 @@ struct Algomorph4 : Module {
 
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
-        json_object_set_new(rootJ, "Config Mode", json_integer(configMode));
+        json_object_set_new(rootJ, "Config Enabled", json_boolean(configMode));
+        json_object_set_new(rootJ, "Config Mode", json_integer(configOp));
+        json_object_set_new(rootJ, "Config Scene", json_integer(configOp));
         json_object_set_new(rootJ, "Current Scene", json_integer(baseScene));
         json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
         json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
@@ -505,20 +507,22 @@ struct Algomorph4 : Module {
             json_array_append_new(algoNamesJ, nameJ);
         }
         json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
-        json_t* opDisabledJ = json_array();
+        json_t* opEnabledJ = json_array();
 		for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
-                json_t* disabledJ = json_object();
-                json_object_set_new(disabledJ, "Disabled Op", json_boolean(opDisabled[i][j]));
-                json_array_append_new(opDisabledJ, disabledJ);
+                json_t* enabledJ = json_object();
+                json_object_set_new(enabledJ, "Enabled Op", json_boolean(opEnabled[i][j]));
+                json_array_append_new(opEnabledJ, enabledJ);
             }
 		}
-		json_object_set_new(rootJ, "Operators Disabled", opDisabledJ);
+		json_object_set_new(rootJ, "Operators Enabled", opEnabledJ);
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
-		configMode = json_integer_value(json_object_get(rootJ, "Config Mode"));
+		configMode = json_integer_value(json_object_get(rootJ, "Config Enabled"));
+		configOp = json_integer_value(json_object_get(rootJ, "Config Mode"));
+		configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
 		baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
 		ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
 		exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
@@ -544,12 +548,25 @@ struct Algomorph4 : Module {
         json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
             algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
         }
+        json_t* opEnabledJ = json_object_get(rootJ, "Operators Enabled");
+		json_t* enabledOpJ;
+		size_t enabledOpIndex;
+        i = j = 0;
+		json_array_foreach(opEnabledJ, enabledOpIndex, enabledOpJ) {
+            opEnabled[i][j] = json_boolean_value(json_object_get(enabledOpJ, "Enabled Op"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
+		}
+        //Legacy opDisabled
 		json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
 		json_t* disabledOpJ;
 		size_t disabledOpIndex;
         i = j = 0;
 		json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
-            opDisabled[i][j] = json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
+            opEnabled[i][j] = !json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
             j++;
             if (j > 3) {
                 j = 0;
@@ -572,9 +589,15 @@ struct AlgoScreenWidget : FramebufferWidget {
         float xOrigin = box.size.x / 2.f;
         float yOrigin = box.size.y / 2.f;
    
-        NVGcolor fillColor = nvgRGBA(149, 122, 172, 160);
-        NVGcolor strokeColor = nvgRGB(26, 26, 26);
-        NVGcolor edgeColor = nvgRGBA(0x9a,0x9a,0x6f,0xff);
+        const NVGcolor NODE_FILL_COLOR = nvgRGBA(149, 122, 172, 120);
+        const NVGcolor NODE_STROKE_COLOR = nvgRGB(26, 26, 26);
+        const NVGcolor TEXT_COLOR = nvgRGBA(0xcc, 0xcc, 0xcc, 255);
+        const NVGcolor EDGE_COLOR = nvgRGBA(0x9a,0x9a,0x6f,0xff);
+
+        NVGcolor nodeFillColor = NODE_FILL_COLOR;
+        NVGcolor nodeStrokeColor = NODE_STROKE_COLOR;
+        NVGcolor textColor = TEXT_COLOR;
+        NVGcolor edgeColor = EDGE_COLOR;
         float borderStroke = 0.45f;
         float labelStroke = 0.5f;
         float nodeStroke = 0.75f;
@@ -604,18 +627,14 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[0] = mostEdges.edges[i];
                         edge[1] = leastEdges.edges[i];
                         nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, xOrigin, morph), crossfade(edge[0].moveCoords.y, yOrigin, morph));
-                        edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, crossfade(0xff, 0x00, morph));
+                        edgeColor.a = crossfade(EDGE_COLOR.a, 0x00, morph);
                     }
                     else {
                         edge[0] = leastEdges.edges[i];
                         edge[1] = mostEdges.edges[i];
                         nvgMoveTo(ctx, crossfade(xOrigin, edge[1].moveCoords.x, morph), crossfade(yOrigin, edge[1].moveCoords.y, morph));
-                        edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, crossfade(0x00, 0xff, morph));
+                        edgeColor.a = crossfade(0x00, EDGE_COLOR.a, morph);
                     }
-                    // if (module->debug) {
-                    //     float debugA = edge[0].moveCoords.x, debugB = edge[0].moveCoords.y, debugC = xOrigin, debugD = yOrigin;
-                    //     int x = 0;
-                    // }
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[i];
                 }
@@ -630,10 +649,6 @@ struct AlgoScreenWidget : FramebufferWidget {
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
                     edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
-                    // if (module->debug) {
-                    //     float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
-                    //     int x = 0;
-                    // }
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[i];
                 }
@@ -647,11 +662,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[1] = mostEdges.edges[i];
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
-                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
-                    // if (module->debug) {
-                    //     float debugA = edge[0].moveCoords.x, debugB = edge[1].moveCoords.x, debugC = edge[0].moveCoords.y, debugD = edge[1].moveCoords.y;
-                    //     int x = 0;
-                    // }
+                    edgeColor = EDGE_COLOR;
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[std::max(0, leastEdges.numEdges - 1)];
                 }
@@ -683,81 +694,18 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, xOrigin, morph), crossfade(mostCurved.curve[j][0].y, yOrigin, morph), crossfade(mostCurved.curve[j][1].x, xOrigin, morph), crossfade(mostCurved.curve[j][1].y, yOrigin, morph), crossfade(mostCurved.curve[j][2].x, xOrigin, morph), crossfade(mostCurved.curve[j][2].y, yOrigin, morph));
                     else
                         nvgBezierTo(ctx, crossfade(xOrigin, mostCurved.curve[j][0].x, morph), crossfade(yOrigin, mostCurved.curve[j][0].y, morph), crossfade(xOrigin, mostCurved.curve[j][1].x, morph), crossfade(yOrigin, mostCurved.curve[j][1].y, morph), crossfade(xOrigin, mostCurved.curve[j][2].x, morph), crossfade(yOrigin, mostCurved.curve[j][2].y, morph));
-                    // if (module->debug) {
-                    //     float   debugA = mostCurved.curve[j][0].x, 
-                    //             debugB = mostCurved.curve[j][0].y,
-                    //             debugC = xOrigin,
-                    //             debugD = yOrigin,
-                    //             debugE = mostCurved.curve[j][1].x,
-                    //             debugF = mostCurved.curve[j][1].y,
-                    //             debugG = xOrigin,
-                    //             debugH = yOrigin,
-                    //             debugI = mostCurved.curve[j][2].x,
-                    //             debugJ = mostCurved.curve[j][2].y,
-                    //             debugK = xOrigin,
-                    //             debugL = yOrigin,
-                    //             debugM = crossfade(mostCurved.curve[j][0].x, xOrigin, morph),
-                    //             debugN = crossfade(mostCurved.curve[j][0].y, yOrigin, morph),
-                    //             debugO = crossfade(mostCurved.curve[j][1].x, xOrigin, morph),
-                    //             debugP = crossfade(mostCurved.curve[j][1].y, yOrigin, morph),
-                    //             debugQ = crossfade(mostCurved.curve[j][2].x, xOrigin, morph),
-                    //             debugR = crossfade(mostCurved.curve[j][2].y, yOrigin, morph);
-                    //     int x = 0;
-                    // }
                 }
                 else if (j < leastCurved.curveLength) {
                     if (!flipped)
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, leastCurved.curve[j][0].x, morph), crossfade(mostCurved.curve[j][0].y, leastCurved.curve[j][0].y, morph), crossfade(mostCurved.curve[j][1].x, leastCurved.curve[j][1].x, morph), crossfade(mostCurved.curve[j][1].y, leastCurved.curve[j][1].y, morph), crossfade(mostCurved.curve[j][2].x, leastCurved.curve[j][2].x, morph), crossfade(mostCurved.curve[j][2].y, leastCurved.curve[j][2].y, morph));
                     else
                         nvgBezierTo(ctx, crossfade(leastCurved.curve[j][0].x, mostCurved.curve[j][0].x, morph), crossfade(leastCurved.curve[j][0].y, mostCurved.curve[j][0].y, morph), crossfade(leastCurved.curve[j][1].x, mostCurved.curve[j][1].x, morph), crossfade(leastCurved.curve[j][1].y, mostCurved.curve[j][1].y, morph), crossfade(leastCurved.curve[j][2].x, mostCurved.curve[j][2].x, morph), crossfade(leastCurved.curve[j][2].y, mostCurved.curve[j][2].y, morph));
-                    // if (module->debug) {
-                    //     float   debugA = mostCurved.curve[j][0].x, 
-                    //             debugB = mostCurved.curve[j][0].y,
-                    //             debugC = leastCurved.curve[j][0].x,
-                    //             debugD = leastCurved.curve[j][0].y,
-                    //             debugE = mostCurved.curve[j][1].x,
-                    //             debugF = mostCurved.curve[j][1].y,
-                    //             debugG = leastCurved.curve[j][1].x,
-                    //             debugH = leastCurved.curve[j][1].y,
-                    //             debugI = mostCurved.curve[j][2].x,
-                    //             debugJ = mostCurved.curve[j][2].y,
-                    //             debugK = leastCurved.curve[j][2].x,
-                    //             debugL = leastCurved.curve[j][2].y,
-                    //             debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[j][0].x, morph),
-                    //             debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[j][0].y, morph),
-                    //             debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[j][1].x, morph),
-                    //             debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[j][1].y, morph),
-                    //             debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[j][2].x, morph),
-                    //             debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[j][2].y, morph);
-                    //     int x = 0;
-                    // }
                 }
                 else {
                     if (!flipped)
                         nvgBezierTo(ctx, crossfade(mostCurved.curve[j][0].x, leastCurved.curve[leastCurved.curveLength - 1][0].x, morph), crossfade(mostCurved.curve[j][0].y, leastCurved.curve[leastCurved.curveLength - 1][0].y, morph), crossfade(mostCurved.curve[j][1].x, leastCurved.curve[leastCurved.curveLength - 1][1].x, morph), crossfade(mostCurved.curve[j][1].y, leastCurved.curve[leastCurved.curveLength - 1][1].y, morph), crossfade(mostCurved.curve[j][2].x, leastCurved.curve[leastCurved.curveLength - 1][2].x, morph), crossfade(mostCurved.curve[j][2].y, leastCurved.curve[leastCurved.curveLength - 1][2].y, morph));
                     else
                         nvgBezierTo(ctx, crossfade(leastCurved.curve[leastCurved.curveLength - 1][0].x, mostCurved.curve[j][0].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][0].y, mostCurved.curve[j][0].y, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][1].x, mostCurved.curve[j][1].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][1].y, mostCurved.curve[j][1].y, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][2].x, mostCurved.curve[j][2].x, morph), crossfade(leastCurved.curve[leastCurved.curveLength - 1][2].y, mostCurved.curve[j][2].y, morph));
-                    // if (module->debug) {
-                    //     float   debugA = mostCurved.curve[j][0].x,
-                    //             debugB = mostCurved.curve[j][0].y,
-                    //             debugC = leastCurved.curve[leastCurved.curveLength - 1][0].x,
-                    //             debugD = leastCurved.curve[leastCurved.curveLength - 1][0].y,
-                    //             debugE = mostCurved.curve[j][1].x,
-                    //             debugF = mostCurved.curve[j][1].y,
-                    //             debugG = leastCurved.curve[leastCurved.curveLength - 1][1].x,
-                    //             debugH = leastCurved.curve[leastCurved.curveLength - 1][1].y,
-                    //             debugI = mostCurved.curve[j][2].x,
-                    //             debugJ = mostCurved.curve[j][2].y,
-                    //             debugK = leastCurved.curve[leastCurved.curveLength - 1][2].x,
-                    //             debugL = leastCurved.curve[leastCurved.curveLength - 1][2].y,
-                    //             debugM = crossfade(mostCurved.curve[j][0].x, leastCurved.curve[leastCurved.curveLength - 1][0].x, morph),
-                    //             debugN = crossfade(mostCurved.curve[j][0].y, leastCurved.curve[leastCurved.curveLength - 1][0].y, morph),
-                    //             debugO = crossfade(mostCurved.curve[j][1].x, leastCurved.curve[leastCurved.curveLength - 1][1].x, morph),
-                    //             debugP = crossfade(mostCurved.curve[j][1].y, leastCurved.curve[leastCurved.curveLength - 1][1].y, morph),
-                    //             debugQ = crossfade(mostCurved.curve[j][2].x, leastCurved.curve[leastCurved.curveLength - 1][2].x, morph),
-                    //             debugR = crossfade(mostCurved.curve[j][2].y, leastCurved.curve[leastCurved.curveLength - 1][2].y, morph);
-                    //     int x = 0;
-                    // }
                 }
             }
         }
@@ -773,27 +721,6 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, xOrigin, morph), crossfade(mostGregarious.lines[j].y, yOrigin, morph));
                     else
                         nvgLineTo(ctx, crossfade(xOrigin, mostGregarious.lines[j].x, morph), crossfade(yOrigin, mostGregarious.lines[j].y, morph));
-                    // if (module->debug) {
-                    //     float   debugA = mostGregarious.lines[j].x, 
-                    //             debugB = mostGregarious.lines[j].y,
-                    //             debugC = xOrigin,
-                    //             debugD = yOrigin,
-                    //             debugE = mostGregarious.lines[j].x,
-                    //             debugF = mostGregarious.lines[j].y,
-                    //             debugG = xOrigin,
-                    //             debugH = yOrigin,
-                    //             debugI = mostGregarious.lines[j].x,
-                    //             debugJ = mostGregarious.lines[j].y,
-                    //             debugK = xOrigin,
-                    //             debugL = yOrigin,
-                    //             debugM = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                    //             debugN = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
-                    //             debugO = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                    //             debugP = crossfade(mostGregarious.lines[j].y, yOrigin, morph),
-                    //             debugQ = crossfade(mostGregarious.lines[j].x, xOrigin, morph),
-                    //             debugR = crossfade(mostGregarious.lines[j].y, yOrigin, morph);
-                    //     int x = 0;
-                    // }
                 }
             }
             else {
@@ -806,27 +733,6 @@ struct AlgoScreenWidget : FramebufferWidget {
                         nvgLineTo(ctx, crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph), crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph));
                     else
                         nvgLineTo(ctx, crossfade(leastGregarious.lines[j].x, mostGregarious.lines[j].x, morph), crossfade(leastGregarious.lines[j].y, mostGregarious.lines[j].y, morph));
-                    // if (module->debug) {
-                    //     float   debugA = mostGregarious.lines[j].x, 
-                    //             debugB = mostGregarious.lines[j].y,
-                    //             debugC = leastGregarious.lines[j].x,
-                    //             debugD = leastGregarious.lines[j].y,
-                    //             debugE = mostGregarious.lines[j].x,
-                    //             debugF = mostGregarious.lines[j].y,
-                    //             debugG = leastGregarious.lines[j].x,
-                    //             debugH = leastGregarious.lines[j].y,
-                    //             debugI = mostGregarious.lines[j].x,
-                    //             debugJ = mostGregarious.lines[j].y,
-                    //             debugK = leastGregarious.lines[j].x,
-                    //             debugL = leastGregarious.lines[j].y,
-                    //             debugM = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                    //             debugN = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
-                    //             debugO = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                    //             debugP = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph),
-                    //             debugQ = crossfade(mostGregarious.lines[j].x, leastGregarious.lines[j].x, morph),
-                    //             debugR = crossfade(mostGregarious.lines[j].y, leastGregarious.lines[j].y, morph);
-                    //     int x = 0;
-                    // }
                 }
             }
         }
@@ -838,14 +744,6 @@ struct AlgoScreenWidget : FramebufferWidget {
             yOrigin = box.size.y / 2.f;
 
 			for (int i = 0; i < 3; i++) {
-			// 	auto search = module->graphStore.find(module->algoName[i]);
-			// 	if (search != module->graphStore.end())
-			// 		graphs[i] = search->second;
-				// if (module->debug) {
-				// 	long long debugA = module->algoName[i].to_ullong();
-				// 	int debugB = module->sixteenToTwelve[module->algoName[i].to_ullong()];
-				// 	std::printf("%lld, %d", debugA, debugB);
-				// }
                 int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
                 if (name != -1)
     				graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
@@ -854,9 +752,9 @@ struct AlgoScreenWidget : FramebufferWidget {
     		}
 
             bool noMorph = false;                
-			float radius = 8.35425f;
+            int scene = module->configMode ? module->configScene : module->baseScene;
 
-            if (module->morph[0] == 0.f || module->configMode > -1)
+            if (module->morph[0] == 0.f || module->configMode)
                 noMorph = true;
 
 			nvgBeginPath(args.vg);
@@ -868,56 +766,53 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgBeginPath(args.vg);
             nvgFontSize(args.vg, 10.f);
             nvgFontFaceId(args.vg, font->handle);
+            nvgFillColor(args.vg, textColor);
             for (int i = 0; i < 4; i++) {
                 std::string s = std::to_string(i + 1);
                 char const *id = s.c_str();
-                nvgTextBounds(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, id, id + 1, textBounds);
+                nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
                 float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
                 // if (module->debug)
                 //     int x = 0;
-                if (module->morph[0] == 0.f || module->configMode > -1)    //Display state without morph
-                    nvgText(args.vg, graphs[module->baseScene].nodes[i].coords.x - xOffset, graphs[module->baseScene].nodes[i].coords.y + yOffset, id, id + 1);
+                if (module->morph[0] == 0.f || module->configMode)    //Display state without morph
+                    nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
                 else {  //Display moprhed state
                     if (module->morph[0] > 0.f) {
-                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 1) % 3].nodes[i].coords.x, module->morph[0]) - xOffset,
-                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 1) % 3].nodes[i].coords.y, module->morph[0]) + yOffset,
+                        nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 1) % 3].nodes[i].coords.x, module->morph[0]) - xOffset,
+                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 1) % 3].nodes[i].coords.y, module->morph[0]) + yOffset,
                                             id, id + 1);
                     }
                     else {
-                        nvgText(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 2) % 3].nodes[i].coords.x, -module->morph[0]) - xOffset,
-                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 2) % 3].nodes[i].coords.y, -module->morph[0]) + yOffset,
+                        nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 2) % 3].nodes[i].coords.x, -module->morph[0]) - xOffset,
+                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 2) % 3].nodes[i].coords.y, -module->morph[0]) + yOffset,
                                             id, id + 1);
                     }
                 }
             }
-            nvgStrokeColor(args.vg, strokeColor);
-            nvgStrokeWidth(args.vg, labelStroke);
-            nvgStroke(args.vg);
-            nvgFillColor(args.vg, fillColor);
-            nvgFill(args.vg);
 
             // Draw nodes
+			float radius = 8.35425f;
             nvgBeginPath(args.vg);
             for (int i = 0; i < 4; i++) {
                 if (noMorph)    //Display state without morph
-                    nvgCircle(args.vg, graphs[module->baseScene].nodes[i].coords.x, graphs[module->baseScene].nodes[i].coords.y, radius);
+                    nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
                 else {  //Display moprhed state
                     if (module->morph[0] > 0.f) {
-                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 1) % 3].nodes[i].coords.x, module->morph[0]),
-                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 1) % 3].nodes[i].coords.y, module->morph[0]),
+                        nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 1) % 3].nodes[i].coords.x, module->morph[0]),
+                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 1) % 3].nodes[i].coords.y, module->morph[0]),
                                             radius);
                     }
                     else {
-                        nvgCircle(args.vg,  crossfade(graphs[module->baseScene].nodes[i].coords.x, graphs[(module->baseScene + 2) % 3].nodes[i].coords.x, -module->morph[0]),
-                                            crossfade(graphs[module->baseScene].nodes[i].coords.y, graphs[(module->baseScene + 2) % 3].nodes[i].coords.y, -module->morph[0]),
+                        nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 2) % 3].nodes[i].coords.x, -module->morph[0]),
+                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 2) % 3].nodes[i].coords.y, -module->morph[0]),
                                             radius);
                     }
                 }
             }
-            nvgFillColor(args.vg, fillColor);
+            nvgFillColor(args.vg, nodeFillColor);
             nvgFill(args.vg);
-            nvgStrokeColor(args.vg, strokeColor);
+            nvgStrokeColor(args.vg, nodeStrokeColor);
             nvgStrokeWidth(args.vg, nodeStroke);
             nvgStroke(args.vg);
 
@@ -925,43 +820,24 @@ struct AlgoScreenWidget : FramebufferWidget {
             if (noMorph) {
                 // Draw edges
                 nvgBeginPath(args.vg);
-                for (int i = 0; i < graphs[module->baseScene].numEdges; i++) {
-                    Edge edge = graphs[module->baseScene].edges[i];
+                for (int i = 0; i < graphs[scene].numEdges; i++) {
+                    Edge edge = graphs[scene].edges[i];
                     nvgMoveTo(args.vg, edge.moveCoords.x, edge.moveCoords.y);
                     for (int j = 0; j < edge.curveLength; j++) {
                         nvgBezierTo(args.vg, edge.curve[j][0].x, edge.curve[j][0].y, edge.curve[j][1].x, edge.curve[j][1].y, edge.curve[j][2].x, edge.curve[j][2].y);
-                        // if (module->debug) {
-                        //     float   debugA = edge.curve[j][0].x, 
-                        //             debugB = edge.curve[j][1].x, 
-                        //             debugC = edge.curve[j][2].x, 
-                        //             debugD = edge.curve[j][0].y, 
-                        //             debugE = edge.curve[j][1].y, 
-                        //             debugF = edge.curve[j][2].y,
-                        //             debugG = edge.moveCoords.x,
-                        //             debugH = edge.moveCoords.y;
-                        //     int x = 0;
-                        // }
                     }
                 }
-                edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
+                edgeColor = EDGE_COLOR;
                 nvgStrokeColor(args.vg, edgeColor);
                 nvgStrokeWidth(args.vg, edgeStroke);
                 nvgStroke(args.vg);
                 // Draw arrows
-                for (int i = 0; i < graphs[module->baseScene].numEdges; i++) {
+                for (int i = 0; i < graphs[scene].numEdges; i++) {
                     nvgBeginPath(args.vg);
-                    nvgMoveTo(args.vg, graphs[module->baseScene].arrows[i].moveCoords.x, graphs[module->baseScene].arrows[i].moveCoords.y);
-                    for (int j = 0; j < 9; j++) {
-                        nvgLineTo(args.vg, graphs[module->baseScene].arrows[i].lines[j].x, graphs[module->baseScene].arrows[i].lines[j].y);
-                        // if (module->debug) {
-                        //     auto debugA = graphs[module->baseScene].arrows[i]; 
-                        //     int x = 0;
-                        // }
-                    }
-                    // nvgStrokeColor(args.vg, strokeColor);
-                    // nvgStrokeWidth(args.vg, arrowStroke2);
-                    // nvgStroke(args.vg);
-                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
+                    nvgMoveTo(args.vg, graphs[scene].arrows[i].moveCoords.x, graphs[scene].arrows[i].moveCoords.y);
+                    for (int j = 0; j < 9; j++)
+                        nvgLineTo(args.vg, graphs[scene].arrows[i].lines[j].x, graphs[scene].arrows[i].lines[j].y);
+                    edgeColor = EDGE_COLOR;
                     nvgFillColor(args.vg, edgeColor);
                     nvgFill(args.vg);
                     nvgStrokeColor(args.vg, edgeColor);
@@ -972,9 +848,9 @@ struct AlgoScreenWidget : FramebufferWidget {
             else {
                 // Draw edges AND arrows
                 if (module->morph[0] > 0.f)
-                    drawEdges(args.vg, graphs[module->baseScene], graphs[(module->baseScene + 1) % 3], module->morph[0]);
+                    drawEdges(args.vg, graphs[scene], graphs[(scene + 1) % 3], module->morph[0]);
                 else
-                    drawEdges(args.vg, graphs[module->baseScene], graphs[(module->baseScene + 2) % 3], -module->morph[0]);
+                    drawEdges(args.vg, graphs[scene], graphs[(scene + 2) % 3], -module->morph[0]);
             }                
         }
     };
@@ -1034,15 +910,6 @@ struct ClickFilterEnabledItem : MenuItem {
 // };
 
 struct Algomorph4Widget : ModuleWidget {
-    template <typename TBase = GrayModuleLightWidget>
-	LineLight<TBase>* createLineLight(Vec a, Vec b, engine::Module* module, int firstLightId) {
-        LineLight<TBase>* o = new LineLight<TBase>(a, b);
-        o->box.pos = a;
-        o->module = module;
-        o->firstLightId = firstLightId;
-        return o;
-    }
-
 	Algomorph4Widget(Algomorph4* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
