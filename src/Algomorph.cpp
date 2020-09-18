@@ -232,10 +232,10 @@ struct Algomorph4 : Module {
                 }
             } 
             else {
+                //Set base scene light
+                for (int i = 0; i < 3; i++)
+                    lights[SCENE_LIGHTS + i].setBrightness(i == baseScene ? 1.f : 0.f);
                 if (morph[0] == 0.f) {  //Display state without morph
-                    //Set scene lights
-                    for (int i = 0; i < 3; i++)
-                        lights[SCENE_LIGHTS + i].setBrightness(i == baseScene ? 1.f : 0.f);
                     //Set connection lights
                     for (int i = 0; i < 12; i++)
                         lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 3][i % 3] ? 1.f : 0.f);
