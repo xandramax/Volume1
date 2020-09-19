@@ -302,6 +302,11 @@ struct Algomorph4 : Module {
                     if (configScene == i) {
                         //Exit config mode
                         configMode = false;
+                        //Turn off op/mod lights
+                        for (int i = 0; i < 4; i++) {
+                            lights[MODULATOR_LIGHTS + i].setBrightness(0.f);
+                            lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
+                        }
                     }
                     else {
                         //Switch scene
@@ -317,11 +322,11 @@ struct Algomorph4 : Module {
                     else {
                         //Switch scene
                         baseScene = i;
-                            }
-                        }
-                        graphDirty = true;
                     }
                 }
+                graphDirty = true;
+            }
+        }
         //Scene advance trigger input
         if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
             //Advance base scene
@@ -337,6 +342,7 @@ struct Algomorph4 : Module {
             if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
 			    if (!configMode) {
                     configMode = true;
+                    configOp = i;
                     if (morph[0] > .5f)
                         configScene = (baseScene + 1) % 3;
                     else if (morph[0] < -.5f)
@@ -344,7 +350,7 @@ struct Algomorph4 : Module {
                     else
                         configScene = baseScene;
                 }
-                if (configOp == i) {  
+                else if (configOp == i) {  
                     //Deselect operator
                     lights[OPERATOR_LIGHTS + i].setBrightness(0.f);
                     for (int j = 0; j < 4; j++) {
