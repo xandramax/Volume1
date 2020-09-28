@@ -36,6 +36,16 @@ struct DLXPortG : SvgPort {
 	}
 };
 
+struct DLXEditButton : virtual rack::app::SvgSwitch {
+	int state = 0;
+
+	DLXEditButton() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_0b.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_1b.svg")));
+	}
+};
+
 template <typename TBase = GrayModuleLightWidget>
 struct TPurpleLight : TBase {
 	TPurpleLight() {
@@ -73,7 +83,7 @@ struct TLineLight : TBase {
 		}
 	}
 	void drawHalo(const widget::Widget::DrawArgs& args) override {
-		float radius = std::min(this->box.size.x, this->box.size.y) / 2.0;
+		/* float radius = std::min(this->box.size.x, this->box.size.y) / 2.0;
 		float oradius = 3.0 * radius;
 
 		nvgBeginPath(args.vg);
@@ -91,7 +101,7 @@ struct TLineLight : TBase {
 			paint = nvgRadialGradient(args.vg, radius, radius, radius, oradius, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-		nvgFill(args.vg);
+		nvgFill(args.vg); */
 	}
 };
 typedef TLineLight<> LineLight;
