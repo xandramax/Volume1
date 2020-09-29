@@ -25,12 +25,12 @@ struct Algomorph4 : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-        ENUMS(SCENE_LIGHTS, 3),
+        ENUMS(SCENE_LIGHTS, 9),
         ENUMS(OPERATOR_LIGHTS, 4),
         ENUMS(MODULATOR_LIGHTS, 4),
         ENUMS(CONNECTION_LIGHTS, 12),
 		ENUMS(DISABLE_LIGHTS, 4),
-        // EDIT_LIGHT,
+        EDIT_LIGHT,
 		NUM_LIGHTS
 	};
     float morph[16] = {0.f};        // Range -1.f -> 1.f
@@ -209,10 +209,13 @@ struct Algomorph4 : Module {
         if (lightDivider.process()) {
             if (configMode) {   //Display state without morph, highlight configScene
                 //Set edit light
-                // lights[EDIT_LIGHT].setBrightness(1.f);
+                lights[EDIT_LIGHT].setBrightness(.8f);
                 //Set scene lights
                 for (int i = 0; i < 3; i++) {
-                    lights[SCENE_LIGHTS + i].setBrightness(configScene == i ? shine : 0.f);
+                    //Set purple component to off
+                    lights[SCENE_LIGHTS + i * 3].setBrightness(0.f);
+                    //Set yellow component depending on config scene and blink status
+                    lights[SCENE_LIGHTS + i * 3 + 1].setBrightness(configScene == i ? shine : 0.f);
                 }
                 //Set op lights
                 for (int i = 0; i < 4; i++)
@@ -238,11 +241,15 @@ struct Algomorph4 : Module {
             } 
             else {
                 //Set edit light
-                // lights[EDIT_LIGHT].setBrightness(0.f);
-                //Set base scene light
-                for (int i = 0; i < 3; i++)
-                    lights[SCENE_LIGHTS + i].setBrightness(i == baseScene ? 1.f : 0.f);
+                lights[EDIT_LIGHT].setBrightness(0.f);
                 if (morph[0] == 0.f) {  //Display state without morph
+                    //Set base scene light
+                    for (int i = 0; i < 3; i++) {
+                        //Set yellow component to off
+                        lights[SCENE_LIGHTS + i * 3 + 1].setBrightness(0.f);
+                        //Set purple component depending on base scene
+                        lights[SCENE_LIGHTS + i * 3].setBrightness(i == baseScene ? 1.f : 0.f);
+                    }
                     //Set connection lights
                     for (int i = 0; i < 12; i++)
                         lights[CONNECTION_LIGHTS + i].setBrightness(opDestinations[baseScene][i / 3][i % 3] ? 1.f : 0.f);
@@ -254,7 +261,15 @@ struct Algomorph4 : Module {
                     float brightness;
                     if (morph[0] > 0.f) {
                         //Set scene lights
-                        lights[SCENE_LIGHTS + (baseScene + 1) % 3].setBrightness(morph[0]);
+                        //Set base scene light
+                        for (int i = 0; i < 3; i++) {
+                            //Set yellow component to off
+                            lights[SCENE_LIGHTS + i * 3 + 1].setBrightness(0.f);
+                            //Set purple component depending on inverse morph
+                            lights[SCENE_LIGHTS + i * 3].setBrightness(i == baseScene ? 1.f - rescale(morph[0], 0.f, 1.f, 0.f, .425f) : 0.f);
+                        }
+                        //Set morph target light's purple component depending on morph
+                        lights[SCENE_LIGHTS + ((baseScene + 1) % 3) * 3].setBrightness(morph[0]);
                         //Set connection lights
                         for (int i = 0; i < 12; i++) {
                             brightness = 0.f;
@@ -276,7 +291,15 @@ struct Algomorph4 : Module {
                     }
                     else {
                         //Set scene lights
-                        lights[SCENE_LIGHTS + (baseScene + 2) % 3].setBrightness(morph[0] * -1.f);
+                        //Set base scene light
+                        for (int i = 0; i < 3; i++) {
+                            //Set yellow component to off
+                            lights[SCENE_LIGHTS + i * 3 + 1].setBrightness(0.f);
+                            //Set purple component depending on inverse morph
+                            lights[SCENE_LIGHTS + i * 3].setBrightness(i == baseScene ? 1.f - rescale(morph[0] * -1, 0.f, 1.f, 0.f, .425f) : 0.f);
+                        }
+                        //Set morph target light's purple component depending on morph
+                        lights[SCENE_LIGHTS + ((baseScene + 2) % 3) * 3].setBrightness(morph[0] * -1);
                         //Set connection lights
                         for (int i = 0; i < 12; i++) {
                             brightness = 0.f;
@@ -942,6 +965,9 @@ struct Algomorph4Widget : ModuleWidget {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
 
+        Vec SceneButtonCenter[3] = {   {37.414, 158.528},
+                                    {62.755, 158.528},
+                                    {88.097, 158.528} };
         Vec OpButtonCenter[4] = {   {59.785, 247.736},
                                     {59.785, 278.458},
                                     {59.785, 309.180},
@@ -961,13 +987,13 @@ struct Algomorph4Widget : ModuleWidget {
         screenWidget->box.size = Vec(113.074f, 93.277f);
 		addChild(screenWidget);
 
-        addChild(createParamCentered<TL1105>(Vec(37.414, 158.528), module, Algomorph4::SCENE_BUTTONS + 0));
-        addChild(createParamCentered<TL1105>(Vec(62.755, 158.528), module, Algomorph4::SCENE_BUTTONS + 1));
-        addChild(createParamCentered<TL1105>(Vec(88.097, 158.528), module, Algomorph4::SCENE_BUTTONS + 2));
+        addChild(createParamCentered<TL1105>(SceneButtonCenter[0], module, Algomorph4::SCENE_BUTTONS + 0));
+        addChild(createParamCentered<TL1105>(SceneButtonCenter[1], module, Algomorph4::SCENE_BUTTONS + 1));
+        addChild(createParamCentered<TL1105>(SceneButtonCenter[2], module, Algomorph4::SCENE_BUTTONS + 2));
 
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(37.414, 148.051), module, Algomorph4::SCENE_LIGHTS + 0));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(62.755, 148.051), module, Algomorph4::SCENE_LIGHTS + 1));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(88.097, 148.051), module, Algomorph4::SCENE_LIGHTS + 2));
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenter[0], 8.462, module, Algomorph4::SCENE_LIGHTS + 0));
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenter[1], 8.462, module, Algomorph4::SCENE_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenter[2], 8.462, module, Algomorph4::SCENE_LIGHTS + 6));
 
 		addInput(createInputCentered<DLXPortPoly>(Vec(125.350, 158.528), module, Algomorph4::SCENE_ADV_INPUT));
 
@@ -978,17 +1004,7 @@ struct Algomorph4Widget : ModuleWidget {
         addOutput(createOutput<DLXPortPolyOut>(Vec(115.420, 190.601), module, Algomorph4::SUM_OUTPUT));
 
         addChild(createParamCentered<DLXEditButton>(Vec(82, 235.686), module, Algomorph4::EDIT_BUTTON));
-        // addChild(createLightCentered<LEDBezelLight<WhiteLight>>(Vec(82, 235.686), module, Algomorph4::EDIT_LIGHT));
-
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 247.736), module, Algomorph4::OPERATOR_LIGHTS + 0));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 278.458), module, Algomorph4::OPERATOR_LIGHTS + 1));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 309.180), module, Algomorph4::OPERATOR_LIGHTS + 2));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(11.181, 339.902), module, Algomorph4::OPERATOR_LIGHTS + 3));
-
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 247.736), module, Algomorph4::MODULATOR_LIGHTS + 0));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 278.458), module, Algomorph4::MODULATOR_LIGHTS + 1));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 309.180), module, Algomorph4::MODULATOR_LIGHTS + 2));
-        addChild(createLightCentered<TinyLight<PurpleLight>>(Vec(152.820, 339.902), module, Algomorph4::MODULATOR_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXYellowLight>(Vec(82, 235.686), 8.462, module, Algomorph4::EDIT_LIGHT));
 
 		addInput(createInput<DLXPortPoly>(Vec(21.969, 237.806), module, Algomorph4::OPERATOR_INPUTS + 0));
 		addInput(createInput<DLXPortPoly>(Vec(21.969, 268.528), module, Algomorph4::OPERATOR_INPUTS + 1));
@@ -1000,26 +1016,26 @@ struct Algomorph4Widget : ModuleWidget {
 		addOutput(createOutput<DLXPortPolyOut>(Vec(122.164, 299.250), module, Algomorph4::MODULATOR_OUTPUTS + 2));
 		addOutput(createOutput<DLXPortPolyOut>(Vec(122.164, 329.972), module, Algomorph4::MODULATOR_OUTPUTS + 3));
 
-        addChild(createLineLight<RedLight>(OpButtonCenter[0], ModButtonCenter[0], module, Algomorph4::DISABLE_LIGHTS + 0));
-        addChild(createLineLight<RedLight>(OpButtonCenter[1], ModButtonCenter[1], module, Algomorph4::DISABLE_LIGHTS + 1));
-        addChild(createLineLight<RedLight>(OpButtonCenter[2], ModButtonCenter[2], module, Algomorph4::DISABLE_LIGHTS + 2));
-        addChild(createLineLight<RedLight>(OpButtonCenter[3], ModButtonCenter[3], module, Algomorph4::DISABLE_LIGHTS + 3));
+        addChild(createLineLight<DLXRedLight>(OpButtonCenter[0], ModButtonCenter[0], module, Algomorph4::DISABLE_LIGHTS + 0));
+        addChild(createLineLight<DLXRedLight>(OpButtonCenter[1], ModButtonCenter[1], module, Algomorph4::DISABLE_LIGHTS + 1));
+        addChild(createLineLight<DLXRedLight>(OpButtonCenter[2], ModButtonCenter[2], module, Algomorph4::DISABLE_LIGHTS + 2));
+        addChild(createLineLight<DLXRedLight>(OpButtonCenter[3], ModButtonCenter[3], module, Algomorph4::DISABLE_LIGHTS + 3));
 	
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[0], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 0));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[0], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 1));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[0], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 2));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[0], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 0));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[0], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 1));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[0], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 2));
 
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[1], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 3));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[1], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 4));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[1], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 5));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[1], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 3));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[1], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 4));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[1], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 5));
 
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[2], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 6));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[2], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 7));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[2], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 8));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[2], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 6));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[2], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 7));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[2], ModButtonCenter[3], module, Algomorph4::CONNECTION_LIGHTS + 8));
 
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[3], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 9));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[3], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 10));
-        addChild(createLineLight<PurpleLight>(OpButtonCenter[3], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 11));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[3], ModButtonCenter[0], module, Algomorph4::CONNECTION_LIGHTS + 9));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[3], ModButtonCenter[1], module, Algomorph4::CONNECTION_LIGHTS + 10));
+        addChild(createLineLight<DLXPurpleLight>(OpButtonCenter[3], ModButtonCenter[2], module, Algomorph4::CONNECTION_LIGHTS + 11));
 
 		addParam(createParamCentered<TL1105>(OpButtonCenter[0], module, Algomorph4::OPERATOR_BUTTONS + 0));
 		addParam(createParamCentered<TL1105>(OpButtonCenter[1], module, Algomorph4::OPERATOR_BUTTONS + 1));
@@ -1030,6 +1046,16 @@ struct Algomorph4Widget : ModuleWidget {
 		addParam(createParamCentered<TL1105>(ModButtonCenter[1], module, Algomorph4::MODULATOR_BUTTONS + 1));
 		addParam(createParamCentered<TL1105>(ModButtonCenter[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
 		addParam(createParamCentered<TL1105>(ModButtonCenter[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
+		
+        addChild(createRingLightCentered<DLXPurpleLight>(OpButtonCenter[0], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 0));
+		addChild(createRingLightCentered<DLXPurpleLight>(OpButtonCenter[1], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 1));
+		addChild(createRingLightCentered<DLXPurpleLight>(OpButtonCenter[2], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 2));
+		addChild(createRingLightCentered<DLXPurpleLight>(OpButtonCenter[3], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 3));
+
+		addChild(createRingLightCentered<DLXPurpleLight>(ModButtonCenter[0], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 0));
+		addChild(createRingLightCentered<DLXPurpleLight>(ModButtonCenter[1], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 1));
+		addChild(createRingLightCentered<DLXPurpleLight>(ModButtonCenter[2], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 2));
+		addChild(createRingLightCentered<DLXPurpleLight>(ModButtonCenter[3], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 3));
     }
 
     void appendContextMenu(Menu* menu) override {

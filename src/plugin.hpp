@@ -8,6 +8,10 @@ extern Plugin* pluginInstance;
 // extern Model* modelMyModule;
 extern Model* modelAlgomorph4;
 
+static const NVGcolor DLXLightPurple = nvgRGB(139, 112, 162);
+static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
+static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
+
 struct DLXKnob : RoundKnob {
 	DLXKnob() {
 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnob.svg")));
@@ -36,7 +40,7 @@ struct DLXPortG : SvgPort {
 	}
 };
 
-struct DLXEditButton : virtual rack::app::SvgSwitch {
+struct DLXEditButton : rack::app::SvgSwitch {
 	int state = 0;
 
 	DLXEditButton() {
@@ -47,20 +51,38 @@ struct DLXEditButton : virtual rack::app::SvgSwitch {
 };
 
 template <typename TBase = GrayModuleLightWidget>
-struct TPurpleLight : TBase {
-	TPurpleLight() {
-		this->addBaseColor(nvgRGB(139, 112, 162));
+struct TDlxPurpleLight : TBase {
+	TDlxPurpleLight() {
+		this->addBaseColor(DLXLightPurple);
 	}
 };
-typedef TPurpleLight<> PurpleLight;
+typedef TDlxPurpleLight<> DLXPurpleLight;
 
 template <typename TBase = GrayModuleLightWidget>
 struct TDlxRedLight : TBase {
 	TDlxRedLight() {
-		this->addBaseColor(nvgRGB(0xae, 0x34, 0x58));
+		this->addBaseColor(DLXRed);
 	}
 };
-typedef TDlxRedLight<> DlxRedLight;
+typedef TDlxRedLight<> DLXRedLight;
+
+template <typename TBase = GrayModuleLightWidget>
+struct TDlxYellowLight : TBase {
+	TDlxYellowLight() {
+		this->addBaseColor(DLXYellow);
+	}
+};
+typedef TDlxYellowLight<> DLXYellowLight;
+
+template <typename TBase = GrayModuleLightWidget>
+struct TDlxMultiLight : TBase {
+	TDlxMultiLight() {
+		this->addBaseColor(DLXLightPurple);
+		this->addBaseColor(DLXYellow);
+		this->addBaseColor(DLXRed);
+	}
+};
+typedef TDlxMultiLight<> DLXMultiLight;
 
 template <typename TBase = GrayModuleLightWidget>
 struct TLineLight : TBase {
@@ -106,12 +128,64 @@ struct TLineLight : TBase {
 };
 typedef TLineLight<> LineLight;
 
-template <typename TBase = PurpleLight>
+template <typename TBase = DLXPurpleLight>
 TLineLight<TBase>* createLineLight(Vec a, Vec b, engine::Module* module, int firstLightId) {
 	TLineLight<TBase>* o = new TLineLight<TBase>(a, b);
 	o->box.pos = a;
 	o->module = module;
 	o->firstLightId = firstLightId;
+	return o;
+}
+
+template <typename TBase = GrayModuleLightWidget>
+struct TRingLight : TBase {
+	float radius = 1.f;
+	TRingLight(float r) {
+		radius = r;
+	}
+	void drawLight(const widget::Widget::DrawArgs& args) override {
+			// Adapted from LightWidget::drawLight, with no fill
+			nvgBeginPath(args.vg);
+			nvgCircle(args.vg, radius, radius, radius);
+			nvgStrokeWidth(args.vg, 1);
+
+			// Background
+			if (this->bgColor.a > 0.0) {
+				nvgStrokeColor(args.vg, this->bgColor);
+				nvgStroke(args.vg);
+			}
+
+			// Foreground
+			if (this->color.a > 0.0) {
+				nvgStrokeColor(args.vg, this->color);
+				nvgStroke(args.vg);
+			}
+
+			// Border
+			if (this->borderColor.a > 0.0) {
+				nvgStrokeWidth(args.vg, 0.5);
+				nvgStrokeColor(args.vg, this->borderColor);
+				nvgStroke(args.vg);
+			}
+	}
+	void drawHalo(const widget::Widget::DrawArgs& args) override {	}
+};
+typedef TRingLight<> RingLight;
+
+template <typename TBase = DLXPurpleLight>
+TRingLight<TBase>* createRingLight(Vec pos, float r, engine::Module* module, int firstLightId) {
+	TRingLight<TBase>* o = new TRingLight<TBase>(r);
+	o->box.pos = pos;
+	o->module = module;
+	o->firstLightId = firstLightId;
+	return o;
+}
+
+template <typename TBase = DLXPurpleLight>
+TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* module, int firstLightId) {
+	TRingLight<TBase>* o = createRingLight<TBase>(pos, r, module, firstLightId);
+	o->box.pos.x -= r;
+	o->box.pos.y -= r;
 	return o;
 }
 
