@@ -8,6 +8,12 @@ extern Plugin* pluginInstance;
 // extern Model* modelMyModule;
 extern Model* modelAlgomorph4;
 
+struct bitsetCompare {
+    bool operator() (const std::bitset<16> &b1, const std::bitset<16> &b2) const {
+        return b1.to_ulong() < b2.to_ulong();
+	}
+};
+
 static const NVGcolor DLXLightPurple = nvgRGB(139, 112, 162);
 static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
@@ -84,6 +90,35 @@ struct TDlxMultiLight : TBase {
 };
 typedef TDlxMultiLight<> DLXMultiLight;
 
+struct ConnectionBgWidget : TransparentWidget {
+	std::vector<Vec> leftCenters = {};
+	std::vector<Vec> rightCenters = {};
+	ConnectionBgWidget(std::vector<Vec> left, std::vector<Vec> right) {
+		for (Vec v : left)
+			leftCenters.push_back(v);
+		for (Vec v : right)
+			rightCenters.push_back(v);
+	}
+	void draw(const widget::Widget::DrawArgs& args) override {
+        //Colors from GrayModuleLightWidget
+        for (Vec v : leftCenters) {
+			for (unsigned i = 0; i < rightCenters.size(); i++) {
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, v.x, v.y);
+				nvgLineTo(args.vg, rightCenters[i].x, rightCenters[i].y);
+				nvgStrokeWidth(args.vg, 1.f);
+				// Background
+				nvgStrokeColor(args.vg, nvgRGB(0x5a, 0x5a, 0x5a));
+				nvgStroke(args.vg);
+				// Border
+				nvgStrokeWidth(args.vg, 0.5);
+				nvgStrokeColor(args.vg, nvgRGBA(0, 0, 0, 0x60));
+				nvgStroke(args.vg);
+			}
+        }
+    }
+};
+
 template <typename TBase = GrayModuleLightWidget>
 struct TLineLight : TBase {
 	bool flipped = false;
@@ -98,8 +133,9 @@ struct TLineLight : TBase {
 		nvgBeginPath(args.vg);
 		nvgMoveTo(args.vg, 0.f, 0.f);
 		nvgLineTo(args.vg, this->box.size.x, flipped ? -this->box.size.y : this->box.size.y);
+		nvgStrokeWidth(args.vg, .875f);
+		// Foreground
 		if (this->color.a > 0.0) {
-			nvgStrokeWidth(args.vg, 1.f);
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
@@ -147,7 +183,7 @@ struct TRingLight : TBase {
 			// Adapted from LightWidget::drawLight, with no fill
 			nvgBeginPath(args.vg);
 			nvgCircle(args.vg, radius, radius, radius);
-			nvgStrokeWidth(args.vg, 1);
+			nvgStrokeWidth(args.vg, 1.5);
 
 			// Background
 			if (this->bgColor.a > 0.0) {
@@ -188,9 +224,3 @@ TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* mod
 	o->box.pos.y -= r;
 	return o;
 }
-
-struct bitsetCompare {
-    bool operator() (const std::bitset<16> &b1, const std::bitset<16> &b2) const {
-        return b1.to_ulong() < b2.to_ulong();
-	}
-};
