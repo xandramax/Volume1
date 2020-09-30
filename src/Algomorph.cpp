@@ -5,39 +5,39 @@
 constexpr float BLINK_INTERVAL = 0.42857142857f;
 
 struct Algomorph4 : Module {
-	enum ParamIds {
-		ENUMS(OPERATOR_BUTTONS, 4),
+    enum ParamIds {
+        ENUMS(OPERATOR_BUTTONS, 4),
         ENUMS(MODULATOR_BUTTONS, 4),
         ENUMS(SCENE_BUTTONS, 3),
         MORPH_KNOB,
         EDIT_BUTTON,
-		NUM_PARAMS
-	};
-	enum InputIds {
-		ENUMS(OPERATOR_INPUTS, 4),
+        NUM_PARAMS
+    };
+    enum InputIds {
+        ENUMS(OPERATOR_INPUTS, 4),
         MORPH_INPUT,
         SCENE_ADV_INPUT,
-		NUM_INPUTS
-	};
-	enum OutputIds {
-		ENUMS(MODULATOR_OUTPUTS, 4),
+        NUM_INPUTS
+    };
+    enum OutputIds {
+        ENUMS(MODULATOR_OUTPUTS, 4),
         SUM_OUTPUT,
-		NUM_OUTPUTS
-	};
-	enum LightIds {
+        NUM_OUTPUTS
+    };
+    enum LightIds {
         ENUMS(SCENE_LIGHTS, 9),         // 3 colors per light
         ENUMS(OPERATOR_LIGHTS, 12),     // 3 colors per light
         ENUMS(MODULATOR_LIGHTS, 12),    // 3 colors per light
         ENUMS(CONNECTION_LIGHTS, 36),   // 3 colors per light
         ENUMS(DISABLE_LIGHTS, 4),
         EDIT_LIGHT,
-		NUM_LIGHTS
-	};
+        NUM_LIGHTS
+    };
     float morph[16] = {0.f};        // Range -1.f -> 1.f
     bool opEnabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
     std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
-	int sixteenToTwelve[4089];      // Graph ID conversion
+    int sixteenToTwelve[4089];      // Graph ID conversion
                                     // The algorithm graph data are stored with IDs in 12-bit space:
                                     //       000 000 000 000 -> 111 111 111 000
                                     // Each set of 3 bits corresponds to an operator.
@@ -47,14 +47,14 @@ struct Algomorph4 : Module {
                                     //       0000 0000 0000 0000 -> 1110 1101 1011 0000
                                     // In 16-bit space, the the feedback destinations are included but never equal 1.  
                                     // sixteenToTwelve is indexed by 16-bit ID and returns equivalent 12-bit ID.
-	int threeToFour[4][3];          // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
+    int threeToFour[4][3];          // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
     bool configMode = true;
     int configOp = -1;      // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
     int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
 
     bool graphDirty = true;
-	// bool debug = false;
+    // bool debug = false;
 
     //User settings
     bool clickFilterEnabled = true;
@@ -76,16 +76,16 @@ struct Algomorph4 : Module {
     float blinkTimer = BLINK_INTERVAL;
     bool blinkStatus = true;
 
-	Algomorph4() {
-		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    Algomorph4() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Algorithm Morph", "", 0, 100);
-		for (int i = 0; i < 4; i++) {
-			configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
-			configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
-		}
-		for (int i = 0; i < 3; i++) {
-			configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
-		}
+        for (int i = 0; i < 4; i++) {
+            configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
+            configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
+        }
+        for (int i = 0; i < 3; i++) {
+            configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
+        }
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int c = 0; c < 16; c++) {
@@ -107,27 +107,27 @@ struct Algomorph4 : Module {
         }
 
         // Map 3-bit operator-relative mod output indices to 4-bit generalized equivalents
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				if (i != j) {
-					threeToFour[i][i > j ? j : j - 1] = j;
-				}
-			}
-		}
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (i != j) {
+                    threeToFour[i][i > j ? j : j - 1] = j;
+                }
+            }
+        }
 
         // Initialize sixteenToTwelve[] to -1, then index 9-bit IDs by the 12-bit equivalents
         for (int i = 0; i < 4089; i++) {
             sixteenToTwelve[i] = -1;
         }
-		for (int i = 0; i < 1695; i++) {
-			sixteenToTwelve[(int)xNodeData[i][0]] = i;
-		}
+        for (int i = 0; i < 1695; i++) {
+            sixteenToTwelve[(int)xNodeData[i][0]] = i;
+        }
 
         onReset();
-	}
+    }
 
     void onReset() override {
-		for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             algoName[i].reset();
             for (int j = 0; j < 4; j++) {
                 opEnabled[i][j] = true;
@@ -146,8 +146,8 @@ struct Algomorph4 : Module {
         ccwSceneSelection = true;
         blinkStatus = true;
         blinkTimer = BLINK_INTERVAL;
-		graphDirty = true;
-	}
+        graphDirty = true;
+    }
 
     void onRandomize() override {
         bool carrier[3][4];
@@ -228,15 +228,15 @@ struct Algomorph4 : Module {
         graphDirty = true;
     }
 
-	void process(const ProcessArgs& args) override {
-		float in[16] = {0.f};                                   // Operator input channels
+    void process(const ProcessArgs& args) override {
+        float in[16] = {0.f};                                   // Operator input channels
         float modOut[4][16] = {{0.f}};                          // Modulator outputs & channels
         float sumOut[16] = {0.f};                               // Sum output channels
         float gain[2][4][4][16] = {{{{0.f}}}};                  // Click filter gains:  [noRing/ring][op][legal mod][channel], gain[x][y][3][z] = sum output
         bool carrier[3][4] = {  {true, true, true, true},       // Per-algorithm operator carriership status
                                 {true, true, true, true},       // [scene][op]
                                 {true, true, true, true} };
-		int channels = 1;                                       // Max channels of operator inputs
+        int channels = 1;                                       // Max channels of operator inputs
 
         // Only redraw display if morph on channel 1 has changed
         float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f + params[MORPH_KNOB].getValue(), -1.f, 1.f);
@@ -302,7 +302,7 @@ struct Algomorph4 : Module {
         //Check to select/deselect operators
         for (int i = 0; i < 4; i++) {
             if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
-			    if (!configMode) {
+                if (!configMode) {
                     configMode = true;
                     configOp = i;
                     if (morph[0] > .5f)
@@ -331,29 +331,29 @@ struct Algomorph4 : Module {
 
         //Check for config mode destination selection
         if (configMode && configOp > -1) {
-			if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
-				opEnabled[configScene][configOp] ^= true;
+            if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
+                opEnabled[configScene][configOp] ^= true;
 
-				if (exitConfigOnConnect)
-					configMode = false;
+                if (exitConfigOnConnect)
+                    configMode = false;
                 
                 graphDirty = true;
-			}
-			else {
-				for (int i = 0; i < 3; i++) {
-					if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
+            }
+            else {
+                for (int i = 0; i < 3; i++) {
+                    if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
 
-						opDestinations[configScene][configOp][i] ^= true;
-						algoName[configScene].flip(configOp * 3 + i);
+                        opDestinations[configScene][configOp][i] ^= true;
+                        algoName[configScene].flip(configOp * 3 + i);
 
-						if (exitConfigOnConnect)
-							configMode = false;
+                        if (exitConfigOnConnect)
+                            configMode = false;
 
-						graphDirty = true;
-						break;
-					}
-				}
-			}
+                        graphDirty = true;
+                        break;
+                    }
+                }
+            }
         }
 
         //Determine polyphony count
@@ -648,7 +648,7 @@ struct Algomorph4 : Module {
                 }
             }
         }
-	}
+    }
 
     inline float getPortBrightness(Port port) {
         return std::max(    {   port.plugLights[0].getBrightness(),
@@ -698,16 +698,16 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
         json_t* opDestinationsJ = json_array();
-		for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int k = 0; k < 3; k++) {
-			        json_t* destinationJ = json_object();
-			        json_object_set_new(destinationJ, "Destination", json_boolean(opDestinations[i][j][k]));
-			        json_array_append_new(opDestinationsJ, destinationJ);
+                    json_t* destinationJ = json_object();
+                    json_object_set_new(destinationJ, "Destination", json_boolean(opDestinations[i][j][k]));
+                    json_array_append_new(opDestinationsJ, destinationJ);
                 }
             }
-		}
-		json_object_set_new(rootJ, "Operator Destinations", opDestinationsJ);
+        }
+        json_object_set_new(rootJ, "Operator Destinations", opDestinationsJ);
         json_t* algoNamesJ = json_array();
         for (int i = 0; i < 3; i++) {
             json_t* nameJ = json_object();
@@ -716,30 +716,30 @@ struct Algomorph4 : Module {
         }
         json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
         json_t* opEnabledJ = json_array();
-		for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 json_t* enabledJ = json_object();
                 json_object_set_new(enabledJ, "Enabled Op", json_boolean(opEnabled[i][j]));
                 json_array_append_new(opEnabledJ, enabledJ);
             }
-		}
-		json_object_set_new(rootJ, "Operators Enabled", opEnabledJ);
+        }
+        json_object_set_new(rootJ, "Operators Enabled", opEnabledJ);
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
-		configMode = json_integer_value(json_object_get(rootJ, "Config Enabled"));
-		configOp = json_integer_value(json_object_get(rootJ, "Config Mode"));
-		configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
-		baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
-		ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
-		exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
-		ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
-		clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
-		json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
-		json_t* destinationJ; size_t destinationIndex;
+        configMode = json_integer_value(json_object_get(rootJ, "Config Enabled"));
+        configOp = json_integer_value(json_object_get(rootJ, "Config Mode"));
+        configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
+        baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
+        ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
+        exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
+        ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
+        clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
+        json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
+        json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
-		json_array_foreach(opDestinationsJ, destinationIndex, destinationJ) {
+        json_array_foreach(opDestinationsJ, destinationIndex, destinationJ) {
             opDestinations[i][j][k] = json_boolean_value(json_object_get(destinationJ, "Destination"));
             k++;
             if (k > 2) {
@@ -750,39 +750,39 @@ struct Algomorph4 : Module {
                     i++;
                 }
             }
-		}
+        }
         json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
         json_t* nameJ; size_t sixteenToTwelve;
         json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
             algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
         }
         json_t* opEnabledJ = json_object_get(rootJ, "Operators Enabled");
-		json_t* enabledOpJ;
-		size_t enabledOpIndex;
+        json_t* enabledOpJ;
+        size_t enabledOpIndex;
         i = j = 0;
-		json_array_foreach(opEnabledJ, enabledOpIndex, enabledOpJ) {
+        json_array_foreach(opEnabledJ, enabledOpIndex, enabledOpJ) {
             opEnabled[i][j] = json_boolean_value(json_object_get(enabledOpJ, "Enabled Op"));
             j++;
             if (j > 3) {
                 j = 0;
                 i++;
             }
-		}
+        }
         //Legacy opDisabled
-		json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
-		json_t* disabledOpJ;
-		size_t disabledOpIndex;
+        json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
+        json_t* disabledOpJ;
+        size_t disabledOpIndex;
         i = j = 0;
-		json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
+        json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
             opEnabled[i][j] = !json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
             j++;
             if (j > 3) {
                 j = 0;
                 i++;
             }
-		}
+        }
         graphDirty = true;
-	}
+    }
 };
 
 template < typename MODULE >
@@ -790,7 +790,7 @@ struct AlgoScreenWidget : FramebufferWidget {
     struct AlgoDrawWidget : OpaqueWidget {
         MODULE* module;
         alGraph graphs[3];
-		bool firstRun = true;
+        bool firstRun = true;
         std::shared_ptr<Font> font;
         float textBounds[4];
 
@@ -951,13 +951,13 @@ struct AlgoScreenWidget : FramebufferWidget {
             xOrigin = box.size.x / 2.f;
             yOrigin = box.size.y / 2.f;
 
-			for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) {
                 int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
                 if (name != -1)
-    				graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
+                    graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
                 else
                     graphs[i] = alGraph(0);
-    		}
+            }
 
             bool noMorph = false;                
             int scene = module->configMode ? module->configScene : module->baseScene;
@@ -965,10 +965,10 @@ struct AlgoScreenWidget : FramebufferWidget {
             if (module->morph[0] == 0.f || module->configMode)
                 noMorph = true;
 
-			nvgBeginPath(args.vg);
-			nvgRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y);
+            nvgBeginPath(args.vg);
+            nvgRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y);
             nvgStrokeWidth(args.vg, borderStroke);
-			nvgStroke(args.vg);
+            nvgStroke(args.vg);
 
             // Draw node numbers
             nvgBeginPath(args.vg);
@@ -998,7 +998,7 @@ struct AlgoScreenWidget : FramebufferWidget {
             }
 
             // Draw nodes
-			float radius = 8.35425f;
+            float radius = 8.35425f;
             nvgBeginPath(args.vg);
             for (int i = 0; i < 4; i++) {
                 if (noMorph)    //Display state without morph
@@ -1109,10 +1109,10 @@ struct ClickFilterEnabledItem : MenuItem {
 };
 
 // struct DebugItem : MenuItem {
-// 	Algomorph4 *module;
-// 	void onAction(const event::Action &e) override {
-// 		module->debug ^= true;
-// 	}
+//     Algomorph4 *module;
+//     void onAction(const event::Action &e) override {
+//         module->debug ^= true;
+//     }
 // };
 
 struct Algomorph4Widget : ModuleWidget {
@@ -1128,19 +1128,19 @@ struct Algomorph4Widget : ModuleWidget {
                                         {mm2px(33.942), mm2px(105.579)},
                                         {mm2px(33.942), mm2px(115.984)} };
 
-	Algomorph4Widget(Algomorph4* module) {
-		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
+    Algomorph4Widget(Algomorph4* module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Algomorph.svg")));
 
-		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
-		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
-		addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
+        addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+        addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
+        addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
+        addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
         AlgoScreenWidget<Algomorph4>* screenWidget = new AlgoScreenWidget<Algomorph4>(module);
         screenWidget->box.pos = mm2px(Vec(6.253, 9.954));
         screenWidget->box.size = mm2px(Vec(38.295, 31.590));
-		addChild(screenWidget);
+        addChild(screenWidget);
 
         addChild(createParamCentered<TL1105>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
         addChild(createParamCentered<TL1105>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
@@ -1150,26 +1150,26 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.462, module, Algomorph4::SCENE_LIGHTS + 3));
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.462, module, Algomorph4::SCENE_LIGHTS + 6));
 
-		addInput(createInputCentered<DLXPortPoly>(mm2px(Vec(39.950, 53.224)), module, Algomorph4::SCENE_ADV_INPUT));
+        addInput(createInputCentered<DLXPortPoly>(mm2px(Vec(39.950, 53.224)), module, Algomorph4::SCENE_ADV_INPUT));
 
-		addInput(createInput<DLXPortPoly>(mm2px(Vec(7.732, 64.118)), module, Algomorph4::MORPH_INPUT));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(7.732, 64.118)), module, Algomorph4::MORPH_INPUT));
 
-		addChild(createParam<DLXKnob>(mm2px(Vec(19.708, 62.457)), module, Algomorph4::MORPH_KNOB));
+        addChild(createParam<DLXKnob>(mm2px(Vec(19.708, 62.457)), module, Algomorph4::MORPH_KNOB));
 
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(36.582, 64.118)), module, Algomorph4::SUM_OUTPUT));
 
         addChild(createParamCentered<DLXEditButton>(mm2px(Vec(25.268, 79.625)), module, Algomorph4::EDIT_BUTTON));
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.268, 79.625)), 8.462, module, Algomorph4::EDIT_LIGHT));
 
-		addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 81.439)), module, Algomorph4::OPERATOR_INPUTS + 0));
-		addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 91.844)), module, Algomorph4::OPERATOR_INPUTS + 1));
-		addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 102.248)), module, Algomorph4::OPERATOR_INPUTS + 2));
-		addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 112.653)), module, Algomorph4::OPERATOR_INPUTS + 3));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 81.439)), module, Algomorph4::OPERATOR_INPUTS + 0));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 91.844)), module, Algomorph4::OPERATOR_INPUTS + 1));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 102.248)), module, Algomorph4::OPERATOR_INPUTS + 2));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 112.653)), module, Algomorph4::OPERATOR_INPUTS + 3));
 
-		addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 81.439)), module, Algomorph4::MODULATOR_OUTPUTS + 0));
-		addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 91.844)), module, Algomorph4::MODULATOR_OUTPUTS + 1));
-		addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 102.248)), module, Algomorph4::MODULATOR_OUTPUTS + 2));
-		addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 112.653)), module, Algomorph4::MODULATOR_OUTPUTS + 3));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 81.439)), module, Algomorph4::MODULATOR_OUTPUTS + 0));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 91.844)), module, Algomorph4::MODULATOR_OUTPUTS + 1));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 102.248)), module, Algomorph4::MODULATOR_OUTPUTS + 2));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 112.653)), module, Algomorph4::MODULATOR_OUTPUTS + 3));
 
         ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters);
         connectionBgWidget->box.pos = this->box.pos;
@@ -1180,7 +1180,7 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createLineLight<DLXRedLight>(OpButtonCenters[1], ModButtonCenters[1], module, Algomorph4::DISABLE_LIGHTS + 1));
         addChild(createLineLight<DLXRedLight>(OpButtonCenters[2], ModButtonCenters[2], module, Algomorph4::DISABLE_LIGHTS + 2));
         addChild(createLineLight<DLXRedLight>(OpButtonCenters[3], ModButtonCenters[3], module, Algomorph4::DISABLE_LIGHTS + 3));
-	
+    
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[0], ModButtonCenters[1], module, Algomorph4::CONNECTION_LIGHTS + 0));
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[0], ModButtonCenters[2], module, Algomorph4::CONNECTION_LIGHTS + 3));
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[0], ModButtonCenters[3], module, Algomorph4::CONNECTION_LIGHTS + 6));
@@ -1197,52 +1197,52 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[1], module, Algomorph4::CONNECTION_LIGHTS + 30));
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[2], module, Algomorph4::CONNECTION_LIGHTS + 33));
 
-		addParam(createParamCentered<TL1105>(OpButtonCenters[0], module, Algomorph4::OPERATOR_BUTTONS + 0));
-		addParam(createParamCentered<TL1105>(OpButtonCenters[1], module, Algomorph4::OPERATOR_BUTTONS + 1));
-		addParam(createParamCentered<TL1105>(OpButtonCenters[2], module, Algomorph4::OPERATOR_BUTTONS + 2));
-		addParam(createParamCentered<TL1105>(OpButtonCenters[3], module, Algomorph4::OPERATOR_BUTTONS + 3));
+        addParam(createParamCentered<TL1105>(OpButtonCenters[0], module, Algomorph4::OPERATOR_BUTTONS + 0));
+        addParam(createParamCentered<TL1105>(OpButtonCenters[1], module, Algomorph4::OPERATOR_BUTTONS + 1));
+        addParam(createParamCentered<TL1105>(OpButtonCenters[2], module, Algomorph4::OPERATOR_BUTTONS + 2));
+        addParam(createParamCentered<TL1105>(OpButtonCenters[3], module, Algomorph4::OPERATOR_BUTTONS + 3));
 
-		addParam(createParamCentered<TL1105>(ModButtonCenters[0], module, Algomorph4::MODULATOR_BUTTONS + 0));
-		addParam(createParamCentered<TL1105>(ModButtonCenters[1], module, Algomorph4::MODULATOR_BUTTONS + 1));
-		addParam(createParamCentered<TL1105>(ModButtonCenters[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
-		addParam(createParamCentered<TL1105>(ModButtonCenters[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
-		
+        addParam(createParamCentered<TL1105>(ModButtonCenters[0], module, Algomorph4::MODULATOR_BUTTONS + 0));
+        addParam(createParamCentered<TL1105>(ModButtonCenters[1], module, Algomorph4::MODULATOR_BUTTONS + 1));
+        addParam(createParamCentered<TL1105>(ModButtonCenters[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
+        addParam(createParamCentered<TL1105>(ModButtonCenters[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
+        
         addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 0));
-		addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 3));
-		addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 6));
-		addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 9));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 6));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 9));
 
-		addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 0));
-		addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 3));
-		addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 6));
-		addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 9));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 0));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 6));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 9));
     }
 
     void appendContextMenu(Menu* menu) override {
-		Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
+        Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
-		menu->addChild(new MenuSeparator());
+        menu->addChild(new MenuSeparator());
 
-		RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
-		ringMorphItem->module = module;
-		menu->addChild(ringMorphItem);
-		
+        RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+        ringMorphItem->module = module;
+        menu->addChild(ringMorphItem);
+        
         ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Config Mode after Connection", CHECKMARK(module->exitConfigOnConnect));
-		exitConfigItem->module = module;
-		menu->addChild(exitConfigItem);
+        exitConfigItem->module = module;
+        menu->addChild(exitConfigItem);
         
         CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input advances counter-clockwise", CHECKMARK(module->ccwSceneSelection));
-		ccwScenesItem->module = module;
-		menu->addChild(ccwScenesItem);
+        ccwScenesItem->module = module;
+        menu->addChild(ccwScenesItem);
         
         ClickFilterEnabledItem *clickFilterEnabledItem = createMenuItem<ClickFilterEnabledItem>("Enable click filter", CHECKMARK(module->clickFilterEnabled));
-		clickFilterEnabledItem->module = module;
-		menu->addChild(clickFilterEnabledItem);
+        clickFilterEnabledItem->module = module;
+        menu->addChild(clickFilterEnabledItem);
 
-		// DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
-		// debugItem->module = module;
-		// menu->addChild(debugItem);
-	}
+        // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+        // debugItem->module = module;
+        // menu->addChild(debugItem);
+    }
 };
 
 
