@@ -245,6 +245,196 @@ struct Algomorph4 : Module {
             graphDirty = true;
         }
 
+        //Check to change scene
+        //Scene buttons
+        for (int i = 0; i < 3; i++) {
+            if (sceneButtonTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
+                if (configMode) {
+                    //If not changing to a new scene
+                    if (configScene == i) {
+                        //Exit config mode
+                        configMode = false;
+                    }
+                    else {
+                        //Switch scene
+                        configScene = i;
+                    }
+                }
+                else {
+                    //If not changing to a new scene
+                    if (baseScene == i) {
+                        //Reset morph knob
+                        params[MORPH_KNOB].setValue(0.f);
+                    }
+                    else {
+                        //Switch scene
+                        baseScene = i;
+                    }
+                }
+                graphDirty = true;
+            }
+        }
+        //Scene advance trigger input
+        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+            //Advance base scene
+            if (!ccwSceneSelection)
+               baseScene = (baseScene + 1) % 3;
+            else
+               baseScene = (baseScene + 2) % 3;
+            graphDirty = true;
+        }
+
+        //Edit button
+        if (editTrigger.process(params[EDIT_BUTTON].getValue() > 0.f)) {
+            configMode ^= true;
+            if (configMode) {
+                blinkStatus = true;
+                blinkTimer = 0.f;
+                if (morph[0] > .5f)
+                    configScene = (baseScene + 1) % 3;
+                else if (morph[0] < -.5f)
+                    configScene = (baseScene + 2) % 3;
+                else
+                    configScene = baseScene;
+            }
+            configOp = -1;
+        }
+        //Check to select/deselect operators
+        for (int i = 0; i < 4; i++) {
+            if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
+			    if (!configMode) {
+                    configMode = true;
+                    configOp = i;
+                    if (morph[0] > .5f)
+                        configScene = (baseScene + 1) % 3;
+                    else if (morph[0] < -.5f)
+                        configScene = (baseScene + 2) % 3;
+                    else
+                        configScene = baseScene;
+                    blinkStatus = true;
+                    blinkTimer = 0.f;
+                }
+                else if (configOp == i) {  
+                    //Deselect operator
+                    configOp = -1;
+                    configMode = false;
+                }
+                else {
+                    configOp = i;
+                    blinkStatus = true;
+                    blinkTimer = 0.f;
+                }
+                graphDirty = true;
+                break;
+            }
+        }
+
+        //Check for config mode destination selection
+        if (configMode && configOp > -1) {
+			if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
+				opEnabled[configScene][configOp] ^= true;
+
+				if (exitConfigOnConnect)
+					configMode = false;
+                
+                graphDirty = true;
+			}
+			else {
+				for (int i = 0; i < 3; i++) {
+					if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
+
+						opDestinations[configScene][configOp][i] ^= true;
+						algoName[configScene].flip(configOp * 3 + i);
+
+						if (exitConfigOnConnect)
+							configMode = false;
+
+						graphDirty = true;
+						break;
+					}
+				}
+			}
+        }
+
+        //Determine polyphony count
+        for (int i = 0; i < 4; i++) {
+            if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
+                channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        }
+
+        //Get operator input channel then route to modulation output channel or to sum output channel
+        for (int c = 0; c < channels; c++) {
+            if (c > 0) {   //morph[0] is calculated earlier
+                morph[c] = inputs[MORPH_INPUT].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
+                morph[c] = clamp(morph[c], -1.f, 1.f);
+            }
+
+            for (int i = 0; i < 4; i++) {
+                if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                    in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
+                    //Simple case, do not check adjacent algorithms
+                    if (morph[c] == 0.f) {
+                        for (int j = 0; j < 3; j++) {
+                            bool connected = opDestinations[baseScene][i][j] && opEnabled[baseScene][i];
+                            carrier[baseScene][i] = connected ? false : carrier[baseScene][i];
+                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
+                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c];
+                        }
+                        bool sumConnected = carrier[baseScene][i] && opEnabled[baseScene][i];
+                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
+                        sumOut[c] += in[c] * gain[0][i][3][c];
+                    }
+                    //Check current algorithm and morph target
+                    else {
+                        int forwardScene, backwardScene;
+                        float absMorph = morph[c];  //Absolute value of morph[c]
+                        if (morph[c] > 0.f) {
+                            forwardScene = (baseScene + 1) % 3;
+                            backwardScene = (baseScene + 2) % 3;
+                        }
+                        else {
+                            absMorph *= -1.f;
+                            forwardScene = (baseScene + 2) % 3;
+                            backwardScene = (baseScene + 1) % 3;
+                        }
+                        for (int j = 0; j < 3; j++) {
+                            if (ringMorph) {
+                                float ringConnection = opDestinations[backwardScene][i][j] * absMorph * opEnabled[backwardScene][i];
+                                carrier[backwardScene][i] = ringConnection == 0.f && opEnabled[backwardScene][i] ? carrier[backwardScene][i] : false;
+                                gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
+                            }
+                            float connectionA = opDestinations[baseScene][i][j]     * (1.f - absMorph)  * opEnabled[baseScene][i];
+                            float connectionB = opDestinations[forwardScene][i][j]  * absMorph          * opEnabled[forwardScene][i];
+                            carrier[baseScene][i]  = connectionA > 0.f ? false : carrier[baseScene][i];
+                            carrier[forwardScene][i] = connectionB > 0.f ? false : carrier[forwardScene][i];
+                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
+                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
+                        }
+                        if (ringMorph) {
+                            float ringSumConnection = carrier[backwardScene][i] * absMorph * opEnabled[backwardScene][i];
+                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                        }
+                        float sumConnection =     carrier[baseScene][i]     * (1.f - absMorph)  * opEnabled[baseScene][i]
+                                            +   carrier[forwardScene][i]    * absMorph          * opEnabled[forwardScene][i];
+                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
+                    }
+                }
+            }
+        }
+
+        //Set outputs
+        for (int i = 0; i < 4; i++) {
+            if (outputs[MODULATOR_OUTPUTS + i].isConnected()) {
+                outputs[MODULATOR_OUTPUTS + i].setChannels(channels);
+                outputs[MODULATOR_OUTPUTS + i].writeVoltages(modOut[i]);
+            }
+        }
+        if (outputs[SUM_OUTPUT].isConnected()) {
+            outputs[SUM_OUTPUT].setChannels(channels);
+            outputs[SUM_OUTPUT].writeVoltages(sumOut);
+        }
+
         //Set lights
         if (lightDivider.process()) {
             if (configMode) {   //Display state without morph, highlight configScene
@@ -457,196 +647,6 @@ struct Algomorph4 : Module {
                     }
                 }
             }
-        }
-
-        //Check to change scene
-        //Scene buttons
-        for (int i = 0; i < 3; i++) {
-            if (sceneButtonTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
-                if (configMode) {
-                    //If not changing to a new scene
-                    if (configScene == i) {
-                        //Exit config mode
-                        configMode = false;
-                    }
-                    else {
-                        //Switch scene
-                        configScene = i;
-                    }
-                }
-                else {
-                    //If not changing to a new scene
-                    if (baseScene == i) {
-                        //Reset morph knob
-                        params[MORPH_KNOB].setValue(0.f);
-                    }
-                    else {
-                        //Switch scene
-                        baseScene = i;
-                    }
-                }
-                graphDirty = true;
-            }
-        }
-        //Scene advance trigger input
-        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
-            //Advance base scene
-            if (!ccwSceneSelection)
-               baseScene = (baseScene + 1) % 3;
-            else
-               baseScene = (baseScene + 2) % 3;
-            graphDirty = true;
-        }
-
-        //Edit button
-        if (editTrigger.process(params[EDIT_BUTTON].getValue() > 0.f)) {
-            configMode ^= true;
-            if (configMode) {
-                blinkStatus = true;
-                blinkTimer = 0.f;
-                if (morph[0] > .5f)
-                    configScene = (baseScene + 1) % 3;
-                else if (morph[0] < -.5f)
-                    configScene = (baseScene + 2) % 3;
-                else
-                    configScene = baseScene;
-            }
-            configOp = -1;
-        }
-        //Check to select/deselect operators
-        for (int i = 0; i < 4; i++) {
-            if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
-			    if (!configMode) {
-                    configMode = true;
-                    configOp = i;
-                    if (morph[0] > .5f)
-                        configScene = (baseScene + 1) % 3;
-                    else if (morph[0] < -.5f)
-                        configScene = (baseScene + 2) % 3;
-                    else
-                        configScene = baseScene;
-                    blinkStatus = true;
-                    blinkTimer = 0.f;
-                }
-                else if (configOp == i) {  
-                    //Deselect operator
-                    configOp = -1;
-                    configMode = false;
-                }
-                else {
-                    configOp = i;
-                    blinkStatus = true;
-                    blinkTimer = 0.f;
-                }
-                graphDirty = true;
-                break;
-            }
-        }
-
-        //Check for config mode destination selection
-        if (configMode && configOp > -1) {
-			if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
-				opEnabled[configScene][configOp] ^= true;
-
-				if (exitConfigOnConnect)
-					configMode = false;
-                
-                graphDirty = true;
-			}
-			else {
-				for (int i = 0; i < 3; i++) {
-					if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
-
-						opDestinations[configScene][configOp][i] ^= true;
-						algoName[configScene].flip(configOp * 3 + i);
-
-						if (exitConfigOnConnect)
-							configMode = false;
-
-						graphDirty = true;
-						break;
-					}
-				}
-			}
-        }
-
-        //Determine polyphony count
-        for (int i = 0; i < 4; i++) {
-            if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
-                channels = inputs[OPERATOR_INPUTS + i].getChannels();
-        }
-
-        //Get operator input channel then route to modulation output channel or to sum output channel
-        for (int c = 0; c < channels; c++) {
-            if (c > 0) {   //morph[0] is calculated earlier
-                morph[c] = inputs[MORPH_INPUT].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
-                morph[c] = clamp(morph[c], -1.f, 1.f);
-            }
-
-            for (int i = 0; i < 4; i++) {
-                if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
-                    //Simple case, do not check adjacent algorithms
-                    if (morph[c] == 0.f) {
-                        for (int j = 0; j < 3; j++) {
-                            bool connected = opDestinations[baseScene][i][j] && opEnabled[baseScene][i];
-                            carrier[baseScene][i] = connected ? false : carrier[baseScene][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c];
-                        }
-                        bool sumConnected = carrier[baseScene][i] && opEnabled[baseScene][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += in[c] * gain[0][i][3][c];
-                    }
-                    //Check current algorithm and morph target
-                    else {
-                        int forwardScene, backwardScene;
-                        float absMorph = morph[c];  //Absolute value of morph[c]
-                        if (morph[c] > 0.f) {
-                            forwardScene = (baseScene + 1) % 3;
-                            backwardScene = (baseScene + 2) % 3;
-                        }
-                        else {
-                            absMorph *= -1.f;
-                            forwardScene = (baseScene + 2) % 3;
-                            backwardScene = (baseScene + 1) % 3;
-                        }
-                        for (int j = 0; j < 3; j++) {
-                            if (ringMorph) {
-                                float ringConnection = opDestinations[backwardScene][i][j] * absMorph * opEnabled[backwardScene][i];
-                                carrier[backwardScene][i] = ringConnection == 0.f && opEnabled[backwardScene][i] ? carrier[backwardScene][i] : false;
-                                gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
-                            }
-                            float connectionA = opDestinations[baseScene][i][j]     * (1.f - absMorph)  * opEnabled[baseScene][i];
-                            float connectionB = opDestinations[forwardScene][i][j]  * absMorph          * opEnabled[forwardScene][i];
-                            carrier[baseScene][i]  = connectionA > 0.f ? false : carrier[baseScene][i];
-                            carrier[forwardScene][i] = connectionB > 0.f ? false : carrier[forwardScene][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
-                        }
-                        if (ringMorph) {
-                            float ringSumConnection = carrier[backwardScene][i] * absMorph * opEnabled[backwardScene][i];
-                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
-                        }
-                        float sumConnection =     carrier[baseScene][i]     * (1.f - absMorph)  * opEnabled[baseScene][i]
-                                            +   carrier[forwardScene][i]    * absMorph          * opEnabled[forwardScene][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
-                    }
-                }
-            }
-        }
-
-        //Set outputs
-        for (int i = 0; i < 4; i++) {
-            if (outputs[MODULATOR_OUTPUTS + i].isConnected()) {
-                outputs[MODULATOR_OUTPUTS + i].setChannels(channels);
-                outputs[MODULATOR_OUTPUTS + i].writeVoltages(modOut[i]);
-            }
-        }
-        if (outputs[SUM_OUTPUT].isConnected()) {
-            outputs[SUM_OUTPUT].setChannels(channels);
-            outputs[SUM_OUTPUT].writeVoltages(sumOut);
         }
 	}
 
