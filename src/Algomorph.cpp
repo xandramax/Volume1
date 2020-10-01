@@ -655,8 +655,8 @@ struct Algomorph4 : Module {
 
     inline float getPortBrightness(Port port) {
         return std::max(    {   port.plugLights[0].getBrightness(),
-                                port.plugLights[2].getBrightness() }   );
                                 port.plugLights[1].getBrightness() * 4,
+                                port.plugLights[2].getBrightness()          }   );
     }
 
     void updateSceneBrightnesses() {
