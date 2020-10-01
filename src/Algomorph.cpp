@@ -90,8 +90,8 @@ struct Algomorph4 : Module {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int c = 0; c < 16; c++) {
-                    clickFilters[0][i][j][c].setRiseFall(400.f, 400.f);
-                    clickFilters[1][i][j][c].setRiseFall(400.f, 400.f);
+                    clickFilters[0][i][j][c].setRiseFall(3750.f, 3750.f);
+                    clickFilters[1][i][j][c].setRiseFall(3750.f, 3750.f);
                 }
             }
         }
@@ -572,7 +572,7 @@ struct Algomorph4 : Module {
                             //Set yellow component to off
                             lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Set purple component depending on inverse morph
-                            lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f - rescale(morph[0], 0.f, 1.f, 0.f, .425f) : 0.f, args.sampleTime * lightDivider.getDivision());
+                            lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f - rescale(morph[0], 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set morph target light's purple component depending on morph
                         lights[SCENE_LIGHTS + ((baseScene + 1) % 3) * 3].setSmoothBrightness(morph[0], args.sampleTime * lightDivider.getDivision());
@@ -614,7 +614,7 @@ struct Algomorph4 : Module {
                             //Set yellow component to off
                             lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Set purple component depending on inverse morph
-                            lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f - rescale(morph[0] * -1, 0.f, 1.f, 0.f, .425f) : 0.f, args.sampleTime * lightDivider.getDivision());
+                            lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f - rescale(morph[0] * -1, 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set morph target light's purple component depending on morph
                         lights[SCENE_LIGHTS + targetScene * 3].setSmoothBrightness(morph[0] * -1, args.sampleTime * lightDivider.getDivision());
