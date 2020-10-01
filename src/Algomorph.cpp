@@ -59,6 +59,7 @@ struct Algomorph4 : Module {
     //User settings
     bool clickFilterEnabled = true;
     bool ringMorph = false;
+    bool randomRingMorph = false;
     bool exitConfigOnConnect = false;
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
 
@@ -142,6 +143,7 @@ struct Algomorph4 : Module {
         baseScene = 1;
         clickFilterEnabled = true;
         ringMorph = false;
+        randomRingMorph = false;
         exitConfigOnConnect = false;
         ccwSceneSelection = true;
         blinkStatus = true;
@@ -222,7 +224,8 @@ struct Algomorph4 : Module {
                 }
             }
             baseScene = 1;
-            ringMorph = random::uniform() > .5f;
+            if (randomRingMorph)
+                ringMorph = random::uniform() > .5f;
             Module::onRandomize();
         }
         graphDirty = true;
@@ -694,6 +697,7 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Config Scene", json_integer(configOp));
         json_object_set_new(rootJ, "Current Scene", json_integer(baseScene));
         json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
+        json_object_set_new(rootJ, "Randomize Ring Morph", json_boolean(randomRingMorph));
         json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
         json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
@@ -733,6 +737,7 @@ struct Algomorph4 : Module {
         configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
         baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
         ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
+        randomRingMorph = json_boolean_value(json_object_get(rootJ, "Randomize Ring Morph"));
         exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
         ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
@@ -1087,6 +1092,13 @@ struct RingMorphItem : MenuItem {
     }
 };
 
+struct RandomizeRingMorphItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->randomRingMorph ^= true;
+    }
+};
+
 struct ExitConfigItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
@@ -1226,6 +1238,10 @@ struct Algomorph4Widget : ModuleWidget {
         RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
         ringMorphItem->module = module;
         menu->addChild(ringMorphItem);
+
+        RandomizeRingMorphItem *ramdomizeRingMorphItem = createMenuItem<RandomizeRingMorphItem>("Randomization includes Ring Morph", CHECKMARK(module->randomRingMorph));
+        ramdomizeRingMorphItem->module = module;
+        menu->addChild(ramdomizeRingMorphItem);
         
         ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Config Mode after Connection", CHECKMARK(module->exitConfigOnConnect));
         exitConfigItem->module = module;
