@@ -183,7 +183,7 @@ struct TRingLight : TBase {
 			// Adapted from LightWidget::drawLight, with no fill
 			nvgBeginPath(args.vg);
 			nvgCircle(args.vg, radius, radius, radius);
-			nvgStrokeWidth(args.vg, 1.5);
+			nvgStrokeWidth(args.vg, 1.6);
 
 			// Background
 			if (this->bgColor.a > 0.0) {
@@ -193,6 +193,7 @@ struct TRingLight : TBase {
 
 			// Foreground
 			if (this->color.a > 0.0) {
+				nvgStrokeWidth(args.vg, 1.7);
 				nvgStrokeColor(args.vg, this->color);
 				nvgStroke(args.vg);
 			}

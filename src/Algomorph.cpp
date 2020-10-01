@@ -368,13 +368,13 @@ struct Algomorph4 : Module {
         //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
             if (c > 0) {   //morph[0] is calculated earlier
-                morph[c] = inputs[MORPH_INPUT].getVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
+                morph[c] = inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f + params[MORPH_KNOB].getValue();
                 morph[c] = clamp(morph[c], -1.f, 1.f);
             }
 
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    in[c] = inputs[OPERATOR_INPUTS + i].getVoltage(c);
+                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c);
                     //Simple case, do not check adjacent algorithms
                     if (morph[c] == 0.f) {
                         for (int j = 0; j < 3; j++) {
@@ -506,7 +506,7 @@ struct Algomorph4 : Module {
                 }
                 //Set disable lights
                 for (int i = 0; i < 4; i++)
-                    lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[configScene][i] ? 0.f : 1.f, args.sampleTime * lightDivider.getDivision());
+                    lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[configScene][i] ? 0.f : 0.675f, args.sampleTime * lightDivider.getDivision());
             } 
             else {
                 //Set edit light
@@ -559,7 +559,7 @@ struct Algomorph4 : Module {
                     }
                     //Set disable lights
                     for (int i = 0; i < 4; i++)
-                        lights[DISABLE_LIGHTS + i].setSmoothBrightness(!opEnabled[baseScene][i], args.sampleTime * lightDivider.getDivision());
+                        lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[baseScene][i] ? 0.f : 0.675f, args.sampleTime * lightDivider.getDivision());
                 }
                 else {  //Display morphed state
                     float brightness;
@@ -603,7 +603,7 @@ struct Algomorph4 : Module {
                                 brightness += 1.f - morph[0];
                             if (!opEnabled[(baseScene + 1) % 3][i])
                                 brightness += morph[0];
-                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
+                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * 0.675f, args.sampleTime * lightDivider.getDivision());
                         }
                     }
                     else {
@@ -645,7 +645,7 @@ struct Algomorph4 : Module {
                                 brightness += 1.f - (morph[0] * -1.f);
                             if (!opEnabled[(baseScene + 2) % 3][i])
                                 brightness += morph[0] * -1.f;
-                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
+                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * 0.675f, args.sampleTime * lightDivider.getDivision());
                         }
                     }
                 }
@@ -655,8 +655,8 @@ struct Algomorph4 : Module {
 
     inline float getPortBrightness(Port port) {
         return std::max(    {   port.plugLights[0].getBrightness(),
-                                port.plugLights[1].getBrightness(),
                                 port.plugLights[2].getBrightness() }   );
+                                port.plugLights[1].getBrightness() * 4,
     }
 
     void updateSceneBrightnesses() {
