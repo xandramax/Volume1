@@ -25,11 +25,12 @@ struct Algomorph4 : Module {
         NUM_OUTPUTS
     };
     enum LightIds {
+        ENUMS(DISPLAY_BACKLIGHT, 3),   // 3 colors
         ENUMS(SCENE_LIGHTS, 9),         // 3 colors per light
+        ENUMS(DISABLE_LIGHTS, 4),
+        ENUMS(CONNECTION_LIGHTS, 36),   // 3 colors per light
         ENUMS(OPERATOR_LIGHTS, 12),     // 3 colors per light
         ENUMS(MODULATOR_LIGHTS, 12),    // 3 colors per light
-        ENUMS(CONNECTION_LIGHTS, 36),   // 3 colors per light
-        ENUMS(DISABLE_LIGHTS, 4),
         EDIT_LIGHT,
         NUM_LIGHTS
     };
@@ -76,6 +77,7 @@ struct Algomorph4 : Module {
     float sceneBrightnesses[3][8][3] = {{{}}};
     float blinkTimer = BLINK_INTERVAL;
     bool blinkStatus = true;
+    const float DEF_RED_BRIGHTNESS = 0.4975f;
 
     Algomorph4() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -95,7 +97,7 @@ struct Algomorph4 : Module {
                 }
             }
         }
-        lightDivider.setDivision(512);
+        lightDivider.setDivision(16);
 
         //  Initialize opEnabled[] to true and opDestinations[] to false;
         for (int i = 0; i < 3; i++) {
@@ -441,6 +443,11 @@ struct Algomorph4 : Module {
         //Set lights
         if (lightDivider.process()) {
             if (configMode) {   //Display state without morph, highlight configScene
+                //Set backlight
+                //Set purple component to off
+                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                //Set yellow component
+                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.01f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
                 //Set scene lights
@@ -477,13 +484,13 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(configOp == i ?
                             (blinkStatus ?
                                 0.f 
-                                : 1.f)
-                            : 1.f, args.sampleTime * lightDivider.getDivision());
+                                : DEF_RED_BRIGHTNESS)
+                            : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         //Set mod lights
                         //Purple lights
                         lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Red lights
-                        lights[MODULATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
+                        lights[MODULATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
 
                     }
                     //Set op lights
@@ -503,12 +510,19 @@ struct Algomorph4 : Module {
                     lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     //Yellow lights
                     lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(opDestinations[configScene][i / 3][i % 3], args.sampleTime * lightDivider.getDivision());
+                    //Red lights
+                    lights[CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 }
                 //Set disable lights
                 for (int i = 0; i < 4; i++)
-                    lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[configScene][i] ? 0.f : 0.675f, args.sampleTime * lightDivider.getDivision());
+                    lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[configScene][i] ? 0.f : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
             } 
             else {
+                //Set backlight
+                //Set yellow component to off
+                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                //Set purple component
+                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 512.f + 0.01f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 if (morph[0] == 0.f) {  //Display state without morph
@@ -539,12 +553,12 @@ struct Algomorph4 : Module {
                             //Purple lights
                             lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Red lights
-                            lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
+                            lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                             //Set mod lights
                             //Purple lights
                             lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Red lights
-                            lights[MODULATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
+                            lights[MODULATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set op lights
                         //Yellow Lights
@@ -553,13 +567,23 @@ struct Algomorph4 : Module {
                     //Set connection lights
                     for (int i = 0; i < 12; i++) {
                         //Purple lights
-                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opDestinations[baseScene][i / 3][i % 3] ? getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) : 0.f, args.sampleTime * lightDivider.getDivision());
+                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[baseScene][i / 3] ? 
+                            opDestinations[baseScene][i / 3][i % 3] ?
+                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3])
+                                : 0.f
+                            : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        //Red lights
+                        lights[CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(opEnabled[baseScene][i / 3] ? 
+                            0.f
+                            : opDestinations[baseScene][i / 3][i % 3] ?
+                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * .5f
+                                : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     //Set disable lights
                     for (int i = 0; i < 4; i++)
-                        lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[baseScene][i] ? 0.f : 0.675f, args.sampleTime * lightDivider.getDivision());
+                        lights[DISABLE_LIGHTS + i].setSmoothBrightness(opEnabled[baseScene][i] ? 0.f : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                 }
                 else {  //Display morphed state
                     float brightness;
@@ -586,15 +610,26 @@ struct Algomorph4 : Module {
                         }
                         //Set connection lights
                         for (int i = 0; i < 12; i++) {
-                            brightness = 0.f;
-                            if (opDestinations[baseScene][i / 3][i % 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - morph[0]);
-                            if (opDestinations[(baseScene + 1) % 3][i / 3][i % 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * morph[0];
+                            float purpleBrightness = 0.f;
+                            float redBrightness = 0.f;
+                            if (opDestinations[baseScene][i / 3][i % 3]) {
+                                if (opEnabled[baseScene][i / 3])
+                                    purpleBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - morph[0]);
+                                else
+                                    redBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - morph[0])* .125f;
+                            }
+                            if (opDestinations[(baseScene + 1) % 3][i / 3][i % 3]) {
+                                if (opEnabled[(baseScene + 1) % 3][i / 3])
+                                    purpleBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * morph[0];
+                                else
+                                    redBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * morph[0]* .125f;
+                            }
                             //Purple lights
-                            lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
+                            lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(purpleBrightness, args.sampleTime * lightDivider.getDivision());
                             //Yellow
                             lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            //Red lights
+                            lights[CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(redBrightness, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set disable lights
                         for (int i = 0; i < 4; i++) {
@@ -603,7 +638,7 @@ struct Algomorph4 : Module {
                                 brightness += 1.f - morph[0];
                             if (!opEnabled[(baseScene + 1) % 3][i])
                                 brightness += morph[0];
-                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * 0.675f, args.sampleTime * lightDivider.getDivision());
+                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         }
                     }
                     else {
@@ -628,15 +663,26 @@ struct Algomorph4 : Module {
                         }
                         //Set connection lights
                         for (int i = 0; i < 12; i++) {
-                            brightness = 0.f;
-                            if (opDestinations[baseScene][i / 3][i % 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - (morph[0] * -1.f));
-                            if (opDestinations[targetScene][i / 3][i % 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (morph[0] * -1.f);
+                            float purpleBrightness = 0.f;
+                            float redBrightness = 0.f;
+                            if (opDestinations[baseScene][i / 3][i % 3]) {
+                                if (opEnabled[baseScene][i / 3])
+                                    purpleBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - (morph[0] * -1.f));
+                                else
+                                    redBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - (morph[0] * -1.f))* .125f;
+                            }
+                            if (opDestinations[targetScene][i / 3][i % 3]) {
+                                if (opEnabled[targetScene][i / 3])
+                                    purpleBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (morph[0] * -1.f);
+                                else
+                                    redBrightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (morph[0] * -1.f)* .125f;
+                            }
                             //Purple lights
-                            lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
+                            lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(purpleBrightness, args.sampleTime * lightDivider.getDivision());
                             //Yellow lights
                             lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            //Red lights
+                            lights[CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(redBrightness, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set disable lights
                         for (int i = 0; i < 4; i++) {
@@ -645,7 +691,7 @@ struct Algomorph4 : Module {
                                 brightness += 1.f - (morph[0] * -1.f);
                             if (!opEnabled[(baseScene + 2) % 3][i])
                                 brightness += morph[0] * -1.f;
-                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * 0.675f, args.sampleTime * lightDivider.getDivision());
+                            lights[DISABLE_LIGHTS + i].setSmoothBrightness(brightness * DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         }
                     }
                 }
@@ -792,7 +838,7 @@ struct Algomorph4 : Module {
 
 template < typename MODULE >
 struct AlgoScreenWidget : FramebufferWidget {
-    struct AlgoDrawWidget : OpaqueWidget {
+    struct AlgoDrawWidget : LightWidget {
         MODULE* module;
         alGraph graphs[3];
         bool firstRun = true;
@@ -971,7 +1017,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                 noMorph = true;
 
             nvgBeginPath(args.vg);
-            nvgRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y);
+            nvgRoundedRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y, 3.675f);
             nvgStrokeWidth(args.vg, borderStroke);
             nvgStroke(args.vg);
 
@@ -1153,14 +1199,16 @@ struct Algomorph4Widget : ModuleWidget {
         screenWidget->box.pos = mm2px(Vec(6.253, 9.954));
         screenWidget->box.size = mm2px(Vec(38.295, 31.590));
         addChild(screenWidget);
+        //Place backlight _above_ in scene in order for brightness to affect screenWidget
+        addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(6.253, 9.954)), mm2px(Vec(38.295, 31.590)), module, Algomorph4::DISPLAY_BACKLIGHT));
+
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_LIGHTS + 0, .75));
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
 
         addChild(createParamCentered<TL1105>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
         addChild(createParamCentered<TL1105>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
         addChild(createParamCentered<TL1105>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
-
-        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.462, module, Algomorph4::SCENE_LIGHTS + 0));
-        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.462, module, Algomorph4::SCENE_LIGHTS + 3));
-        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.462, module, Algomorph4::SCENE_LIGHTS + 6));
 
         addInput(createInputCentered<DLXPortPoly>(mm2px(Vec(39.950, 53.224)), module, Algomorph4::SCENE_ADV_INPUT));
 
@@ -1170,8 +1218,9 @@ struct Algomorph4Widget : ModuleWidget {
 
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(36.582, 64.118)), module, Algomorph4::SUM_OUTPUT));
 
+        addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.268, 79.625)), 8.862, module, Algomorph4::EDIT_LIGHT, .4));
         addChild(createParamCentered<DLXEditButton>(mm2px(Vec(25.268, 79.625)), module, Algomorph4::EDIT_BUTTON));
-        addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.268, 79.625)), 8.462, module, Algomorph4::EDIT_LIGHT));
+        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(25.258, 79.483)), APP->window->loadSvg(asset::plugin(pluginInstance, "res/PencilLight.svg")), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 81.439)), module, Algomorph4::OPERATOR_INPUTS + 0));
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 91.844)), module, Algomorph4::OPERATOR_INPUTS + 1));
@@ -1208,6 +1257,16 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[0], module, Algomorph4::CONNECTION_LIGHTS + 27));
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[1], module, Algomorph4::CONNECTION_LIGHTS + 30));
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[2], module, Algomorph4::CONNECTION_LIGHTS + 33));
+        
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 0));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 6));
+        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 9));
+
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 0));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 3));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 6));
+        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 9));
 
         addParam(createParamCentered<TL1105>(OpButtonCenters[0], module, Algomorph4::OPERATOR_BUTTONS + 0));
         addParam(createParamCentered<TL1105>(OpButtonCenters[1], module, Algomorph4::OPERATOR_BUTTONS + 1));
@@ -1218,16 +1277,6 @@ struct Algomorph4Widget : ModuleWidget {
         addParam(createParamCentered<TL1105>(ModButtonCenters[1], module, Algomorph4::MODULATOR_BUTTONS + 1));
         addParam(createParamCentered<TL1105>(ModButtonCenters[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
         addParam(createParamCentered<TL1105>(ModButtonCenters[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
-        
-        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 0));
-        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 3));
-        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 6));
-        addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.462, module, Algomorph4::OPERATOR_LIGHTS + 9));
-
-        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 0));
-        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 3));
-        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 6));
-        addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], 8.462, module, Algomorph4::MODULATOR_LIGHTS + 9));
     }
 
     void appendContextMenu(Menu* menu) override {
