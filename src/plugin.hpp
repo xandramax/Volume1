@@ -2,10 +2,7 @@
 #include <rack.hpp>
 #include <bitset>
 using namespace rack;
-// Declare the Plugin, defined in plugin.cpp
 extern Plugin* pluginInstance;
-// Declare each Model, defined in each module source file
-// extern Model* modelMyModule;
 extern Model* modelAlgomorph4;
 
 struct bitsetCompare {
@@ -19,12 +16,8 @@ static const NVGcolor DLXLightPurple = nvgRGB(139, 112, 162);
 static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 
-struct DLXKnob : RoundKnob {
-	DLXKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnob.svg")));
-		// shadow->opacity = 0.f;
-	}
-};
+
+/// Params
 
 struct DLXPortPoly : SvgPort {
 	DLXPortPoly() {
@@ -47,15 +40,28 @@ struct DLXPortG : SvgPort {
 	}
 };
 
-struct DLXEditButton : rack::app::SvgSwitch {
+struct DLXPurpleButton : rack::app::SvgSwitch {
 	int state = 0;
 
-	DLXEditButton() {
+	DLXPurpleButton() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_0c.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_1c.svg")));
 	}
 };
+
+struct DLXTL1105B : rack::app::SvgSwitch {
+	int state = 0;
+
+	DLXTL1105B() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_1.svg")));
+	}
+};
+
+
+/// Lights
 
 template <typename TBase = GrayModuleLightWidget>
 struct TDlxPurpleLight : TBase {
@@ -144,12 +150,12 @@ struct ConnectionBgWidget : TransparentWidget {
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, line.left.x, line.left.y);
 			nvgLineTo(args.vg, line.right.x, line.right.y);
-			nvgStrokeWidth(args.vg, 1.f);
+			nvgStrokeWidth(args.vg, 1.1f);
 			// Background
 			nvgStrokeColor(args.vg, nvgRGB(0x5a, 0x5a, 0x5a));
 			nvgStroke(args.vg);
 			// Border
-			nvgStrokeWidth(args.vg, 0.5);
+			nvgStrokeWidth(args.vg, 0.6);
 			nvgStrokeColor(args.vg, nvgRGBA(0, 0, 0, 0x60));
 			nvgStroke(args.vg);
         }
@@ -158,9 +164,6 @@ struct ConnectionBgWidget : TransparentWidget {
 
 template < typename TBase = GrayModuleLightWidget >
 struct TBacklight : TBase {
-	TBacklight() {
-		this->color = DLXDarkPurple;
-	}
     void drawLight(const widget::Widget::DrawArgs& args) override {
 		nvgBeginPath(args.vg);
 		nvgRoundedRect(args.vg, 0.f, 0.f, this->box.size.x, this->box.size.y, 3.675f);
@@ -199,8 +202,9 @@ struct TBacklight : TBase {
 		nvgFill(args.vg);
 	}
 };
+typedef TBacklight<> Backlight;
 
-template <typename TBase = DLXPurpleLight>
+template <typename TBase = DLXScreenMultiLight>
 TBacklight<TBase>* createBacklight(Vec pos, Vec size, engine::Module* module, int firstLightId) {
 	TBacklight<TBase>* o = new TBacklight<TBase>();
 	o->box.pos = pos;
@@ -340,8 +344,31 @@ TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* mod
 	return o;
 }
 
-struct SvgSwitchLight : ModuleLightWidget {
+struct SvgLight : ModuleLightWidget {
 	widget::SvgWidget* sw;
+
+	SvgLight() {
+		sw = new widget::SvgWidget;
+		this->addChild(sw);
+	};
+
+	void draw(const DrawArgs& args) override {
+		sw->draw(args);
+		Widget::draw(args);
+	}
+};
+
+template <class TSvgLight>
+TSvgLight* createSvgLight(Vec pos, engine::Module* module, int firstLightId) {
+	TSvgLight* o = new TSvgLight;
+	o->box.pos = pos;
+	o->module = module;
+	if (module)
+		o->firstLightId = firstLightId;
+	return o;
+}
+
+struct SvgSwitchLight : SvgLight {
 	std::vector<std::shared_ptr<Svg>> frames;
 	engine::ParamQuantity* paramQuantity = NULL;
 	float dirtyValue = NAN;
@@ -350,11 +377,6 @@ struct SvgSwitchLight : ModuleLightWidget {
 	/** Hysteresis state for momentary switch */
 	bool momentaryPressed = false;
 	bool momentaryReleased = false;
-
-	SvgSwitchLight() {
-		sw = new widget::SvgWidget;
-		this->addChild(sw);
-	};
 
 	/** Adds an SVG file to represent the next switch position */
 	void addFrame(std::shared_ptr<Svg> svg) {
@@ -453,15 +475,10 @@ struct SvgSwitchLight : ModuleLightWidget {
 			paramQuantity->reset();
 		}
 	}
-
-	void draw(const DrawArgs& args) override {
-		sw->draw(args);
-		Widget::draw(args);
-	}
 };
 
 template <class TSvgSwitchLight>
-TSvgSwitchLight* createSvgSwitchLight(Vec pos, std::shared_ptr<Svg> svg, engine::Module* module, int firstLightId, int paramId) {
+TSvgSwitchLight* createSvgSwitchLight(Vec pos, engine::Module* module, int firstLightId, int paramId) {
 	TSvgSwitchLight* o = new TSvgSwitchLight;
 	o->box.pos = pos;
 	o->module = module;
@@ -473,8 +490,8 @@ TSvgSwitchLight* createSvgSwitchLight(Vec pos, std::shared_ptr<Svg> svg, engine:
 }
 
 template <class TSvgSwitchLight>
-TSvgSwitchLight* createSvgSwitchLightCentered(Vec pos, std::shared_ptr<Svg> svg, engine::Module* module, int firstLightId, int paramId) {
-	TSvgSwitchLight* o = createSvgSwitchLight<TSvgSwitchLight>(pos, svg, module, firstLightId, paramId);
+TSvgSwitchLight* createSvgSwitchLightCentered(Vec pos, engine::Module* module, int firstLightId, int paramId) {
+	TSvgSwitchLight* o = createSvgSwitchLight<TSvgSwitchLight>(pos, module, firstLightId, paramId);
 	o->box.pos = o->box.pos.minus(o->box.size.div(2));
 	return o;
 }
@@ -486,5 +503,99 @@ struct DLXPencilLight : SvgSwitchLight {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilLight_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilLight_1.svg")));
+	}
+};
+
+struct DLXKnobLight : ModuleLightWidget {
+	float angle = 0;
+	float transform[6];
+
+	DLXKnobLight() {
+		box.size = mm2px(Vec(10.322, 10.322));
+	}
+
+	void draw(const DrawArgs& args) override {
+		math::Vec center = Vec(4.081, 4.081);
+
+		nvgBeginPath(args.vg);
+		nvgScale(args.vg, 3.745, 3.745);
+		nvgCircle(args.vg, center.x, center.y, center.x - .4);
+		nvgStrokeColor(args.vg, DLXLightPurple);
+		nvgStrokeWidth(args.vg, .2785);
+		nvgStroke(args.vg);
+
+		nvgBeginPath(args.vg);
+		nvgTransformIdentity(transform);
+		float t[6];
+		nvgTransformTranslate(t, center.x, center.y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformRotate(t, angle);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformTranslate(t, center.neg().x, center.neg().y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
+		nvgMoveTo(args.vg, 4.2915104,0.794608);
+		nvgBezierTo(args.vg, 4.3143438,0.62833073, 4.1037866,0.52002026, 3.9662013,0.59255105);
+		nvgBezierTo(args.vg, 3.8556057,0.63433429, 3.8183122,0.76099231, 3.8537918,0.86619144);
+		nvgBezierTo(args.vg, 3.9560394,1.5850019, 3.8517625,2.3219891, 3.6287271,3.0087598);
+		nvgBezierTo(args.vg, 3.6092158,3.080529, 3.501243,3.2593293, 3.655733,3.2154921);
+		nvgBezierTo(args.vg, 3.796758,3.1799277, 3.9220276,3.0926393, 4.0670114,3.072624);
+		nvgBezierTo(args.vg, 4.2265284,3.0902694, 4.3623073,3.2020904, 4.5231983,3.2115989);
+		nvgBezierTo(args.vg, 4.5983946,3.15853, 4.489421,3.0422152, 4.4852236,2.9611388);
+		nvgBezierTo(args.vg, 4.2754123,2.2639957, 4.179022,1.5182965, 4.2915104,0.794608);
+		nvgClosePath(args.vg);
+
+		nvgFillColor(args.vg, nvgRGB(0xc3, 0xc3, 0xc3));
+		nvgFill(args.vg);
+		nvgScale(args.vg, 1, 1);
+		Widget::draw(args);
+	}
+};
+
+template <class TKnobLight = DLXKnobLight>
+struct DLXLightKnob : RoundKnob {
+	TKnobLight* sibling;
+
+	DLXLightKnob() {
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB.svg")));
+	}
+
+	void setSibling(TKnobLight* kl) {
+		sibling = kl;
+	}
+
+	void onChange(const event::Change& e) override {
+		// Update the sibling's transformation angle
+		if (paramQuantity) {
+			float angle;
+			if (paramQuantity->isBounded()) {
+				angle = math::rescale(paramQuantity->getScaledValue(), 0.f, 1.f, minAngle, maxAngle);
+			}
+			else {
+				angle = math::rescale(paramQuantity->getValue(), -1.f, 1.f, minAngle, maxAngle);
+			}
+			angle = std::fmod(angle, 2 * M_PI);
+			sibling->angle = angle;
+		}
+		Knob::onChange(e);
+	}
+};
+
+template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob<TKnobLight>>
+TDLXLightKnob* createLightKnob(Vec pos, engine::Module* module, int paramId, TKnobLight* kl) {
+	TDLXLightKnob* o = new TDLXLightKnob();
+	o->box.pos = pos;
+	if (module) {
+		o->paramQuantity = module->paramQuantities[paramId];
+	}
+	o->setSibling(kl);
+	return o;
+}
+
+///Glowing Ink
+
+struct DLXGlowingInk : SvgLight {
+	DLXGlowingInk() {
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/GlowingInk.svg")));
 	}
 };
