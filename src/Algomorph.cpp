@@ -67,6 +67,7 @@ struct Algomorph4 : Module {
     bool exitConfigOnConnect = false;
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     bool glowingInk = false;
+    bool vuLights = true;
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger sceneAdvButtonTrigger;
@@ -710,9 +711,12 @@ struct Algomorph4 : Module {
     }
 
     inline float getPortBrightness(Port port) {
-        return std::max(    {   port.plugLights[0].getBrightness(),
-                                port.plugLights[1].getBrightness() * 4,
-                                port.plugLights[2].getBrightness()          }   );
+        if (vuLights)
+            return std::max(    {   port.plugLights[0].getBrightness(),
+                                    port.plugLights[1].getBrightness() * 4,
+                                    port.plugLights[2].getBrightness()          }   );
+        else
+            return 1.f;
     }
 
     void updateSceneBrightnesses() {
@@ -752,6 +756,7 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
         json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
+        json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
         json_t* opDestinationsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -793,6 +798,7 @@ struct Algomorph4 : Module {
         ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
         glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
+        vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
         json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
         json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
@@ -1179,6 +1185,13 @@ struct GlowingInkItem : MenuItem {
     }
 };
 
+struct VULightsItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->vuLights ^= true;
+    }
+};
+
 // struct DebugItem : MenuItem {
 //     Algomorph4 *module;
 //     void onAction(const event::Action &e) override {
@@ -1344,6 +1357,10 @@ struct Algomorph4Widget : ModuleWidget {
         GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
         glowingInkItem->module = module;
         menu->addChild(glowingInkItem);
+        
+        VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+        vuLightsItem->module = module;
+        menu->addChild(vuLightsItem);
 
         // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
         // debugItem->module = module;
