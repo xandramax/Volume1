@@ -5,7 +5,9 @@ It is intended for use with modules capable of linear through-zero FM or phase m
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
+* Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
+
 
 ![Algomorph](<res/Algomorph Components.png>)
 
