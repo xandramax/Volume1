@@ -451,7 +451,7 @@ struct Algomorph4 : Module {
                 //Set purple component to off
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Set yellow component
-                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.01f, args.sampleTime * lightDivider.getDivision());
+                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 2048.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
                 //Set scene lights
@@ -1212,7 +1212,7 @@ struct Algomorph4Widget : ModuleWidget {
 
         ink = createSvgLight<DLXGlowingInk>(Vec(0,0), module, Algomorph4::GLOWING_INK);
         ink->visible = false;
-        addChild(ink);
+        addChildBottom(ink);
 
         AlgoScreenWidget<Algomorph4>* screenWidget = new AlgoScreenWidget<Algomorph4>(module);
         screenWidget->box.pos = mm2px(Vec(6.253, 9.954));
@@ -1349,6 +1349,20 @@ struct Algomorph4Widget : ModuleWidget {
         // debugItem->module = module;
         // menu->addChild(debugItem);
     }
+
+    void step() override {
+		if (module) {
+			if (dynamic_cast<Algomorph4*>(module)->glowingInk) {
+                if (!ink->sw->svg)
+                    ink->sw->svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/GlowingInk.svg"));
+            }
+            else {
+                if (ink->sw->svg)
+                    ink->sw->svg = NULL;
+            }
+		}
+		ModuleWidget::step();
+	}
 };
 
 
