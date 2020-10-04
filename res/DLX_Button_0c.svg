@@ -7,34 +7,34 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   sodipodi:docname="DLX_Button_0c.svg"
-   inkscape:version="1.0rc1 (09960d6f05, 2020-04-09)"
-   id="svg1215"
-   version="1.1"
-   viewBox="0 0 5.4186701 5.41787"
+   width="5.4186702mm"
    height="5.41787mm"
-   width="5.4186702mm">
+   viewBox="0 0 5.4186701 5.41787"
+   version="1.1"
+   id="svg1215"
+   inkscape:version="1.0rc1 (09960d6f05, 2020-04-09)"
+   sodipodi:docname="DLX_Button_0c.svg">
   <defs
      id="defs1209" />
   <sodipodi:namedview
-     inkscape:window-maximized="1"
-     inkscape:window-y="-8"
-     inkscape:window-x="54"
-     inkscape:window-height="1058"
-     inkscape:window-width="1858"
-     showgrid="false"
-     inkscape:document-rotation="0"
-     inkscape:current-layer="layer1"
-     inkscape:document-units="mm"
-     inkscape:cy="9.1915281"
-     inkscape:cx="15.162253"
-     inkscape:zoom="28.284271"
-     inkscape:pageshadow="2"
-     inkscape:pageopacity="0.0"
-     borderopacity="1.0"
-     bordercolor="#666666"
+     id="base"
      pagecolor="#ffffff"
-     id="base" />
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="14.142136"
+     inkscape:cx="-3.1278822"
+     inkscape:cy="-2.1823874"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="1858"
+     inkscape:window-height="1058"
+     inkscape:window-x="54"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata1212">
     <rdf:RDF>
@@ -43,32 +43,32 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
-     id="layer1"
+     inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     inkscape:label="Layer 1">
+     id="layer1">
     <ellipse
-       ry="2.7090001"
-       rx="2.7095001"
-       cy="2.708935"
-       cx="2.7095001"
+       style="fill:#201b28;fill-opacity:1;stroke:none;stroke-width:0.264583"
        id="path1286"
-       style="fill:#282030;fill-opacity:1;stroke:none;stroke-width:0.264583" />
-    <circle
-       r="2.2495"
-       cy="2.5678585"
        cx="2.7095001"
+       cy="2.708935"
+       rx="2.7095001"
+       ry="2.7090001" />
+    <circle
+       style="fill:#645c6b;fill-opacity:0.93333298;stroke:none;stroke-width:0.264583"
        id="path1284"
-       style="fill:#6e6375;fill-opacity:0.933333;stroke:none;stroke-width:0.264583" />
-    <circle
-       r="2.2495"
-       cy="2.70891"
        cx="2.7095001"
+       cy="2.5678585"
+       r="2.2495" />
+    <circle
+       style="fill:#302636;fill-opacity:1;stroke:none;stroke-width:0.264583"
        id="path1282"
-       style="fill:#392c3f;fill-opacity:1;stroke:none;stroke-width:0.264583" />
+       cx="2.7095001"
+       cy="2.70891"
+       r="2.2495" />
   </g>
 </svg>
