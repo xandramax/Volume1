@@ -1247,8 +1247,8 @@ struct Algomorph4Widget : ModuleWidget {
         addInput(createInput<DLXPortPoly>(mm2px(Vec(7.732, 64.118)), module, Algomorph4::MORPH_INPUT));
 
         DLXKnobLight* kl = createLight<DLXKnobLight>(mm2px(Vec(19.708, 62.457)), module, Algomorph4::KNOB_LIGHT);
-        addChild(createLightKnob(mm2px(Vec(19.708, 62.457)), module, Algomorph4::MORPH_KNOB, kl));
-        addChild(kl);
+        addChild(createLightKnob(mm2px(Vec(19.968, 62.757)), module, Algomorph4::MORPH_KNOB, kl));
+        addChildBottom(kl);
 
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(36.582, 64.118)), module, Algomorph4::SUM_OUTPUT));
 

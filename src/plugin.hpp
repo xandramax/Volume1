@@ -565,7 +565,7 @@ struct DLXLightKnob : RoundKnob {
 	}
 
 	void onChange(const event::Change& e) override {
-		// Update the sibling's transformation angle
+		// Re-transform the widget::TransformWidget and pdate the sibling's transformation angle
 		if (paramQuantity) {
 			float angle;
 			if (paramQuantity->isBounded()) {
@@ -576,6 +576,13 @@ struct DLXLightKnob : RoundKnob {
 			}
 			angle = std::fmod(angle, 2 * M_PI);
 			sibling->angle = angle;
+			// Rotate SVG
+			tw->identity();
+			math::Vec center = sw->box.getCenter();
+			tw->translate(center);
+			tw->rotate(angle);
+			tw->translate(center.neg());
+			fb->dirty = true;
 		}
 		Knob::onChange(e);
 	}
