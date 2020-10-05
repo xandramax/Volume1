@@ -1333,6 +1333,11 @@ struct Algomorph4Widget : ModuleWidget {
         Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
         menu->addChild(new MenuSeparator());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
+        
+        ClickFilterEnabledItem *clickFilterEnabledItem = createMenuItem<ClickFilterEnabledItem>("Disable Click Filter", CHECKMARK(!module->clickFilterEnabled));
+        clickFilterEnabledItem->module = module;
+        menu->addChild(clickFilterEnabledItem);
 
         RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
         ringMorphItem->module = module;
@@ -1341,18 +1346,20 @@ struct Algomorph4Widget : ModuleWidget {
         RandomizeRingMorphItem *ramdomizeRingMorphItem = createMenuItem<RandomizeRingMorphItem>("Randomization includes Ring Morph", CHECKMARK(module->randomRingMorph));
         ramdomizeRingMorphItem->module = module;
         menu->addChild(ramdomizeRingMorphItem);
+
+        menu->addChild(new MenuSeparator());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
         
-        ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Config Mode after Connection", CHECKMARK(module->exitConfigOnConnect));
+        ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after Connection", CHECKMARK(module->exitConfigOnConnect));
         exitConfigItem->module = module;
         menu->addChild(exitConfigItem);
         
-        CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input advances counter-clockwise", CHECKMARK(module->ccwSceneSelection));
+        CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input - reverse sequence", CHECKMARK(!module->ccwSceneSelection));
         ccwScenesItem->module = module;
         menu->addChild(ccwScenesItem);
-        
-        ClickFilterEnabledItem *clickFilterEnabledItem = createMenuItem<ClickFilterEnabledItem>("Enable click filter", CHECKMARK(module->clickFilterEnabled));
-        clickFilterEnabledItem->module = module;
-        menu->addChild(clickFilterEnabledItem);
+
+        menu->addChild(new MenuSeparator());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
         
         GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
         glowingInkItem->module = module;
