@@ -102,6 +102,7 @@ struct TDlxScreenMultiLight : TBase {
 	TDlxScreenMultiLight() {
 		this->addBaseColor(DLXDarkPurple);
 		this->addBaseColor(DLXYellow);
+		this->addBaseColor(DLXRed);
 	}
 };
 typedef TDlxMultiLight<> DLXScreenMultiLight;
@@ -506,25 +507,48 @@ struct DLXPencilLight : SvgSwitchLight {
 	}
 };
 
-struct DLXKnobLight : ModuleLightWidget {
+struct DLX1Light : SvgSwitchLight {
+	int state = 0;
+
+	DLX1Light() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
+	}
+};
+
+struct DLX2Light : SvgSwitchLight {
+	int state = 0;
+
+	DLX2Light() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
+	}
+};
+
+struct DLX3Light : SvgSwitchLight {
+	int state = 0;
+
+	DLX3Light() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
+	}
+};
+
+struct DLXKnobLight : SvgLight {
 	float angle = 0;
 	float transform[6];
 
 	DLXKnobLight() {
-		box.size = mm2px(Vec(10.322, 10.322));
+		// box.size = mm2px(Vec(10.322, 10.322));
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large_light.svg")));
+
 	}
 
 	void draw(const DrawArgs& args) override {
-		math::Vec center = Vec(4.081, 4.081);
-
-		nvgBeginPath(args.vg);
-		nvgScale(args.vg, 3.745, 3.745);
-		nvgCircle(args.vg, center.x, center.y, center.x - .4);
-		nvgStrokeColor(args.vg, DLXLightPurple);
-		nvgStrokeWidth(args.vg, .2785);
-		nvgStroke(args.vg);
-
-		nvgBeginPath(args.vg);
+		math::Vec center = Vec(sw->box.size.x / 2, sw->box.size.y / 2);
 		nvgTransformIdentity(transform);
 		float t[6];
 		nvgTransformTranslate(t, center.x, center.y);
@@ -534,20 +558,7 @@ struct DLXKnobLight : ModuleLightWidget {
 		nvgTransformTranslate(t, center.neg().x, center.neg().y);
 		nvgTransformPremultiply(transform, t);
 		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
-		nvgMoveTo(args.vg, 4.2915104,0.794608);
-		nvgBezierTo(args.vg, 4.3143438,0.62833073, 4.1037866,0.52002026, 3.9662013,0.59255105);
-		nvgBezierTo(args.vg, 3.8556057,0.63433429, 3.8183122,0.76099231, 3.8537918,0.86619144);
-		nvgBezierTo(args.vg, 3.9560394,1.5850019, 3.8517625,2.3219891, 3.6287271,3.0087598);
-		nvgBezierTo(args.vg, 3.6092158,3.080529, 3.501243,3.2593293, 3.655733,3.2154921);
-		nvgBezierTo(args.vg, 3.796758,3.1799277, 3.9220276,3.0926393, 4.0670114,3.072624);
-		nvgBezierTo(args.vg, 4.2265284,3.0902694, 4.3623073,3.2020904, 4.5231983,3.2115989);
-		nvgBezierTo(args.vg, 4.5983946,3.15853, 4.489421,3.0422152, 4.4852236,2.9611388);
-		nvgBezierTo(args.vg, 4.2754123,2.2639957, 4.179022,1.5182965, 4.2915104,0.794608);
-		nvgClosePath(args.vg);
-
-		nvgFillColor(args.vg, nvgRGB(0xc3, 0xc3, 0xc3));
-		nvgFill(args.vg);
-		nvgScale(args.vg, 1, 1);
+		sw->draw(args);
 		Widget::draw(args);
 	}
 };
@@ -557,7 +568,7 @@ struct DLXLightKnob : RoundKnob {
 	TKnobLight* sibling;
 
 	DLXLightKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large.svg")));
 	}
 
 	void setSibling(TKnobLight* kl) {
