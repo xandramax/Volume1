@@ -16,7 +16,9 @@ struct Algomorph4 : Module {
     enum InputIds {
         ENUMS(OPERATOR_INPUTS, 4),
         MORPH_INPUT,
-        SCENE_ADV_INPUT,
+        SCENE_ADV_INPUT,    //Clk input
+        RESET_INPUT,
+        OPTION_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
@@ -35,6 +37,9 @@ struct Algomorph4 : Module {
         EDIT_LIGHT,
         KNOB_LIGHT,
         GLOWING_INK,
+        ONE_LIGHT,
+        TWO_LIGHT,
+        THREE_LIGHT,
         NUM_LIGHTS
     };
     float morph[16] = {0.f};        // Range -1.f -> 1.f
@@ -371,6 +376,8 @@ struct Algomorph4 : Module {
             if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
                 channels = inputs[OPERATOR_INPUTS + i].getChannels();
         }
+        if (channels < inputs[MORPH_INPUT].getChannels())
+            channels = inputs[MORPH_INPUT].getChannels();
 
         //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
@@ -1200,17 +1207,17 @@ struct VULightsItem : MenuItem {
 // };
 
 struct Algomorph4Widget : ModuleWidget {
-    std::vector<Vec> SceneButtonCenters = {  {mm2px(10.169), mm2px(53.224)},
-                                            {mm2px(18.751), mm2px(53.224)},
-                                            {mm2px(27.334), mm2px(53.224)} };
-    std::vector<Vec> OpButtonCenters = { {mm2px(16.592), mm2px(84.771)},
-                                        {mm2px(16.592), mm2px(95.175)},
-                                        {mm2px(16.592), mm2px(105.579)},
-                                        {mm2px(16.592), mm2px(115.984)} };
-    std::vector<Vec> ModButtonCenters = {{mm2px(33.942), mm2px(84.771)},
-                                        {mm2px(33.942), mm2px(95.175)},
-                                        {mm2px(33.942), mm2px(105.579)},
-                                        {mm2px(33.942), mm2px(115.984)} };
+    std::vector<Vec> SceneButtonCenters = {  {mm2px(53.831), mm2px(46.862)},
+                                            {mm2px(53.831), mm2px(55.262)},
+                                            {mm2px(53.831), mm2px(63.662)} };
+    std::vector<Vec> OpButtonCenters = { {mm2px(22.416), mm2px(49.614)},
+                                        {mm2px(22.416), mm2px(60.634)},
+                                        {mm2px(22.416), mm2px(71.655)},
+                                        {mm2px(22.416), mm2px(82.677)} };
+    std::vector<Vec> ModButtonCenters = {{mm2px(38.732), mm2px(49.614)},
+                                        {mm2px(38.732), mm2px(60.634)},
+                                        {mm2px(38.732), mm2px(71.655)},
+                                        {mm2px(38.732), mm2px(82.677)} };
     DLXGlowingInk* ink;
     
 
@@ -1228,43 +1235,48 @@ struct Algomorph4Widget : ModuleWidget {
         addChildBottom(ink);
 
         AlgoScreenWidget<Algomorph4>* screenWidget = new AlgoScreenWidget<Algomorph4>(module);
-        screenWidget->box.pos = mm2px(Vec(6.253, 9.954));
+        screenWidget->box.pos = mm2px(Vec(11.333, 7.195));
         screenWidget->box.size = mm2px(Vec(38.295, 31.590));
         addChild(screenWidget);
         //Place backlight _above_ in scene in order for brightness to affect screenWidget
-        addChild(createBacklight(mm2px(Vec(6.253, 9.954)), mm2px(Vec(38.295, 31.590)), module, Algomorph4::DISPLAY_BACKLIGHT));
+        addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(11.333, 7.195)), mm2px(Vec(38.295, 31.590)), module, Algomorph4::DISPLAY_BACKLIGHT));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_LIGHTS + 0, .75));
-        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
-        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
-
         addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
+        addChild(createSvgSwitchLightCentered<DLX1Light>(SceneButtonCenters[0], module, Algomorph4::ONE_LIGHT, Algomorph4::SCENE_BUTTONS + 0));
+
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
         addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
+        addChild(createSvgSwitchLightCentered<DLX2Light>(SceneButtonCenters[1], module, Algomorph4::TWO_LIGHT, Algomorph4::SCENE_BUTTONS + 1));
+
+        addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
         addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
+        addChild(createSvgSwitchLightCentered<DLX3Light>(SceneButtonCenters[2], module, Algomorph4::THREE_LIGHT, Algomorph4::SCENE_BUTTONS + 2));
 
-        addInput(createInputCentered<DLXPortPoly>(mm2px(Vec(39.950, 53.224)), module, Algomorph4::SCENE_ADV_INPUT));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 42.973)), module, Algomorph4::OPTION_INPUT));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 52.994)), module, Algomorph4::MORPH_INPUT));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 63.015)), module, Algomorph4::SCENE_ADV_INPUT));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 73.036)), module, Algomorph4::RESET_INPUT));
 
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(7.732, 64.118)), module, Algomorph4::MORPH_INPUT));
+        DLXKnobLight* kl = createLight<DLXKnobLight>(mm2px(Vec(20.305, 96.721)), module, Algomorph4::KNOB_LIGHT);
+        addChild(createLightKnob(mm2px(Vec(20.305, 96.721)), module, Algomorph4::MORPH_KNOB, kl));
+        addChild(kl);
 
-        DLXKnobLight* kl = createLight<DLXKnobLight>(mm2px(Vec(19.708, 62.457)), module, Algomorph4::KNOB_LIGHT);
-        addChild(createLightKnob(mm2px(Vec(19.968, 62.757)), module, Algomorph4::MORPH_KNOB, kl));
-        addChildBottom(kl);
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.182, 73.040)), module, Algomorph4::SUM_OUTPUT));
 
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(36.582, 64.118)), module, Algomorph4::SUM_OUTPUT));
+        addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(30.545, 87.440)), 8.862, module, Algomorph4::EDIT_LIGHT, .4));
+        addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(30.545, 87.440)), module, Algomorph4::EDIT_BUTTON));
+        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(30.545 - 0.01, 87.440 - 0.387)), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
 
-        addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.268, 79.625)), 8.862, module, Algomorph4::EDIT_LIGHT, .4));
-        addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.268, 79.625)), module, Algomorph4::EDIT_BUTTON));
-        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(25.258, 79.483)), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 85.526)), module, Algomorph4::OPERATOR_INPUTS + 0));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 95.546)), module, Algomorph4::OPERATOR_INPUTS + 1));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 105.567)), module, Algomorph4::OPERATOR_INPUTS + 2));
+        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 115.589)), module, Algomorph4::OPERATOR_INPUTS + 3));
 
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 81.439)), module, Algomorph4::OPERATOR_INPUTS + 0));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 91.844)), module, Algomorph4::OPERATOR_INPUTS + 1));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 102.248)), module, Algomorph4::OPERATOR_INPUTS + 2));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 112.653)), module, Algomorph4::OPERATOR_INPUTS + 3));
-
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 81.439)), module, Algomorph4::MODULATOR_OUTPUTS + 0));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 91.844)), module, Algomorph4::MODULATOR_OUTPUTS + 1));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 102.248)), module, Algomorph4::MODULATOR_OUTPUTS + 2));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(40.021, 112.653)), module, Algomorph4::MODULATOR_OUTPUTS + 3));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.184, 85.526)), module, Algomorph4::MODULATOR_OUTPUTS + 0));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.184, 95.546)), module, Algomorph4::MODULATOR_OUTPUTS + 1));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.184, 105.567)), module, Algomorph4::MODULATOR_OUTPUTS + 2));
+        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.184, 115.589)), module, Algomorph4::MODULATOR_OUTPUTS + 3));
 
         ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters);
         connectionBgWidget->box.pos = this->box.pos;
