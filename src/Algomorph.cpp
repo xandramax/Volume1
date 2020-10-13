@@ -1161,9 +1161,11 @@ struct AlgoScreenWidget : FramebufferWidget {
             }
 
             bool noMorph = false;                
-            int scene = module->configMode ? module->configScene : module->baseScene;
+            int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
+            int morphScene = module->forwardMorphScene[0];
+            float morph = module->relativeMorphMagnitude[0];
 
-            if (module->morph[0] == 0.f || module->configMode)
+            if (module->morphless[0] || module->configMode)
                 noMorph = true;
 
             nvgBeginPath(args.vg);
@@ -1177,17 +1179,10 @@ struct AlgoScreenWidget : FramebufferWidget {
             for (int i = 0; i < 4; i++) {
                 if (noMorph)    //Display state without morph
                     nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
-                else {  //Display moprhed state
-                    if (module->morph[0] > 0.f) {
-                        nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 1) % 3].nodes[i].coords.x, module->morph[0]),
-                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 1) % 3].nodes[i].coords.y, module->morph[0]),
-                                            radius);
-                    }
-                    else {
-                        nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 2) % 3].nodes[i].coords.x, -module->morph[0]),
-                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 2) % 3].nodes[i].coords.y, -module->morph[0]),
-                                            radius);
-                    }
+                else {  //Display morphed state
+                    nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph),
+                                        crossfade(graphs[scene].nodes[i].coords.y, graphs[morphScene].nodes[i].coords.y, morph),
+                                        radius);
                 }
             }
             nvgFillColor(args.vg, nodeFillColor);
@@ -1207,19 +1202,12 @@ struct AlgoScreenWidget : FramebufferWidget {
                 nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
                 float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                if (module->morph[0] == 0.f || module->configMode)    //Display state without morph
+                if (noMorph)    //Display state without morph
                     nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
                 else {  //Display moprhed state
-                    if (module->morph[0] > 0.f) {
-                        nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 1) % 3].nodes[i].coords.x, module->morph[0]) - xOffset,
-                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 1) % 3].nodes[i].coords.y, module->morph[0]) + yOffset,
-                                            id, id + 1);
-                    }
-                    else {
-                        nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[(scene + 2) % 3].nodes[i].coords.x, -module->morph[0]) - xOffset,
-                                            crossfade(graphs[scene].nodes[i].coords.y, graphs[(scene + 2) % 3].nodes[i].coords.y, -module->morph[0]) + yOffset,
-                                            id, id + 1);
-                    }
+                    nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph) - xOffset,
+                                        crossfade(graphs[scene].nodes[i].coords.y, graphs[morphScene].nodes[i].coords.y, morph) + yOffset,
+                                        id, id + 1);
                 }
             }
 
@@ -1254,10 +1242,7 @@ struct AlgoScreenWidget : FramebufferWidget {
             }
             else {
                 // Draw edges AND arrows
-                if (module->morph[0] > 0.f)
-                    drawEdges(args.vg, graphs[scene], graphs[(scene + 1) % 3], module->morph[0]);
-                else
-                    drawEdges(args.vg, graphs[scene], graphs[(scene + 2) % 3], -module->morph[0]);
+                drawEdges(args.vg, graphs[scene], graphs[morphScene], morph);
             }                
         }
     };
