@@ -42,7 +42,11 @@ struct Algomorph4 : Module {
         THREE_LIGHT,
         NUM_LIGHTS
     };
+    int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
     float morph[16] = {0.f};        // Range -1.f -> 1.f
+    float relativeMorphMagnitude[16] = { morph[0] };
+    bool morphless[16] = { false };
+    int morphlessScene[16] = { baseScene }, centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
     bool opEnabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
     std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
@@ -60,7 +64,6 @@ struct Algomorph4 : Module {
     bool configMode = true;
     int configOp = -1;      // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
-    int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
 
     bool graphDirty = true;
     // bool debug = false;
@@ -260,6 +263,63 @@ struct Algomorph4 : Module {
             graphDirty = true;
         }
 
+        for (int c = 1; c < channels; c++)
+            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue();
+
+        for (int c = 0; c < channels; c++) {
+            relativeMorphMagnitude[c] = morph[c];
+            if (morph[c] == 0) {
+                morphless[c] = true;
+                morphlessScene[c] = baseScene;
+            }
+            else if (morph[c] == 1.f) {
+                morphless[c] = true;
+                morphlessScene[c] = (baseScene + 1) % 3;
+            }
+            else if (morph[c] == 2.f) {
+                morphless[c] = true;
+                morphlessScene[c] = (baseScene + 2) % 3;
+            }
+            else if (morph[c] == -1.f) {
+                morphless[c] = true;
+                morphlessScene[c] = (baseScene + 2) % 3;
+            }
+            else if (morph[c] == -2.f) {
+                morphless[c] = true;
+                morphlessScene[c] = (baseScene + 1) % 3;
+            }
+            else {
+                morphless[c] = false;
+                if (morph[c] > 0.f) {
+                    if (morph[c] < 1.f) {
+                        centerMorphScene[c] = baseScene;
+                        forwardMorphScene[c] = (baseScene + 1) % 3;
+                        backwardMorphScene[c] = (baseScene + 2) % 3;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 1.f;
+                        centerMorphScene[c] = (baseScene + 1) % 3;
+                        forwardMorphScene[c] = (baseScene + 2) % 3;
+                        backwardMorphScene[c] = baseScene;
+                    }
+                }
+                else {
+                    relativeMorphMagnitude[c] *= -1.f;
+                    if (morph[c] > -1.f) {
+                        centerMorphScene[c] = baseScene;
+                        forwardMorphScene[c] = (baseScene + 2) % 3;
+                        backwardMorphScene[c] = (baseScene + 1) % 3;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 1.f;
+                        centerMorphScene[c] = (baseScene + 2) % 3;
+                        forwardMorphScene[c] = (baseScene + 1) % 3;
+                        backwardMorphScene[c] = baseScene;
+                    }
+                }
+            }
+        }        
+
         //Check to change scene
         //Scene buttons
         for (int i = 0; i < 3; i++) {
@@ -381,60 +441,6 @@ struct Algomorph4 : Module {
 
         //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
-            if (c > 0) {      //morph[0] is calculated earlier
-                morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue();
-                clamp(morph[c], -2.f, 2.f);
-            }
-            /* if (debug) {
-                float x = inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f;
-                float y = params[MORPH_KNOB].getValue();
-                float z = x + y;
-                float q = clamp(z, -2.f, 2.f);
-                float r = 0;
-            } */
-            float absMorph = morph[c];
-            bool morphless = false;
-            int morphlessScene = baseScene, centerMorphScene = baseScene, forwardMorphScene = (baseScene + 1) % 3, backwardMorphScene = (baseScene + 2) % 3;
-            if (morph[c] == 0)
-                morphless = true;
-            else if (morph[c] == 1.f) {
-                morphless = true;
-                morphlessScene = (baseScene + 1) % 3;
-            }
-            else if (morph[c] == 2.f) {
-                morphless = true;
-                morphlessScene = (baseScene + 2) % 3;
-            }
-            else if (morph[c] == -1.f) {
-                morphless = true;
-                morphlessScene = (baseScene + 2) % 3;
-            }
-            else if (morph[c] == -2.f) {
-                morphless = true;
-                morphlessScene = (baseScene + 1) % 3;
-            }
-            else if (morph[c] > 1.f && morph[c] < 2.f) {
-                absMorph -= 1.f;
-                centerMorphScene = (baseScene + 1) % 3;
-                forwardMorphScene = (baseScene + 2) % 3;
-                backwardMorphScene = baseScene;
-            }
-            else if (morph[c] < 0.f) {
-                absMorph = fabsf(morph[c]);
-                if (morph[c] > -1.f) {
-                    forwardMorphScene = (baseScene + 2) % 3;
-                    backwardMorphScene = (baseScene + 1) % 3;
-                }
-                else {
-                    /* if (debug)
-                        int x = 0; */
-                    absMorph -= 1.f;
-                    centerMorphScene = (baseScene + 2) % 3;
-                    forwardMorphScene = (baseScene + 1) % 3;
-                    backwardMorphScene = baseScene;
-                }
-            }
-
             //Note: gain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because output index 3 is hijacked for the sum output
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
@@ -442,12 +448,12 @@ struct Algomorph4 : Module {
                     //Simple case, do not check adjacent algorithms
                     if (morphless) {
                         for (int j = 0; j < 3; j++) {
-                            bool connected = opDestinations[morphlessScene][i][j] && opEnabled[morphlessScene][i];
-                            carrier[morphlessScene][i] = connected ? false : carrier[morphlessScene][i];
+                            bool connected = opDestinations[morphlessScene[c]][i][j] && opEnabled[morphlessScene[c]][i];
+                            carrier[morphlessScene[c]][i] = connected ? false : carrier[morphlessScene[c]][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c];
                         }
-                        bool sumConnected = carrier[morphlessScene][i] && opEnabled[morphlessScene][i];
+                        bool sumConnected = carrier[morphlessScene[c]][i] && opEnabled[morphlessScene[c]][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
                         sumOut[c] += in[c] * gain[0][i][3][c];
                     }
@@ -455,23 +461,23 @@ struct Algomorph4 : Module {
                     else {
                         for (int j = 0; j < 3; j++) {
                             if (ringMorph) {
-                                float ringConnection = opDestinations[backwardMorphScene][i][j] * absMorph * opEnabled[backwardMorphScene][i];
-                                carrier[backwardMorphScene][i] = ringConnection == 0.f && opEnabled[backwardMorphScene][i] ? carrier[backwardMorphScene][i] : false;
+                                float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
+                                carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && opEnabled[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
                                 gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                             }
-                            float connectionA = opDestinations[centerMorphScene][i][j]     * (1.f - absMorph)  * opEnabled[centerMorphScene][i];
-                            float connectionB = opDestinations[forwardMorphScene][i][j]  * absMorph          * opEnabled[forwardMorphScene][i];
-                            carrier[centerMorphScene][i]  = connectionA > 0.f ? false : carrier[centerMorphScene][i];
-                            carrier[forwardMorphScene][i] = connectionB > 0.f ? false : carrier[forwardMorphScene][i];
+                            float connectionA = opDestinations[centerMorphScene[c]][i][j]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                            float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
+                            carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
                             modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
                         }
                         if (ringMorph) {
-                            float ringSumConnection = carrier[backwardMorphScene][i] * absMorph * opEnabled[backwardMorphScene][i];
+                            float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                             gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                         }
-                        float sumConnection =     carrier[centerMorphScene][i]     * (1.f - absMorph)  * opEnabled[centerMorphScene][i]
-                                            +   carrier[forwardMorphScene][i]    * absMorph          * opEnabled[forwardMorphScene][i];
+                        float sumConnection =     carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                                            +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
                         sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
                     }
@@ -612,7 +618,7 @@ struct Algomorph4 : Module {
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                if (morph[0] == 0.f) {  //Display state without morph
+                if (morphless) {  //Display state without morph
                     //Set base scene light
                     for (int i = 0; i < 3; i++) {
                         //Set yellow component to off
@@ -622,7 +628,7 @@ struct Algomorph4 : Module {
                     }
                     //Set op/mod lights
                     for (int i = 0; i < 4; i++) {
-                        if (opEnabled[baseScene][i]) {
+                        if (opEnabled[morphlessScene[0]][i]) {
                             //Set op lights
                             //Purple lights
                             lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]), args.sampleTime * lightDivider.getDivision());
@@ -649,8 +655,8 @@ struct Algomorph4 : Module {
                     //Set connection lights
                     for (int i = 0; i < 12; i++) {
                         //Purple lights
-                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[baseScene][i / 3] ? 
-                            opDestinations[baseScene][i / 3][i % 3] ?
+                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[morphlessScene[0]][i / 3] ? 
+                            opDestinations[morphlessScene[0]][i / 3][i % 3] ?
                                 getPortBrightness(inputs[OPERATOR_INPUTS + i / 3])
                                 : 0.f
                             : 0.f, args.sampleTime * lightDivider.getDivision());
