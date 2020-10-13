@@ -867,6 +867,17 @@ struct Algomorph4 : Module {
         }
     }
 
+    void swapAlgorithms(int a, int b) {
+        bool swap[4][3];
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 3; j++) {
+                swap[i][j] = opDestinations[a][i][j];
+                opDestinations[a][i][j] = opDestinations[b][i][j];
+                opDestinations[b][i][j] = swap[i][j];
+            }
+        }
+    }
+
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "Config Enabled", json_boolean(configMode));
@@ -1270,6 +1281,53 @@ struct AlgoScreenWidget : FramebufferWidget {
     }
 };
 
+struct OptionModeItem : MenuItem {
+    Algomorph4 *module;
+    Algomorph4::OptionInput::Modes mode;
+
+    void onAction(const event::Action &e) override {
+        module->optionInput.setMode(mode);
+    }
+};
+
+std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph CV",
+                                                                        "Morph CV Attenuverter",
+                                                                        "Run",
+                                                                        "Clock",
+                                                                        "Reset",
+                                                                        "Modulation Gain Attenuverter",
+                                                                        "Operator Gain Attenuverter",
+                                                                        "Sum Gain Attenuverter",
+                                                                        "Base Scene",
+                                                                        "Wildcard Modulation",
+                                                                        "Wildcard Operator",
+                                                                        "Click Filter Strength",
+                                                                        "Hyper Morph CV",
+                                                                        "Screen Brightness",
+                                                                        "Connection Brightness",
+                                                                        "Ring Brightness",
+                                                                        "All Brightness"};
+
+template < typename MODULE >
+void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
+    // for (int i = 0; i < Algomorph4::OptionInput::Modes::NUM_MODES; i++)
+    //     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
+}
+
+template < typename MODULE >
+struct OptionInputMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createOptionInputMenu(module, menu);
+		return menu;
+	}
+};
+
 struct RingMorphItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
@@ -1513,6 +1571,10 @@ struct Algomorph4Widget : ModuleWidget {
         VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
         vuLightsItem->module = module;
         menu->addChild(vuLightsItem);
+        
+        RememberOptionVoltageItem *rememberOptionVoltageItem = createMenuItem<RememberOptionVoltageItem>("Remember option input voltage when mode-changing", CHECKMARK(!module->rememberOptionVoltage));
+        rememberOptionVoltageItem->module = module;
+        menu->addChild(rememberOptionVoltageItem);
 
         // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
         // debugItem->module = module;
