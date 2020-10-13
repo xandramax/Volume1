@@ -560,18 +560,18 @@ struct Algomorph4 : Module {
             //Note: gain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because output index 3 is hijacked for the sum output
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c);
+                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
                     //Simple case, do not check adjacent algorithms
                     if (morphless[c]) {
                         for (int j = 0; j < 3; j++) {
                             bool connected = opDestinations[morphlessScene[c]][i][j] && opEnabled[morphlessScene[c]][i];
                             carrier[morphlessScene[c]][i] = connected ? false : carrier[morphlessScene[c]][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c];
+                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] * clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
                         }
                         bool sumConnected = carrier[morphlessScene[c]][i] && opEnabled[morphlessScene[c]][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += in[c] * gain[0][i][3][c];
+                        sumOut[c] += in[c] * gain[0][i][3][c] * clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
                     }
                     //Check current algorithm and morph target
                     else {
@@ -586,7 +586,7 @@ struct Algomorph4 : Module {
                             carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                             carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                             gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c];
+                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c] * clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
                         }
                         if (ringMorph) {
                             float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
@@ -595,7 +595,7 @@ struct Algomorph4 : Module {
                         float sumConnection =     carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
                                             +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
                         gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c];
+                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c] * clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
                     }
                 }
             }
@@ -1300,6 +1300,9 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
 }
 
 template < typename MODULE >
@@ -1545,6 +1548,10 @@ struct Algomorph4Widget : ModuleWidget {
         CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input - reverse sequence", CHECKMARK(!module->ccwSceneSelection));
         ccwScenesItem->module = module;
         menu->addChild(ccwScenesItem);
+        
+        RememberOptionVoltageItem *rememberOptionVoltageItem = createMenuItem<RememberOptionVoltageItem>("Remember option input voltage when mode-changing", CHECKMARK(module->rememberOptionVoltage));
+        rememberOptionVoltageItem->module = module;
+        menu->addChild(rememberOptionVoltageItem);
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
@@ -1556,10 +1563,6 @@ struct Algomorph4Widget : ModuleWidget {
         VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
         vuLightsItem->module = module;
         menu->addChild(vuLightsItem);
-        
-        RememberOptionVoltageItem *rememberOptionVoltageItem = createMenuItem<RememberOptionVoltageItem>("Remember option input voltage when mode-changing", CHECKMARK(!module->rememberOptionVoltage));
-        rememberOptionVoltageItem->module = module;
-        menu->addChild(rememberOptionVoltageItem);
 
         // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
         // debugItem->module = module;
