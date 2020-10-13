@@ -41,10 +41,91 @@ struct Algomorph4 : Module {
         ONE_LIGHT,
         TWO_LIGHT,
         THREE_LIGHT,
-        ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors per light
+        ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         SCREEN_BUTTON_LIGHT,
         NUM_LIGHTS
     };
+    struct OptionInput {
+        enum Modes {
+            MORPH_CV,
+            MORPH_ATTEN,
+            RUN,
+            CLOCK,
+            RESET,
+            MOD_GAIN,
+            OP_GAIN,
+            SUM_GAIN,
+            BASE_SCENE,
+            WILDCARD_MOD,
+            WILDCARD_OP,
+            CLICK_FILTER,
+            TRIPLE_MORPH_CV,
+            SCREEN_BRIGHTNESS,
+            CONNECTION_BRIGHTNESS,
+            RING_BRIGHTNESS,
+            ALL_BRIGHTNESS,
+            NUM_MODES
+        };
+        Modes mode = Modes::MORPH_CV;
+        Algomorph4* module;
+        dsp::SchmittTrigger runCVTrigger;
+        dsp::SchmittTrigger sceneAdvCVTrigger;
+        float voltage[Modes::NUM_MODES][16];
+        float defVoltage[Modes::NUM_MODES] = { 0.f };
+        int channels = 0;
+
+        OptionInput(Algomorph4* m) {
+            module = m;
+            defVoltage[MORPH_ATTEN] = 5.f;
+            defVoltage[MOD_GAIN] = 5.f;
+            defVoltage[OP_GAIN] = 5.f;
+            defVoltage[SUM_GAIN] = 5.f;
+            defVoltage[BASE_SCENE] = 5.f;
+            defVoltage[CLICK_FILTER] = 5.f;
+            resetVoltages();
+        }
+
+        void resetVoltages() {
+            for (int i = 0; i < Modes::NUM_MODES; i++) {
+                for (int j = 0; j < 16; j++) {
+                    if (i != mode)
+                        voltage[i][j] = defVoltage[i];
+                }
+            }
+        }
+
+        void setMode(Modes newMode) {
+            for (int i = 0; i < Modes::NUM_MODES; i++) {
+                for (int j = 0; j < channels; j++) {
+                    if (i == mode) {
+                        if (!module->rememberOptionVoltage)
+                            voltage[i][j] = defVoltage[i];
+                    }
+                    else if (i == newMode)
+                        voltage[i][j] = module->inputs[OPTION_INPUT].getPolyVoltage(j);
+                }
+            }
+            mode = newMode;
+        }
+
+        void updateVoltage() {
+            if (module->inputs[OPTION_INPUT].isConnected())
+                module->inputs[OPTION_INPUT].readVoltages(voltage[mode]);
+            else {
+                for (int i = 0; i < 16; i++)
+                    voltage[mode][i] = defVoltage[mode]; 
+            }
+        }
+
+        float getPolyVoltage(Modes reqMode, int channel) {
+            updateVoltage();
+            if (channels == 1)
+                return voltage[reqMode][0];
+            else
+                return voltage[reqMode][channel];
+        }
+    };
+    OptionInput optionInput = OptionInput(this);
     int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
     float morph[16] = {0.f};        // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
@@ -69,7 +150,7 @@ struct Algomorph4 : Module {
     int configScene = 1;
 
     bool graphDirty = true;
-    // bool debug = false;
+    bool debug = false;
 
     //User settings
     bool clickFilterEnabled = true;
@@ -79,6 +160,7 @@ struct Algomorph4 : Module {
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     bool glowingInk = false;
     bool vuLights = true;
+    bool rememberOptionVoltage = false;
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger sceneAdvButtonTrigger;
@@ -259,15 +341,26 @@ struct Algomorph4 : Module {
                                 {true, true, true, true} };
         int channels = 1;                                       // Max channels of operator inputs
 
+        //Determine polyphony count
+        for (int i = 0; i < 4; i++) {
+            if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
+                channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        }
+        if (channels < inputs[MORPH_INPUT].getChannels())
+            channels = inputs[MORPH_INPUT].getChannels();
+        if (channels < inputs[OPTION_INPUT].getChannels())
+            channels = inputs[OPTION_INPUT].getChannels();
+        optionInput.channels = channels;
+
         // Only redraw display if morph on channel 1 has changed
-        float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue();
+        float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
             graphDirty = true;
         }
 
         for (int c = 1; c < channels; c++)
-            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue();
+            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, c) / 5.f, -1.f, 1.f);
 
         for (int c = 0; c < channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
@@ -283,11 +376,19 @@ struct Algomorph4 : Module {
                 morphless[c] = true;
                 morphlessScene[c] = (baseScene + 2) % 3;
             }
+            else if (morph[c] == 3.f) {
+                morphless[c] = true;
+                morphlessScene[c] = baseScene;
+            }
             else if (morph[c] == -1.f) {
                 morphless[c] = true;
                 morphlessScene[c] = (baseScene + 2) % 3;
             }
             else if (morph[c] == -2.f) {
+                morphless[c] = true;
+                morphlessScene[c] = (baseScene + 1) % 3;
+            }
+            else if (morph[c] == -3.f) {
                 morphless[c] = true;
                 morphlessScene[c] = (baseScene + 1) % 3;
             }
@@ -299,11 +400,17 @@ struct Algomorph4 : Module {
                         forwardMorphScene[c] = (baseScene + 1) % 3;
                         backwardMorphScene[c] = (baseScene + 2) % 3;
                     }
-                    else {
+                    else if (morph[c] < 2.f) {
                         relativeMorphMagnitude[c] -= 1.f;
                         centerMorphScene[c] = (baseScene + 1) % 3;
                         forwardMorphScene[c] = (baseScene + 2) % 3;
                         backwardMorphScene[c] = baseScene;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 2.f;
+                        centerMorphScene[c] = (baseScene + 2) % 3;
+                        forwardMorphScene[c] = baseScene;
+                        backwardMorphScene[c] = (baseScene + 1) % 3;
                     }
                 }
                 else {
@@ -313,11 +420,17 @@ struct Algomorph4 : Module {
                         forwardMorphScene[c] = (baseScene + 2) % 3;
                         backwardMorphScene[c] = (baseScene + 1) % 3;
                     }
-                    else {
+                    else if (morph[c] > -2.f) {
                         relativeMorphMagnitude[c] -= 1.f;
                         centerMorphScene[c] = (baseScene + 2) % 3;
                         forwardMorphScene[c] = (baseScene + 1) % 3;
                         backwardMorphScene[c] = baseScene;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 2.f;
+                        centerMorphScene[c] = (baseScene + 1) % 3;
+                        forwardMorphScene[c] = baseScene;
+                        backwardMorphScene[c] = (baseScene + 2) % 3;
                     }
                 }
             }
@@ -354,6 +467,14 @@ struct Algomorph4 : Module {
         }
         //Scene advance trigger input
         if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+            //Advance base scene
+            if (!ccwSceneSelection)
+               baseScene = (baseScene + 1) % 3;
+            else
+               baseScene = (baseScene + 2) % 3;
+            graphDirty = true;
+        }
+        if (optionInput.sceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::CLOCK, 0))) {
             //Advance base scene
             if (!ccwSceneSelection)
                baseScene = (baseScene + 1) % 3;
@@ -433,14 +554,6 @@ struct Algomorph4 : Module {
                 }
             }
         }
-
-        //Determine polyphony count
-        for (int i = 0; i < 4; i++) {
-            if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
-                channels = inputs[OPERATOR_INPUTS + i].getChannels();
-        }
-        if (channels < inputs[MORPH_INPUT].getChannels())
-            channels = inputs[MORPH_INPUT].getChannels();
 
         //Get operator input channel then route to modulation output channel or to sum output channel
         for (int c = 0; c < channels; c++) {
@@ -767,6 +880,8 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
         json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
         json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
+        json_object_set_new(rootJ, "Option Input Mode", json_integer(optionInput.mode));
+        json_object_set_new(rootJ, "Remember Option Voltage", json_boolean(rememberOptionVoltage));
         json_t* opDestinationsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -809,6 +924,8 @@ struct Algomorph4 : Module {
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
         glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
         vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
+        optionInput.setMode(static_cast<OptionInput::Modes>(json_integer_value(json_object_get(rootJ, "Option Input Mode"))));
+        rememberOptionVoltage = json_boolean_value(json_object_get(rootJ, "Remember Option Voltage"));
         json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
         json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
@@ -1208,6 +1325,12 @@ struct VULightsItem : MenuItem {
 //         module->debug ^= true;
 //     }
 // };
+struct RememberOptionVoltageItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->rememberOptionVoltage ^= true;
+    }
+};
 
 struct Algomorph4Widget : ModuleWidget {
     std::vector<Vec> SceneButtonCenters = {  {mm2px(53.831), mm2px(46.862)},
@@ -1350,6 +1473,9 @@ struct Algomorph4Widget : ModuleWidget {
 
     void appendContextMenu(Menu* menu) override {
         Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
+
+        menu->addChild(new MenuSeparator());
+		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Option (*) Input modes", &OptionInputMenuItem<Algomorph4>::module, module));
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
