@@ -11,6 +11,7 @@ struct Algomorph4 : Module {
         ENUMS(SCENE_BUTTONS, 3),
         MORPH_KNOB,
         EDIT_BUTTON,
+        SCREEN_BUTTON,
         NUM_PARAMS
     };
     enum InputIds {
@@ -27,19 +28,21 @@ struct Algomorph4 : Module {
         NUM_OUTPUTS
     };
     enum LightIds {
-        ENUMS(DISPLAY_BACKLIGHT, 3),    // 3 colors
-        ENUMS(SCENE_LIGHTS, 9),         // 3 colors per light
+        ENUMS(DISPLAY_BACKLIGHT, 3),              // 3 colors
+        ENUMS(SCENE_LIGHTS, 9),                   // 3 colors per light
         ENUMS(H_DISABLE_LIGHTS, 4),
         ENUMS(D_DISABLE_LIGHTS, 12),
-        ENUMS(CONNECTION_LIGHTS, 36),   // 3 colors per light
-        ENUMS(OPERATOR_LIGHTS, 12),     // 3 colors per light
-        ENUMS(MODULATOR_LIGHTS, 12),    // 3 colors per light
+        ENUMS(CONNECTION_LIGHTS, 36),            // 3 colors per light
+        ENUMS(OPERATOR_LIGHTS, 12),              // 3 colors per light
+        ENUMS(MODULATOR_LIGHTS, 12),             // 3 colors per light
         EDIT_LIGHT,
         KNOB_LIGHT,
         GLOWING_INK,
         ONE_LIGHT,
         TWO_LIGHT,
         THREE_LIGHT,
+        ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors per light
+        SCREEN_BUTTON_LIGHT,
         NUM_LIGHTS
     };
     int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
@@ -1240,6 +1243,10 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(screenWidget);
         //Place backlight _above_ in scene in order for brightness to affect screenWidget
         addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(11.333, 7.195)), mm2px(Vec(38.295, 31.590)), module, Algomorph4::DISPLAY_BACKLIGHT));
+
+        addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(30.760, 45.048)), 8.862, module, Algomorph4::SCREEN_BUTTON_RING_LIGHT, .4));
+        addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(30.760, 45.048)), module, Algomorph4::SCREEN_BUTTON));
+        addChild(createSvgSwitchLightCentered<DLXScreenButtonLight>(mm2px(Vec(30.760, 45.048)), module, Algomorph4::SCREEN_BUTTON_LIGHT, Algomorph4::SCREEN_BUTTON));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_LIGHTS + 0, .75));
         addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
