@@ -385,13 +385,13 @@ struct Algomorph4 : Module {
                 morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue();
                 clamp(morph[c], -2.f, 2.f);
             }
-            if (debug) {
+            /* if (debug) {
                 float x = inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f;
                 float y = params[MORPH_KNOB].getValue();
                 float z = x + y;
                 float q = clamp(z, -2.f, 2.f);
                 float r = 0;
-            }
+            } */
             float absMorph = morph[c];
             bool morphless = false;
             int morphlessScene = baseScene, centerMorphScene = baseScene, forwardMorphScene = (baseScene + 1) % 3, backwardMorphScene = (baseScene + 2) % 3;
@@ -426,8 +426,8 @@ struct Algomorph4 : Module {
                     backwardMorphScene = (baseScene + 1) % 3;
                 }
                 else {
-                    if (debug)
-                        int x = 0;
+                    /* if (debug)
+                        int x = 0; */
                     absMorph -= 1.f;
                     centerMorphScene = (baseScene + 2) % 3;
                     forwardMorphScene = (baseScene + 1) % 3;
