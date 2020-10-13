@@ -507,6 +507,16 @@ struct DLXPencilLight : SvgSwitchLight {
 	}
 };
 
+struct DLXScreenButtonLight : SvgSwitchLight {
+	int state = 0;
+
+	DLXScreenButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButton_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButton_light_1.svg")));
+	}
+};
+
 struct DLX1Light : SvgSwitchLight {
 	int state = 0;
 
