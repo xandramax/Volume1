@@ -446,7 +446,7 @@ struct Algomorph4 : Module {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
                     in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c);
                     //Simple case, do not check adjacent algorithms
-                    if (morphless) {
+                    if (morphless[c]) {
                         for (int j = 0; j < 3; j++) {
                             bool connected = opDestinations[morphlessScene[c]][i][j] && opEnabled[morphlessScene[c]][i];
                             carrier[morphlessScene[c]][i] = connected ? false : carrier[morphlessScene[c]][i];
@@ -618,7 +618,7 @@ struct Algomorph4 : Module {
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                if (morphless) {  //Display state without morph
+                if (morphless[0]) {  //Display state without morph
                     //Set base scene light
                     for (int i = 0; i < 3; i++) {
                         //Set yellow component to off
