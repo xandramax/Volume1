@@ -4,6 +4,7 @@
 
 constexpr float BLINK_INTERVAL = 0.42857142857f;
 constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
+constexpr float FIVE_D_THREE = 5.f / 3.f;
 
 struct Algomorph4 : Module {
     enum ParamIds {
@@ -56,7 +57,7 @@ struct Algomorph4 : Module {
             MOD_GAIN,
             OP_GAIN,
             SUM_GAIN,
-            BASE_SCENE,
+            SCENE_OFFSET,
             WILDCARD_MOD,
             WILDCARD_SUM,
             ENUMS(SHADOW, 4),       //Shadow 
@@ -94,8 +95,6 @@ struct Algomorph4 : Module {
             defVoltage[MOD_GAIN] = 5.f;
             defVoltage[OP_GAIN] = 5.f;
             defVoltage[SUM_GAIN] = 5.f;
-            defVoltage[BASE_SCENE] = 5.f;
-            defVoltage[CLICK_FILTER] = 5.f;
             resetVoltages();
             for (int i = WILDCARD_MOD; i < CLICK_FILTER; i++)
                 isAudioMode[i] = true;
@@ -410,6 +409,7 @@ struct Algomorph4 : Module {
         bool carrier[3][4] = {  {true, true, true, true},       // Per-algorithm operator carriership status
                                 {true, true, true, true},       // [scene][op]
                                 {true, true, true, true} };
+        int sceneOffset[16] = {0};                               //Offset to the base scene
         int channels = 1;                                       // Max channels of operator inputs
 
         //Determine polyphony count
@@ -423,96 +423,17 @@ struct Algomorph4 : Module {
             channels = inputs[OPTION_INPUT].getChannels();
         optionInput.channels = channels;
 
-        // Only redraw display if morph on channel 1 has changed
-        float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
-                            * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f)
-                            + params[MORPH_KNOB].getValue()
-                            + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f)
-                            + clamp(optionInput.getPolyVoltage(OptionInput::TRIPLE_MORPH_CV, 0) / (5.f / 3.f), -3.f, 3.f);
-        newMorph0 = clamp(newMorph0, -3.f, 3.f);
-        if (morph[0] != newMorph0) {
-            morph[0] = newMorph0;
-            graphDirty = true;
-        }
-
-        for (int c = 1; c < channels; c++)
-            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, c) / 5.f, -1.f, 1.f);
-
-        for (int c = 0; c < channels; c++) {
-            relativeMorphMagnitude[c] = morph[c];
-            if (morph[c] == 0) {
-                morphless[c] = true;
-                centerMorphScene[c] = baseScene;
-            }
-            else if (morph[c] == 1.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + 1) % 3;
-            }
-            else if (morph[c] == 2.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + 2) % 3;
-            }
-            else if (morph[c] == 3.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = baseScene;
-            }
-            else if (morph[c] == -1.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + 2) % 3;
-            }
-            else if (morph[c] == -2.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + 1) % 3;
-            }
-            else if (morph[c] == -3.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + 1) % 3;
-            }
-            else {
-                morphless[c] = false;
-                if (morph[c] > 0.f) {
-                    if (morph[c] < 1.f) {
-                        centerMorphScene[c] = baseScene;
-                        forwardMorphScene[c] = (baseScene + 1) % 3;
-                        backwardMorphScene[c] = (baseScene + 2) % 3;
-                    }
-                    else if (morph[c] < 2.f) {
-                        relativeMorphMagnitude[c] -= 1.f;
-                        centerMorphScene[c] = (baseScene + 1) % 3;
-                        forwardMorphScene[c] = (baseScene + 2) % 3;
-                        backwardMorphScene[c] = baseScene;
-                    }
-                    else {
-                        relativeMorphMagnitude[c] -= 2.f;
-                        centerMorphScene[c] = (baseScene + 2) % 3;
-                        forwardMorphScene[c] = baseScene;
-                        backwardMorphScene[c] = (baseScene + 1) % 3;
-                    }
-                }
-                else {
-                    relativeMorphMagnitude[c] *= -1.f;
-                    if (morph[c] > -1.f) {
-                        centerMorphScene[c] = baseScene;
-                        forwardMorphScene[c] = (baseScene + 2) % 3;
-                        backwardMorphScene[c] = (baseScene + 1) % 3;
-                    }
-                    else if (morph[c] > -2.f) {
-                        relativeMorphMagnitude[c] -= 1.f;
-                        centerMorphScene[c] = (baseScene + 2) % 3;
-                        forwardMorphScene[c] = (baseScene + 1) % 3;
-                        backwardMorphScene[c] = baseScene;
-                    }
-                    else {
-                        relativeMorphMagnitude[c] -= 2.f;
-                        centerMorphScene[c] = (baseScene + 1) % 3;
-                        forwardMorphScene[c] = baseScene;
-                        backwardMorphScene[c] = (baseScene + 2) % 3;
-                    }
-                }
-            }
-        }        
-
         //Check to change scene
+        //Option input
+        for (int c = 0; c < channels; c++) {
+            float sceneOffsetVoltage = optionInput.getPolyVoltage(OptionInput::SCENE_OFFSET, c);
+            if (sceneOffsetVoltage > FIVE_D_THREE)
+                sceneOffset[c] = 1;
+            else if (sceneOffsetVoltage < -FIVE_D_THREE)
+                sceneOffset[c] = 2;
+            else
+                sceneOffset[c] = 0;
+        }
         //Scene buttons
         for (int i = 0; i < 3; i++) {
             if (sceneButtonTrigger[i].process(params[SCENE_BUTTONS + i].getValue() > 0.f)) {
@@ -559,6 +480,95 @@ struct Algomorph4 : Module {
             graphDirty = true;
         }
 
+        // Only redraw display if morph on channel 1 has changed
+        float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
+                            * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f)
+                            + params[MORPH_KNOB].getValue()
+                            + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f)
+                            + clamp(optionInput.getPolyVoltage(OptionInput::TRIPLE_MORPH_CV, 0) / FIVE_D_THREE, -3.f, 3.f);
+        newMorph0 = clamp(newMorph0, -3.f, 3.f);
+        if (morph[0] != newMorph0) {
+            morph[0] = newMorph0;
+            graphDirty = true;
+        }
+
+        for (int c = 1; c < channels; c++)
+            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, c) / 5.f, -1.f, 1.f);
+
+        for (int c = 0; c < channels; c++) {
+            relativeMorphMagnitude[c] = morph[c];
+            if (morph[c] == 0) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+            }
+            else if (morph[c] == 1.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+            }
+            else if (morph[c] == 2.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+            }
+            else if (morph[c] == 3.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+            }
+            else if (morph[c] == -1.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+            }
+            else if (morph[c] == -2.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+            }
+            else if (morph[c] == -3.f) {
+                morphless[c] = true;
+                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+            }
+            else {
+                morphless[c] = false;
+                if (morph[c] > 0.f) {
+                    if (morph[c] < 1.f) {
+                        centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    }
+                    else if (morph[c] < 2.f) {
+                        relativeMorphMagnitude[c] -= 1.f;
+                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 2.f;
+                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    }
+                }
+                else {
+                    relativeMorphMagnitude[c] *= -1.f;
+                    if (morph[c] > -1.f) {
+                        centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    }
+                    else if (morph[c] > -2.f) {
+                        relativeMorphMagnitude[c] -= 1.f;
+                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    }
+                    else {
+                        relativeMorphMagnitude[c] -= 2.f;
+                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                        forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    }
+                }
+            }
+        }        
+
         //Edit button
         if (editTrigger.process(params[EDIT_BUTTON].getValue() > 0.f)) {
             configMode ^= true;
@@ -566,11 +576,11 @@ struct Algomorph4 : Module {
                 blinkStatus = true;
                 blinkTimer = 0.f;
                 if (morph[0] > .5f)
-                    configScene = (baseScene + 1) % 3;
+                    configScene = (baseScene + sceneOffset[0] + 1) % 3;
                 else if (morph[0] < -.5f)
-                    configScene = (baseScene + 2) % 3;
+                    configScene = (baseScene + sceneOffset[0] + 2) % 3;
                 else
-                    configScene = baseScene;
+                    configScene = baseScene + sceneOffset[0];
             }
             configOp = -1;
         }
@@ -581,11 +591,11 @@ struct Algomorph4 : Module {
                     configMode = true;
                     configOp = i;
                     if (morph[0] > .5f)
-                        configScene = (baseScene + 1) % 3;
+                        configScene = (baseScene + sceneOffset[0] + 1) % 3;
                     else if (morph[0] < -.5f)
-                        configScene = (baseScene + 2) % 3;
+                        configScene = (baseScene + sceneOffset[0] + 2) % 3;
                     else
-                        configScene = baseScene;
+                        configScene = baseScene + sceneOffset[0];
                     blinkStatus = true;
                     blinkTimer = 0.f;
                 }
@@ -859,7 +869,7 @@ struct Algomorph4 : Module {
                         //Set yellow component to off
                         lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Set purple component depending on base scene
-                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f : 0.f, args.sampleTime * lightDivider.getDivision());
+                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == (baseScene + sceneOffset[0]) % 3 ? 1.f : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     //Set op/mod lights
                     for (int i = 0; i < 4; i++) {
@@ -914,7 +924,7 @@ struct Algomorph4 : Module {
                         //Set yellow component to off
                         lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Set purple component depending on inverse morph
-                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == baseScene ? 1.f - rescale(relativeMorphMagnitude[0], 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
+                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == (baseScene + sceneOffset[0]) % 3 ? 1.f - rescale(relativeMorphMagnitude[0], 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     //Set morph target light's purple component depending on morph
                     lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
@@ -1420,7 +1430,7 @@ std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph C
                                                                         "Modulation Gain Attenuverter",
                                                                         "Operator Gain Attenuverter",
                                                                         "Sum Gain Attenuverter",
-                                                                        "Base Scene",
+                                                                        "Algorithm Offset",
                                                                         "Wildcard -> Modulation",
                                                                         "Wildcard -> Sum",
                                                                         "Shadow -> 1",
@@ -1502,6 +1512,7 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[5]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[6]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[7]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[8], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[8]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(8)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[15], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[15]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(15)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[16], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[16]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(16)));
     menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Light modes", &MenuItem::rightText, RIGHT_ARROW, &BrightnessInputMenuItem<Algomorph4>::module, module));
