@@ -161,7 +161,7 @@ struct Algomorph4 : Module {
     float morph[16] = {0.f};        // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
     bool morphless[16] = { false };
-    int morphlessScene[16] = { baseScene }, centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
+    int centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
     bool opEnabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
     std::bitset<12> algoName[3];    // 12-bit IDs of the three stored algorithms
@@ -402,31 +402,31 @@ struct Algomorph4 : Module {
             relativeMorphMagnitude[c] = morph[c];
             if (morph[c] == 0) {
                 morphless[c] = true;
-                morphlessScene[c] = baseScene;
+                centerMorphScene[c] = baseScene;
             }
             else if (morph[c] == 1.f) {
                 morphless[c] = true;
-                morphlessScene[c] = (baseScene + 1) % 3;
+                centerMorphScene[c] = (baseScene + 1) % 3;
             }
             else if (morph[c] == 2.f) {
                 morphless[c] = true;
-                morphlessScene[c] = (baseScene + 2) % 3;
+                centerMorphScene[c] = (baseScene + 2) % 3;
             }
             else if (morph[c] == 3.f) {
                 morphless[c] = true;
-                morphlessScene[c] = baseScene;
+                centerMorphScene[c] = baseScene;
             }
             else if (morph[c] == -1.f) {
                 morphless[c] = true;
-                morphlessScene[c] = (baseScene + 2) % 3;
+                centerMorphScene[c] = (baseScene + 2) % 3;
             }
             else if (morph[c] == -2.f) {
                 morphless[c] = true;
-                morphlessScene[c] = (baseScene + 1) % 3;
+                centerMorphScene[c] = (baseScene + 1) % 3;
             }
             else if (morph[c] == -3.f) {
                 morphless[c] = true;
-                morphlessScene[c] = (baseScene + 1) % 3;
+                centerMorphScene[c] = (baseScene + 1) % 3;
             }
             else {
                 morphless[c] = false;
@@ -614,12 +614,12 @@ struct Algomorph4 : Module {
                     //Simple case, do not check adjacent algorithms
                     if (morphless[c]) {
                         for (int j = 0; j < 3; j++) {
-                            bool connected = opDestinations[morphlessScene[c]][i][j] && opEnabled[morphlessScene[c]][i];
-                            carrier[morphlessScene[c]][i] = connected ? false : carrier[morphlessScene[c]][i];
+                            bool connected = opDestinations[centerMorphScene[c]][i][j] && opEnabled[centerMorphScene[c]][i];
+                            carrier[centerMorphScene[c]][i] = connected ? false : carrier[centerMorphScene[c]][i];
                             clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
                             modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c]) * modAttenuversion[c];
                         }
-                        bool sumConnected = carrier[morphlessScene[c]][i] && opEnabled[morphlessScene[c]][i];
+                        bool sumConnected = carrier[centerMorphScene[c]][i] && opEnabled[centerMorphScene[c]][i];
                         clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
                         sumOut[c] += in[c] * clickGain[0][i][3][c] * sumAttenuversion[c];
                     }
@@ -794,7 +794,7 @@ struct Algomorph4 : Module {
                     }
                     //Set op/mod lights
                     for (int i = 0; i < 4; i++) {
-                        if (opEnabled[morphlessScene[0]][i]) {
+                        if (opEnabled[centerMorphScene[0]][i]) {
                             //Set op lights
                             //Purple lights
                             lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]), args.sampleTime * lightDivider.getDivision());
@@ -821,8 +821,8 @@ struct Algomorph4 : Module {
                     //Set connection lights
                     for (int i = 0; i < 12; i++) {
                         //Purple lights
-                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[morphlessScene[0]][i / 3] ? 
-                            opDestinations[morphlessScene[0]][i / 3][i % 3] ?
+                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[centerMorphScene[0]][i / 3] ? 
+                            opDestinations[centerMorphScene[0]][i / 3][i % 3] ?
                                 getPortBrightness(inputs[OPERATOR_INPUTS + i / 3])
                                 : 0.f
                             : 0.f, args.sampleTime * lightDivider.getDivision());
