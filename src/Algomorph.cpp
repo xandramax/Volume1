@@ -1389,10 +1389,6 @@ struct VULightsItem : MenuItem {
 //         module->debug ^= true;
 //     }
 // };
-    Algomorph4 *module;
-    void onAction(const event::Action &e) override {
-    }
-};
 
 struct Algomorph4Widget : ModuleWidget {
     std::vector<Vec> SceneButtonCenters = {  {mm2px(53.831), mm2px(46.862)},
