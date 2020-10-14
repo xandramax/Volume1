@@ -53,6 +53,7 @@ struct Algomorph4 : Module {
             MORPH_ATTEN,
             RUN,
             CLOCK,
+            REVERSE_CLOCK,
             RESET,
             MOD_GAIN,
             OP_GAIN,
@@ -79,6 +80,7 @@ struct Algomorph4 : Module {
         Algomorph4* module;
         dsp::SchmittTrigger runCVTrigger;
         dsp::SchmittTrigger sceneAdvCVTrigger;
+        dsp::SchmittTrigger reverseSceneAdvCVTrigger;
         dsp::SlewLimiter shadowOpClickFilters[2][4][4][16];     // [noRing/ring][shadow op][legal mod][channel], clickGain[x][y][3][z] = sum output
         float shadowOpClickGains[2][4][4][16] = {{{0.f}}};
         dsp::SlewLimiter wildcardModClickFilter[16];
@@ -477,6 +479,14 @@ struct Algomorph4 : Module {
                baseScene = (baseScene + 1) % 3;
             else
                baseScene = (baseScene + 2) % 3;
+            graphDirty = true;
+        }
+        if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::REVERSE_CLOCK, 0))) {
+            //Advance base scene
+            if (!ccwSceneSelection)
+               baseScene = (baseScene + 2) % 3;
+            else
+               baseScene = (baseScene + 1) % 3;
             graphDirty = true;
         }
 
@@ -1422,10 +1432,12 @@ struct OptionModeItem : MenuItem {
     }
 };
 
+//Order must match OptionInput::Modes
 std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph CV",
                                                                         "Morph CV Attenuverter",
                                                                         "Run",
                                                                         "Clock",
+                                                                        "Reverse Clock",
                                                                         "Reset",
                                                                         "Modulation Gain Attenuverter",
                                                                         "Operator Gain Attenuverter",
@@ -1444,7 +1456,7 @@ std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph C
 
 template < typename MODULE >
 void createWildcardInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = 9; i < 11; i++)
+    for (int i = Algomorph4::OptionInput::WILDCARD_MOD; i <= Algomorph4::OptionInput::WILDCARD_SUM; i++)
         menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
 }
 
@@ -1461,7 +1473,7 @@ struct WildcardInputMenuItem : MenuItem {
 
 template < typename MODULE >
 void createShadowInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = 11; i < 15; i++)
+    for (int i = Algomorph4::OptionInput::SHADOW; i <= Algomorph4::OptionInput::SHADOW + 3; i++)
         menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
 }
 
@@ -1478,7 +1490,7 @@ struct ShadowInputMenuItem : MenuItem {
 
 template < typename MODULE >
 void createBrightnessInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = 17; i < 19; i++)
+    for (int i = Algomorph4::OptionInput::SCREEN_BRIGHTNESS; i <= Algomorph4::OptionInput::CONNECTION_BRIGHTNESS; i++)
         menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
 }
 
@@ -1504,17 +1516,18 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[3]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[4], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[4]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(4)));
    
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "CV"));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[0]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[1]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[5]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[6]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[7]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[8], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[8]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(8)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[15], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[15]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(15)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[9], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[9]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(9)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[16], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[16]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(16)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[17], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[17]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(17)));
     menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Light modes", &MenuItem::rightText, RIGHT_ARROW, &BrightnessInputMenuItem<Algomorph4>::module, module));
 }
 
