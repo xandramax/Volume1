@@ -3,6 +3,7 @@
 #include <bitset>
 
 constexpr float BLINK_INTERVAL = 0.42857142857f;
+constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 
 struct Algomorph4 : Module {
     enum ParamIds {
@@ -79,9 +80,9 @@ struct Algomorph4 : Module {
         dsp::SchmittTrigger sceneAdvCVTrigger;
         dsp::SlewLimiter shadowOpClickFilters[2][4][4][16];     // [noRing/ring][shadow op][legal mod][channel], clickGain[x][y][3][z] = sum output
         float shadowOpClickGains[2][4][4][16] = {{{0.f}}};
-        dsp::SlewLimiter wildcardModClickFilter;
+        dsp::SlewLimiter wildcardModClickFilter[16];
         float wildcardModClickGain = 0.f;
-        dsp::SlewLimiter wildcardSumClickFilter;
+        dsp::SlewLimiter wildcardSumClickFilter[16];
         float wildcardSumClickGain = 0.f;
         float voltage[NUM_MODES][16];
         float defVoltage[NUM_MODES] = { 0.f };
@@ -98,16 +99,16 @@ struct Algomorph4 : Module {
             resetVoltages();
             for (int i = WILDCARD_MOD; i < CLICK_FILTER; i++)
                 isAudioMode[i] = true;
-            for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < 4; j++) {
-                    for (int k = 0; k < 4; k++) {
-                        for (int m = 0; m < 16; m++)
-                            shadowOpClickFilters[i][j][k][m].setRiseFall(3750.f, 3750.f);
+            for (int c = 0; c < 16; c++) {
+                wildcardModClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+                wildcardSumClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+                for (int i = 0; i < 2; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        for (int k = 0; k < 4; k++)
+                            shadowOpClickFilters[i][j][k][c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
                     }
                 }
             }
-            wildcardModClickFilter.setRiseFall(3750.f, 3750.f);
-            wildcardSumClickFilter.setRiseFall(3750.f, 3750.f);
         }
 
         void resetVoltages() {
@@ -224,6 +225,7 @@ struct Algomorph4 : Module {
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     bool glowingInk = false;
     bool vuLights = true;
+    float clickFilterSlew = DEF_CLICK_FILTER_SLEW;
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger sceneAdvButtonTrigger;
@@ -233,6 +235,7 @@ struct Algomorph4 : Module {
     dsp::BooleanTrigger modulatorTrigger[4];
 
     dsp::SlewLimiter clickFilters[2][4][4][16];    // [noRing/ring][op][legal mod][channel], [op][3] = Sum output
+    dsp::ClockDivider clickFilterDivider;
 
     dsp::ClockDivider lightDivider;
     float sceneBrightnesses[3][8][3] = {{{}}};
@@ -253,12 +256,13 @@ struct Algomorph4 : Module {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int c = 0; c < 16; c++) {
-                    clickFilters[0][i][j][c].setRiseFall(3750.f, 3750.f);
-                    clickFilters[1][i][j][c].setRiseFall(3750.f, 3750.f);
+                    clickFilters[0][i][j][c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+                    clickFilters[1][i][j][c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
                 }
             }
         }
         lightDivider.setDivision(16);
+        clickFilterDivider.setDivision(16);
 
         //  Initialize opEnabled[] to true and opDestinations[] to false;
         for (int i = 0; i < 3; i++) {
@@ -627,6 +631,24 @@ struct Algomorph4 : Module {
             }
         }
 
+        //Update clickfilter rise/fall times
+        if (clickFilterDivider.process()) {
+            for (int c = 0; c < 16; c++) {
+                //+/-5V = 0V-2V
+                float clickFilterGain = (clamp(optionInput.getPolyVoltage(OptionInput::CLICK_FILTER, c) / 5.f, -1.f, 1.f) + 1.001f);
+                float clickFilterResult = clickFilterSlew * clickFilterGain;
+                optionInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                optionInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                for (int i = 0; i < 4; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        clickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                        clickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                        optionInput.shadowOpClickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                        optionInput.shadowOpClickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                    }
+                }
+            }
+        }
 
         //Get operator input channel then route to modulation output channel or to sum output channel
         float wildcardMod[16] = {0.f};
@@ -638,9 +660,9 @@ struct Algomorph4 : Module {
         for (int c = 0; c < channels; c++) {
             //Grab values from Option Input
             wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
-            optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter.process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
+            optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
             wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
-            optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter.process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
+            optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
             modAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
             opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
             sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
@@ -1446,7 +1468,7 @@ struct ShadowInputMenuItem : MenuItem {
 
 template < typename MODULE >
 void createBrightnessInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = 17; i < 20; i++)
+    for (int i = 17; i < 19; i++)
         menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
 }
 
@@ -1466,8 +1488,8 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     // for (int i = 0; i < Algomorph4::OptionInput::Modes::NUM_MODES; i++)
     //     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "5th Operator"));
-    menu->addChild(construct<WildcardInputMenuItem<Algomorph4>>(&MenuItem::text, "Wildcard modes", &WildcardInputMenuItem<Algomorph4>::module, module));
-    menu->addChild(construct<ShadowInputMenuItem<Algomorph4>>(&MenuItem::text, "Shadow modes", &ShadowInputMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<WildcardInputMenuItem<Algomorph4>>(&MenuItem::text, "Wildcard modes", &MenuItem::rightText, RIGHT_ARROW, &WildcardInputMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<ShadowInputMenuItem<Algomorph4>>(&MenuItem::text, "Shadow modes", &MenuItem::rightText, RIGHT_ARROW, &ShadowInputMenuItem<Algomorph4>::module, module));
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
@@ -1480,8 +1502,9 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[5]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[6]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[7]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[15], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[15]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(15)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[16], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[16]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(16)));
-    menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Light modes", &BrightnessInputMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Light modes", &MenuItem::rightText, RIGHT_ARROW, &BrightnessInputMenuItem<Algomorph4>::module, module));
 }
 
 template < typename MODULE >
@@ -1710,7 +1733,7 @@ struct Algomorph4Widget : ModuleWidget {
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Option Input"));
 
-		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Modes", &OptionInputMenuItem<Algomorph4>::module, module));
+		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Modes", &MenuItem::rightText, RIGHT_ARROW, &OptionInputMenuItem<Algomorph4>::module, module));
         
         AllowMultipleModesItem *allowMultipleModesItem = createMenuItem<AllowMultipleModesItem>("Allow multiple active modes", CHECKMARK(module->optionInput.allowMultipleModes));
         allowMultipleModesItem->module = module;
