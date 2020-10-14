@@ -57,7 +57,8 @@ struct Algomorph4 : Module {
             SUM_GAIN,
             BASE_SCENE,
             WILDCARD_MOD,
-            WILDCARD_OP,
+            WILDCARD_SUM,
+            WILDCARD_MOD_SUM,
             CLICK_FILTER,
             TRIPLE_MORPH_CV,
             SCREEN_BRIGHTNESS,
@@ -70,6 +71,10 @@ struct Algomorph4 : Module {
         Algomorph4* module;
         dsp::SchmittTrigger runCVTrigger;
         dsp::SchmittTrigger sceneAdvCVTrigger;
+        dsp::SlewLimiter modClickFilters[2][4][16];     //[noRing/ring][mod][channel]
+        float modClickGains[2][4][16] = {{{0.f}}};
+        dsp::SlewLimiter sumClickFilters[2][4][16];     //[noRing/ring][op][channel]
+        float sumClickGains[2][4][16] = {{{0.f}}};
         float voltage[Modes::NUM_MODES][16];
         float defVoltage[Modes::NUM_MODES] = { 0.f };
         int channels = 0;
@@ -83,6 +88,14 @@ struct Algomorph4 : Module {
             defVoltage[BASE_SCENE] = 5.f;
             defVoltage[CLICK_FILTER] = 5.f;
             resetVoltages();
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 4; j++) {
+                    for (int k = 0; k < 16; k++) {
+                        sumClickFilters[i][j][k].setRiseFall(3750.f, 3750.f);
+                        modClickFilters[i][j][k].setRiseFall(3750.f, 3750.f);
+                    }
+                }
+            }
         }
 
         void resetVoltages() {
@@ -96,24 +109,42 @@ struct Algomorph4 : Module {
 
         void setMode(Modes newMode) {
             for (int i = 0; i < Modes::NUM_MODES; i++) {
-                for (int j = 0; j < channels; j++) {
+                for (int c = 0; c < channels; c++) {
                     if (i == mode) {
-                        if (!module->rememberOptionVoltage)
-                            voltage[i][j] = defVoltage[i];
+                        if (mode == Modes::WILDCARD_MOD_SUM) {
+                            voltage[Modes::WILDCARD_MOD][c] = defVoltage[Modes::WILDCARD_MOD];
+                            voltage[Modes::WILDCARD_SUM][c] = defVoltage[Modes::WILDCARD_SUM];
+                        }
+                        else if (!module->rememberOptionVoltage || mode == Modes::WILDCARD_MOD || mode == Modes::WILDCARD_SUM)
+                            voltage[i][c] = defVoltage[i];
                     }
                     else if (i == newMode)
-                        voltage[i][j] = module->inputs[OPTION_INPUT].getPolyVoltage(j);
+                        voltage[i][c] = module->inputs[OPTION_INPUT].getPolyVoltage(c);
                 }
             }
             mode = newMode;
         }
 
         void updateVoltage() {
-            if (module->inputs[OPTION_INPUT].isConnected())
-                module->inputs[OPTION_INPUT].readVoltages(voltage[mode]);
+            if (mode == Modes::WILDCARD_MOD_SUM) {
+                if (module->inputs[OPTION_INPUT].isConnected()) {
+                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode - 1]);
+                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode - 2]);
+                }
+                else {
+                    for (int c = 0; c < 16; c++) {
+                        voltage[mode - 1][c] = defVoltage[mode - 1]; 
+                        voltage[mode - 2][c] = defVoltage[mode - 2]; 
+                    }
+                }
+            }
             else {
-                for (int i = 0; i < 16; i++)
-                    voltage[mode][i] = defVoltage[mode]; 
+                if (module->inputs[OPTION_INPUT].isConnected())
+                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode]);
+                else {
+                    for (int c = 0; c < 16; c++)
+                        voltage[mode][c] = defVoltage[mode]; 
+                }
             }
         }
 
@@ -335,7 +366,7 @@ struct Algomorph4 : Module {
         float in[16] = {0.f};                                   // Operator input channels
         float modOut[4][16] = {{0.f}};                          // Modulator outputs & channels
         float sumOut[16] = {0.f};                               // Sum output channels
-        float gain[2][4][4][16] = {{{{0.f}}}};                  // Click filter gains:  [noRing/ring][op][legal mod][channel], gain[x][y][3][z] = sum output
+        float clickGain[2][4][4][16] = {{{{0.f}}}};             // Click filter gains:  [noRing/ring][op][legal mod][channel], clickGain[x][y][3][z] = sum output
         bool carrier[3][4] = {  {true, true, true, true},       // Per-algorithm operator carriership status
                                 {true, true, true, true},       // [scene][op]
                                 {true, true, true, true} };
@@ -560,23 +591,37 @@ struct Algomorph4 : Module {
             }
         }
 
+
         //Get operator input channel then route to modulation output channel or to sum output channel
+        float wildcardMod[16] = {0.f};
+        float modAttenuversion[16] = {0.f};
+        float opAttenuversion[16] = {0.f};
+        float wildcardSum[16] = {0.f};
+        float sumAttenuversion[16] = {0.f};
         for (int c = 0; c < channels; c++) {
-            //Note: gain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because output index 3 is hijacked for the sum output
+            //Grab values from Option Input
+            wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
+            modAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
+            opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
+            wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
+            sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
+            //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
+            sumOut[c] += wildcardSum[c] * sumAttenuversion[c];
             for (int i = 0; i < 4; i++) {
+                modOut[i][c] += wildcardMod[c] * modAttenuversion[c];
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
+                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
                     //Simple case, do not check adjacent algorithms
                     if (morphless[c]) {
                         for (int j = 0; j < 3; j++) {
                             bool connected = opDestinations[morphlessScene[c]][i][j] && opEnabled[morphlessScene[c]][i];
                             carrier[morphlessScene[c]][i] = connected ? false : carrier[morphlessScene[c]][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] * clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
+                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
+                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c]) * modAttenuversion[c];
                         }
                         bool sumConnected = carrier[morphlessScene[c]][i] && opEnabled[morphlessScene[c]][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += in[c] * gain[0][i][3][c] * clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
+                        clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
+                        sumOut[c] += in[c] * clickGain[0][i][3][c] * sumAttenuversion[c];
                     }
                     //Check current algorithm and morph target
                     else {
@@ -584,23 +629,23 @@ struct Algomorph4 : Module {
                             if (ringMorph) {
                                 float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                                 carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && opEnabled[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
-                                gain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
+                                clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                             }
-                            float connectionA = opDestinations[centerMorphScene[c]][i][j]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                            float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
                             float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
                             carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                             carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                            gain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
-                            modOut[threeToFour[i][j]][c] += in[c] * gain[0][i][j][c] - in[c] * gain[1][i][j][c] * clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
+                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
+                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * modAttenuversion[c];
                         }
                         if (ringMorph) {
                             float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
-                            gain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                            clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                         }
-                        float sumConnection =     carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                        float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
                                             +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
-                        gain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += in[c] * gain[0][i][3][c] - in[c] * gain[1][i][3][c] * clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
+                        clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                        sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * sumAttenuversion[c];
                     }
                 }
             }
@@ -1289,8 +1334,9 @@ std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph C
                                                                         "Operator Gain Attenuverter",
                                                                         "Sum Gain Attenuverter",
                                                                         "Base Scene",
-                                                                        "Wildcard Modulation",
-                                                                        "Wildcard Operator",
+                                                                        "Wildcard -> Modulation",
+                                                                        "Wildcard -> Sum",
+                                                                        "Wildcard -> Modulation & Sum",
                                                                         "Click Filter Strength",
                                                                         "Hyper Morph CV",
                                                                         "Screen Brightness",
@@ -1302,13 +1348,23 @@ template < typename MODULE >
 void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     // for (int i = 0; i < Algomorph4::OptionInput::Modes::NUM_MODES; i++)
     //     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[9], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(9)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[10], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(10)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[11], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(11)));
+    
+    menu->addChild(new MenuSeparator());
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
+   
+    menu->addChild(new MenuSeparator());
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "CV"));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[12], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(12)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[13], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(13)));
 }
 
 template < typename MODULE >
