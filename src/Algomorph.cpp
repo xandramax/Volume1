@@ -717,7 +717,7 @@ struct Algomorph4 : Module {
                 //Set purple component to off
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Set yellow component
-                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 2048.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
+                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 2048.f + 0.014325f + clamp(optionInput.getPolyVoltage(OptionInput::SCREEN_BRIGHTNESS, 0), 0.f, 10.f) / 1536.f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
                 //Set scene lights
@@ -735,8 +735,8 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(configOp == i ?
                             blinkStatus ?
                                 0.f
-                                : getPortBrightness(inputs[OPERATOR_INPUTS + i])
-                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]), args.sampleTime * lightDivider.getDivision());
+                                : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
+                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow Lights
                         lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Red lights
@@ -764,9 +764,9 @@ struct Algomorph4 : Module {
                             opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
                                 blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i])
-                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i])
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]), args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
+                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             (opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
@@ -778,11 +778,11 @@ struct Algomorph4 : Module {
                         //Purple lights
                         lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
-                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i])
+                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
                                 : blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i])
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]), args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
@@ -828,7 +828,7 @@ struct Algomorph4 : Module {
                 //Set yellow component to off
                 lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Set purple component
-                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
+                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f + clamp(optionInput.getPolyVoltage(OptionInput::SCREEN_BRIGHTNESS, 0), 0.f, 10.f) / 768.f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 if (morphless[0]) {  //Display state without morph
@@ -844,7 +844,7 @@ struct Algomorph4 : Module {
                         if (opEnabled[centerMorphScene[0]][i]) {
                             //Set op lights
                             //Purple lights
-                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]), args.sampleTime * lightDivider.getDivision());
+                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                             //Red lights
                             lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
 
@@ -861,7 +861,7 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Set mod lights
                         //Purple lights
-                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(outputs[MODULATOR_OUTPUTS + i]), args.sampleTime * lightDivider.getDivision());
+                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     }
@@ -870,7 +870,7 @@ struct Algomorph4 : Module {
                         //Purple lights
                         lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[centerMorphScene[0]][i / 3] ? 
                             opDestinations[centerMorphScene[0]][i / 3][i % 3] ?
-                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3])
+                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f
                                 : 0.f
                             : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
@@ -909,11 +909,11 @@ struct Algomorph4 : Module {
                         brightness = 0.f;
                         if (opDestinations[centerMorphScene[0]][i / 3][i % 3]) {
                             if (opEnabled[centerMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]);
+                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f;
                         }
                         if (opDestinations[forwardMorphScene[0]][i / 3][i % 3]) {
                             if (opEnabled[forwardMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0];
+                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f;
                         }
                         //Purple lights
                         lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
@@ -945,10 +945,10 @@ struct Algomorph4 : Module {
                 if (opEnabled[i][j]) {
                     //Op lights
                     //Purple lights
-                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]);
+                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f;
                     //Mod lights
                     //Purple lights
-                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]);
+                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f;
                 }
                 else {
                     //Op lights
@@ -1408,8 +1408,7 @@ std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph C
                                                                         "Click Filter Strength",
                                                                         "Hyper Morph CV",
                                                                         "Screen Brightness",
-                                                                        "Connection Brightness",
-                                                                        "Ring Brightness"};
+                                                                        "Connection Brightness"};
 
 template < typename MODULE >
 void createWildcardInputMenu(MODULE* module, ui::Menu* menu) {
@@ -1482,7 +1481,7 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[6]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[7]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[16], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[16]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(16)));
-    menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Brightness modes", &BrightnessInputMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Light modes", &BrightnessInputMenuItem<Algomorph4>::module, module));
 }
 
 template < typename MODULE >
