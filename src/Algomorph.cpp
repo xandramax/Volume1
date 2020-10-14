@@ -77,10 +77,8 @@ struct Algomorph4 : Module {
         Algomorph4* module;
         dsp::SchmittTrigger runCVTrigger;
         dsp::SchmittTrigger sceneAdvCVTrigger;
-        dsp::SlewLimiter modClickFilters[2][4][16];     //[noRing/ring][mod][channel]
-        float modClickGains[2][4][16] = {{{0.f}}};
-        dsp::SlewLimiter sumClickFilters[2][4][16];     //[noRing/ring][op][channel]
-        float sumClickGains[2][4][16] = {{{0.f}}};
+        dsp::SlewLimiter shadowOpClickFilters[2][4][4][16];     // [noRing/ring][shadow op][legal mod][channel], clickGain[x][y][3][z] = sum output
+        float shadowOpClickGains[2][4][4][16] = {{{0.f}}};
         float voltage[NUM_MODES][16];
         float defVoltage[NUM_MODES] = { 0.f };
         int channels = 0;
@@ -98,9 +96,9 @@ struct Algomorph4 : Module {
                 isAudioMode[i] = true;
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 4; j++) {
-                    for (int k = 0; k < 16; k++) {
-                        sumClickFilters[i][j][k].setRiseFall(3750.f, 3750.f);
-                        modClickFilters[i][j][k].setRiseFall(3750.f, 3750.f);
+                    for (int k = 0; k < 4; k++) {
+                        for (int m = 0; m < 16; m++)
+                            shadowOpClickFilters[i][j][k][m].setRiseFall(3750.f, 3750.f);
                     }
                 }
             }
@@ -167,6 +165,12 @@ struct Algomorph4 : Module {
                 for (int i = 0; i < NUM_MODES; i++) {
                     if (mode[i])
                         module->inputs[OPTION_INPUT].readVoltages(voltage[i]);
+                }
+            }
+            else {
+                if (forgetVoltage || isAudioMode[lastSetMode]) {
+                    for (int c = 0; c < channels; c++)
+                        voltage[lastSetMode][c] = defVoltage[lastSetMode];
                 }
             }
         }
@@ -620,22 +624,24 @@ struct Algomorph4 : Module {
 
         //Get operator input channel then route to modulation output channel or to sum output channel
         float wildcardMod[16] = {0.f};
+        float wildcardSum[16] = {0.f};
+        float shadowOp[16] = {0.f};
         float modAttenuversion[16] = {0.f};
         float opAttenuversion[16] = {0.f};
-        float wildcardSum[16] = {0.f};
         float sumAttenuversion[16] = {0.f};
         for (int c = 0; c < channels; c++) {
             //Grab values from Option Input
             wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
+            wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
             modAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
             opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
-            wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
             sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
             sumOut[c] += wildcardSum[c] * sumAttenuversion[c];
             for (int i = 0; i < 4; i++) {
                 modOut[i][c] += wildcardMod[c] * modAttenuversion[c];
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                    shadowOp[c] = optionInput.getPolyVoltage(static_cast<OptionInput::Modes>(OptionInput::SHADOW + i), c);
                     in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
                     //Simple case, do not check adjacent algorithms
                     if (morphless[c]) {
@@ -643,11 +649,13 @@ struct Algomorph4 : Module {
                             bool connected = opDestinations[centerMorphScene[c]][i][j] && opEnabled[centerMorphScene[c]][i];
                             carrier[centerMorphScene[c]][i] = connected ? false : carrier[centerMorphScene[c]][i];
                             clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c]) * modAttenuversion[c];
+                            optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
+                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c];
                         }
                         bool sumConnected = carrier[centerMorphScene[c]][i] && opEnabled[centerMorphScene[c]][i];
                         clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += in[c] * clickGain[0][i][3][c] * sumAttenuversion[c];
+                        optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
+                        sumOut[c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * sumAttenuversion[c];
                     }
                     //Check current algorithm and morph target
                     else {
@@ -656,22 +664,27 @@ struct Algomorph4 : Module {
                                 float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                                 carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && opEnabled[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
                                 clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
+                                optionInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
                             }
                             float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
                             float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            float morphedConnection = connectionA + connectionB;
                             carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                             carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connectionA + connectionB) : connectionA + connectionB;
-                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * modAttenuversion[c];
+                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                            optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                            modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c];
                         }
                         if (ringMorph) {
                             float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                             clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                            optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                         }
                         float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
                                             +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
                         clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * sumAttenuversion[c];
+                        optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                        sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * sumAttenuversion[c];
                     }
                 }
             }
