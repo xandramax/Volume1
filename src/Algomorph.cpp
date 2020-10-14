@@ -96,7 +96,6 @@ struct Algomorph4 : Module {
             resetVoltages();
             for (int i = WILDCARD_MOD; i < CLICK_FILTER; i++)
                 isAudioMode[i] = true;
-            setMode(MORPH_CV);
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 4; j++) {
                     for (int k = 0; k < 16; k++) {
@@ -291,6 +290,10 @@ struct Algomorph4 : Module {
                 }
             }
         }
+        optionInput.setMode(OptionInput::MORPH_CV);
+        optionInput.resetVoltages();
+        optionInput.allowMultipleModes = false;
+        optionInput.forgetVoltage = true;
         configMode = false;
         configOp = -1;
         configScene = 1;
