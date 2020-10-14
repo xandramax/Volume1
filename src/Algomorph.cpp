@@ -79,6 +79,10 @@ struct Algomorph4 : Module {
         dsp::SchmittTrigger sceneAdvCVTrigger;
         dsp::SlewLimiter shadowOpClickFilters[2][4][4][16];     // [noRing/ring][shadow op][legal mod][channel], clickGain[x][y][3][z] = sum output
         float shadowOpClickGains[2][4][4][16] = {{{0.f}}};
+        dsp::SlewLimiter wildcardModClickFilter;
+        float wildcardModClickGain = 0.f;
+        dsp::SlewLimiter wildcardSumClickFilter;
+        float wildcardSumClickGain = 0.f;
         float voltage[NUM_MODES][16];
         float defVoltage[NUM_MODES] = { 0.f };
         int channels = 0;
@@ -102,6 +106,8 @@ struct Algomorph4 : Module {
                     }
                 }
             }
+            wildcardModClickFilter.setRiseFall(3750.f, 3750.f);
+            wildcardSumClickFilter.setRiseFall(3750.f, 3750.f);
         }
 
         void resetVoltages() {
@@ -632,14 +638,16 @@ struct Algomorph4 : Module {
         for (int c = 0; c < channels; c++) {
             //Grab values from Option Input
             wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
+            optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter.process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
             wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
+            optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter.process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
             modAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
             opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
             sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
-            sumOut[c] += wildcardSum[c] * sumAttenuversion[c];
+            sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c];
             for (int i = 0; i < 4; i++) {
-                modOut[i][c] += wildcardMod[c] * modAttenuversion[c];
+                modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c];
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
                     shadowOp[c] = optionInput.getPolyVoltage(static_cast<OptionInput::Modes>(OptionInput::SHADOW + i), c);
                     in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
