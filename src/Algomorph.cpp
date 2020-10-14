@@ -58,7 +58,7 @@ struct Algomorph4 : Module {
             BASE_SCENE,
             WILDCARD_MOD,
             WILDCARD_SUM,
-            WILDCARD_MOD_SUM,
+            ENUMS(SHADOW, 4),       //Shadow 
             CLICK_FILTER,
             TRIPLE_MORPH_CV,
             SCREEN_BRIGHTNESS,
@@ -67,7 +67,13 @@ struct Algomorph4 : Module {
             ALL_BRIGHTNESS,
             NUM_MODES
         };
-        Modes mode = Modes::MORPH_CV;
+        bool mode[NUM_MODES] = {false};
+        bool isAudioMode[NUM_MODES] = {false};
+        bool allowMultipleModes = false;
+        int activeModes = 0;
+        Modes lastSetMode;
+        bool forgetVoltage = true;
+        // Modes mode = MORPH_CV;
         Algomorph4* module;
         dsp::SchmittTrigger runCVTrigger;
         dsp::SchmittTrigger sceneAdvCVTrigger;
@@ -75,8 +81,8 @@ struct Algomorph4 : Module {
         float modClickGains[2][4][16] = {{{0.f}}};
         dsp::SlewLimiter sumClickFilters[2][4][16];     //[noRing/ring][op][channel]
         float sumClickGains[2][4][16] = {{{0.f}}};
-        float voltage[Modes::NUM_MODES][16];
-        float defVoltage[Modes::NUM_MODES] = { 0.f };
+        float voltage[NUM_MODES][16];
+        float defVoltage[NUM_MODES] = { 0.f };
         int channels = 0;
 
         OptionInput(Algomorph4* m) {
@@ -88,6 +94,9 @@ struct Algomorph4 : Module {
             defVoltage[BASE_SCENE] = 5.f;
             defVoltage[CLICK_FILTER] = 5.f;
             resetVoltages();
+            for (int i = WILDCARD_MOD; i < CLICK_FILTER; i++)
+                isAudioMode[i] = true;
+            setMode(MORPH_CV);
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 4; j++) {
                     for (int k = 0; k < 16; k++) {
@@ -99,51 +108,66 @@ struct Algomorph4 : Module {
         }
 
         void resetVoltages() {
-            for (int i = 0; i < Modes::NUM_MODES; i++) {
+            for (int i = 0; i < NUM_MODES; i++) {
                 for (int j = 0; j < 16; j++) {
-                    if (i != mode)
+                    if (!mode[i])
                         voltage[i][j] = defVoltage[i];
                 }
             }
         }
 
-        void setMode(Modes newMode) {
-            for (int i = 0; i < Modes::NUM_MODES; i++) {
-                for (int c = 0; c < channels; c++) {
-                    if (i == mode) {
-                        if (mode == Modes::WILDCARD_MOD_SUM) {
-                            voltage[Modes::WILDCARD_MOD][c] = defVoltage[Modes::WILDCARD_MOD];
-                            voltage[Modes::WILDCARD_SUM][c] = defVoltage[Modes::WILDCARD_SUM];
-                        }
-                        else if (!module->rememberOptionVoltage || mode == Modes::WILDCARD_MOD || mode == Modes::WILDCARD_SUM)
-                            voltage[i][c] = defVoltage[i];
+        void toggleAllowMultipleModes() {
+            if (allowMultipleModes) {
+                if (activeModes > 1) {
+                    for (int i = 0; i < NUM_MODES; i++) {
+                        if (mode[i] && i != lastSetMode)
+                            unsetMode(static_cast<Modes>(i));
                     }
-                    else if (i == newMode)
-                        voltage[i][c] = module->inputs[OPTION_INPUT].getPolyVoltage(c);
+                }
+                allowMultipleModes = false;
+            }
+            else
+                allowMultipleModes = true;
+        }
+
+        void setMode(Modes newMode) {
+            activeModes++;
+            if (!allowMultipleModes) {
+                for (int i = 0; i < NUM_MODES; i++) {
+                    if (mode[i])   //Unset previous mode
+                        unsetMode(static_cast<Modes>(i));
                 }
             }
-            mode = newMode;
+            mode[newMode] = true;
+            module->inputs[OPTION_INPUT].readVoltages(voltage[newMode]);
+            lastSetMode = newMode;
+        }
+
+        void unsetMode(Modes oldMode) {
+            if (activeModes > 1) {
+                if (forgetVoltage || isAudioMode[oldMode]) {
+                    for (int c = 0; c < channels; c++)
+                        voltage[oldMode][c] = defVoltage[oldMode];
+                }
+                mode[oldMode] = false;
+                activeModes--;
+            }
+        }
+
+        void toggleForgetVoltage() {
+            if (forgetVoltage)
+                forgetVoltage = false;
+            else {
+                resetVoltages();
+                forgetVoltage = true;
+            }
         }
 
         void updateVoltage() {
-            if (mode == Modes::WILDCARD_MOD_SUM) {
-                if (module->inputs[OPTION_INPUT].isConnected()) {
-                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode - 1]);
-                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode - 2]);
-                }
-                else {
-                    for (int c = 0; c < 16; c++) {
-                        voltage[mode - 1][c] = defVoltage[mode - 1]; 
-                        voltage[mode - 2][c] = defVoltage[mode - 2]; 
-                    }
-                }
-            }
-            else {
-                if (module->inputs[OPTION_INPUT].isConnected())
-                    module->inputs[OPTION_INPUT].readVoltages(voltage[mode]);
-                else {
-                    for (int c = 0; c < 16; c++)
-                        voltage[mode][c] = defVoltage[mode]; 
+            if (module->inputs[OPTION_INPUT].isConnected()) {
+                for (int i = 0; i < NUM_MODES; i++) {
+                    if (mode[i])
+                        module->inputs[OPTION_INPUT].readVoltages(voltage[i]);
                 }
             }
         }
@@ -191,7 +215,6 @@ struct Algomorph4 : Module {
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     bool glowingInk = false;
     bool vuLights = true;
-    bool rememberOptionVoltage = false;
 
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger sceneAdvButtonTrigger;
@@ -941,8 +964,15 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
         json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
         json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
-        json_object_set_new(rootJ, "Option Input Mode", json_integer(optionInput.mode));
-        json_object_set_new(rootJ, "Remember Option Voltage", json_boolean(rememberOptionVoltage));
+        json_t* opInputModesJ = json_array();
+        for (int i = 0; i < OptionInput::NUM_MODES; i++) {
+            json_t* inputModeJ = json_object();
+            json_object_set_new(inputModeJ, "Destination", json_boolean(optionInput.mode[i]));
+            json_array_append_new(opInputModesJ, inputModeJ);
+        }
+        json_object_set_new(rootJ, "Option Input Modes", opInputModesJ);
+        json_object_set_new(rootJ, "Allow Multiple Modes", json_boolean(optionInput.allowMultipleModes));
+        json_object_set_new(rootJ, "Forget Option Voltage", json_boolean(optionInput.forgetVoltage));
         json_t* opDestinationsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -985,8 +1015,16 @@ struct Algomorph4 : Module {
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
         glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
         vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
+        //Set allowMultipleModes and forgetVoltage before loading modes
+        optionInput.allowMultipleModes = json_boolean_value(json_object_get(rootJ, "Allow Multiple Modes"));
+        optionInput.forgetVoltage = json_boolean_value(json_object_get(rootJ, "Forget Option Voltage"));
         optionInput.setMode(static_cast<OptionInput::Modes>(json_integer_value(json_object_get(rootJ, "Option Input Mode"))));
-        rememberOptionVoltage = json_boolean_value(json_object_get(rootJ, "Remember Option Voltage"));
+        json_t* opInputModesJ = json_object_get(rootJ, "Option Input Modes");
+        json_t* inputModeJ; size_t inputModeIndex;
+        json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
+            if (json_boolean_value(json_object_get(inputModeJ, "Destination")))
+                optionInput.setMode(static_cast<OptionInput::Modes>(inputModeIndex));
+        }
         json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
         json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
@@ -1321,7 +1359,10 @@ struct OptionModeItem : MenuItem {
     Algomorph4::OptionInput::Modes mode;
 
     void onAction(const event::Action &e) override {
-        module->optionInput.setMode(mode);
+        if (module->optionInput.mode[mode])
+            module->optionInput.unsetMode(mode);
+        else
+            module->optionInput.setMode(mode);
     }
 };
 
@@ -1336,35 +1377,88 @@ std::string OptionModeLabels[Algomorph4::OptionInput::NUM_MODES] = {    "Morph C
                                                                         "Base Scene",
                                                                         "Wildcard -> Modulation",
                                                                         "Wildcard -> Sum",
-                                                                        "Wildcard -> Modulation & Sum",
+                                                                        "Shadow -> 1",
+                                                                        "Shadow -> 2",
+                                                                        "Shadow -> 3",
+                                                                        "Shadow -> 4",
                                                                         "Click Filter Strength",
                                                                         "Hyper Morph CV",
                                                                         "Screen Brightness",
                                                                         "Connection Brightness",
-                                                                        "Ring Brightness",
-                                                                        "All Brightness"};
+                                                                        "Ring Brightness"};
+
+template < typename MODULE >
+void createWildcardInputMenu(MODULE* module, ui::Menu* menu) {
+    for (int i = 9; i < 11; i++)
+        menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
+}
+
+template < typename MODULE >
+struct WildcardInputMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createWildcardInputMenu(module, menu);
+		return menu;
+	}
+};
+
+template < typename MODULE >
+void createShadowInputMenu(MODULE* module, ui::Menu* menu) {
+    for (int i = 11; i < 15; i++)
+        menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
+}
+
+template < typename MODULE >
+struct ShadowInputMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createShadowInputMenu(module, menu);
+		return menu;
+	}
+};
+
+template < typename MODULE >
+void createBrightnessInputMenu(MODULE* module, ui::Menu* menu) {
+    for (int i = 17; i < 20; i++)
+        menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
+}
+
+template < typename MODULE >
+struct BrightnessInputMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createBrightnessInputMenu(module, menu);
+		return menu;
+	}
+};
 
 template < typename MODULE >
 void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     // for (int i = 0; i < Algomorph4::OptionInput::Modes::NUM_MODES; i++)
     //     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(i)));
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[9], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(9)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[10], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(10)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[11], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(11)));
-    
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "5th Operator"));
+    menu->addChild(construct<WildcardInputMenuItem<Algomorph4>>(&MenuItem::text, "Wildcard modes", &WildcardInputMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<ShadowInputMenuItem<Algomorph4>>(&MenuItem::text, "Shadow modes", &ShadowInputMenuItem<Algomorph4>::module, module));
+
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[3]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
    
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "CV"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[13], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(13)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[0], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[0]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(0)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[1], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[1]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(1)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[5]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[6]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[7]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[16], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[16]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(16)));
+    menu->addChild(construct<BrightnessInputMenuItem<Algomorph4>>(&MenuItem::text, "Brightness modes", &BrightnessInputMenuItem<Algomorph4>::module, module));
 }
 
 template < typename MODULE >
@@ -1378,15 +1472,17 @@ struct OptionInputMenuItem : MenuItem {
 	}
 };
 
-struct RememberOptionVoltageItem : MenuItem {
+struct AllowMultipleModesItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
-        if(module->rememberOptionVoltage) {
-            module->optionInput.resetVoltages();
-            module->rememberOptionVoltage = false;
-        }
-        else
-            module->rememberOptionVoltage = true;
+        module->optionInput.toggleAllowMultipleModes();
+    }
+};
+
+struct ForgetOptionVoltageItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->optionInput.toggleForgetVoltage();
     }
 };
 
@@ -1589,7 +1685,17 @@ struct Algomorph4Widget : ModuleWidget {
         Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
         menu->addChild(new MenuSeparator());
-		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Option (*) Input modes", &OptionInputMenuItem<Algomorph4>::module, module));
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Option Input"));
+
+		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Modes", &OptionInputMenuItem<Algomorph4>::module, module));
+        
+        AllowMultipleModesItem *allowMultipleModesItem = createMenuItem<AllowMultipleModesItem>("Allow multiple active modes", CHECKMARK(module->optionInput.allowMultipleModes));
+        allowMultipleModesItem->module = module;
+        menu->addChild(allowMultipleModesItem);
+        
+        ForgetOptionVoltageItem *forgetOptionVoltageItem = createMenuItem<ForgetOptionVoltageItem>("Remember voltage", CHECKMARK(!module->optionInput.forgetVoltage));
+        forgetOptionVoltageItem->module = module;
+        menu->addChild(forgetOptionVoltageItem);
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
@@ -1616,10 +1722,6 @@ struct Algomorph4Widget : ModuleWidget {
         CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input - reverse sequence", CHECKMARK(!module->ccwSceneSelection));
         ccwScenesItem->module = module;
         menu->addChild(ccwScenesItem);
-        
-        RememberOptionVoltageItem *rememberOptionVoltageItem = createMenuItem<RememberOptionVoltageItem>("Remember option input voltage when mode-changing", CHECKMARK(module->rememberOptionVoltage));
-        rememberOptionVoltageItem->module = module;
-        menu->addChild(rememberOptionVoltageItem);
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
