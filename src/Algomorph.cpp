@@ -353,7 +353,12 @@ struct Algomorph4 : Module {
         optionInput.channels = channels;
 
         // Only redraw display if morph on channel 1 has changed
-        float newMorph0 = clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f);
+        float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
+                            * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f)
+                            + params[MORPH_KNOB].getValue()
+                            + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f)
+                            + clamp(optionInput.getPolyVoltage(OptionInput::TRIPLE_MORPH_CV, 0) / (5.f / 3.f), -3.f, 3.f);
+        newMorph0 = clamp(newMorph0, -3.f, 3.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
             graphDirty = true;
@@ -1303,6 +1308,7 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[6], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(6)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[7], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(7)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[12], &OptionModeItem::module, module, &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(12)));
 }
 
 template < typename MODULE >
@@ -1314,6 +1320,18 @@ struct OptionInputMenuItem : MenuItem {
 		createOptionInputMenu(module, menu);
 		return menu;
 	}
+};
+
+struct RememberOptionVoltageItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        if(module->rememberOptionVoltage) {
+            module->optionInput.resetVoltages();
+            module->rememberOptionVoltage = false;
+        }
+        else
+            module->rememberOptionVoltage = true;
+    }
 };
 
 struct RingMorphItem : MenuItem {
@@ -1371,10 +1389,8 @@ struct VULightsItem : MenuItem {
 //         module->debug ^= true;
 //     }
 // };
-struct RememberOptionVoltageItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
-        module->rememberOptionVoltage ^= true;
     }
 };
 
