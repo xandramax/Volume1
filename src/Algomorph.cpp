@@ -951,15 +951,16 @@ struct Algomorph4 : Module {
                     }
                 }
                 //Set connection lights
+                float connectionLineBrightnessInput = clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
                 for (int i = 0; i < 12; i++) {
                     brightness = 0.f;
                     if (opDestinations[centerMorphScene[0]][i / 3][i % 3]) {
                         if (opEnabled[centerMorphScene[0]][i / 3])
-                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
+                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + connectionLineBrightnessInput;
                     }
                     if (opDestinations[forwardMorphScene[0]][i / 3][i % 3]) {
                         if (opEnabled[forwardMorphScene[0]][i / 3])
-                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
+                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + connectionLineBrightnessInput;
                     }
                     //Purple lights
                     lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
