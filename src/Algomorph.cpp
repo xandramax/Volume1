@@ -1373,6 +1373,9 @@ struct AlgoScreenWidget : FramebufferWidget {
         void draw(const Widget::DrawArgs& args) override {
             if (!module) return;
 
+            xOrigin = box.size.x / 2.f;
+            yOrigin = box.size.y / 2.f;
+
             for (int i = 0; i < 3; i++) {
                 int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
                 if (name != -1)
