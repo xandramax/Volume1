@@ -191,7 +191,6 @@ struct Algomorph4 : Module {
     int baseScene = 1;      // Center the Morph knob on saved algorithm 0, 1, or 2
     float morph[16] = {0.f};        // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
-    bool morphless[16] = { false };
     int centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
     bool opEnabled[3][4];          // [scene][op]
     bool opDestinations[3][4][3];   // [scene][op][legal mod]
@@ -930,101 +929,48 @@ struct Algomorph4 : Module {
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f + clamp(optionInput.voltage[OptionInput::SCREEN_BRIGHTNESS][0], 0.f, 10.f) / 768.f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                if (morphless[0]) {  //Display state without morph
-                    //Set base scene light
-                    for (int i = 0; i < 3; i++) {
-                        //Set yellow component to off
-                        lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                        //Set purple component depending on base scene
-                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == (baseScene + sceneOffset[0]) % 3 ? 1.f : 0.f, args.sampleTime * lightDivider.getDivision());
+                //Display morphed state
+                float brightness;
+                updateSceneBrightnesses();
+                //Set scene lights
+                //Set base scene light
+                for (int i = 0; i < 3; i++) {
+                    //Set yellow component to off
+                    lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    //Set purple component depending on inverse morph
+                    lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == (baseScene + sceneOffset[0]) % 3 ? 1.f - rescale(relativeMorphMagnitude[0], 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
+                }
+                //Set morph target light's purple component depending on morph
+                lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
+                //Set op/mod lights
+                for (int i = 0; i < 4; i++) {
+                    //Purple, yellow, and red lights
+                    for (int j = 0; j < 3; j++) {
+                        lights[OPERATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i][j], sceneBrightnesses[forwardMorphScene[0]][i][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
+                        lights[MODULATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i + 4][j], sceneBrightnesses[forwardMorphScene[0]][i + 4][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
                     }
-                    //Set op/mod lights
-                    for (int i = 0; i < 4; i++) {
-                        if (opEnabled[centerMorphScene[0]][i]) {
-                            //Set op lights
-                            //Purple lights
-                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
-                            //Red lights
-                            lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-
-                        }
-                        else {
-                            //Set op lights
-                            //Purple lights
-                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                            //Red lights
-                            lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
-                        }
-                        //Set op lights
-                        //Yellow Lights
-                        lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                        //Set mod lights
-                        //Purple lights
-                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
-                        //Yellow lights
-                        lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                }
+                //Set connection lights
+                for (int i = 0; i < 12; i++) {
+                    brightness = 0.f;
+                    if (opDestinations[centerMorphScene[0]][i / 3][i % 3]) {
+                        if (opEnabled[centerMorphScene[0]][i / 3])
+                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
                     }
-                    //Set connection lights
-                    for (int i = 0; i < 12; i++) {
-                        //Purple lights
-                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[centerMorphScene[0]][i / 3] ? 
-                            opDestinations[centerMorphScene[0]][i / 3][i % 3] ?
-                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f
-                                : 0.f
-                            : 0.f, args.sampleTime * lightDivider.getDivision());
-                        //Yellow lights
-                        lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    if (opDestinations[forwardMorphScene[0]][i / 3][i % 3]) {
+                        if (opEnabled[forwardMorphScene[0]][i / 3])
+                            brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
                     }
-                    //Set horizontal disable lights
-                    for (int i = 0; i < 4; i++)
-                        lights[H_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    //Purple lights
+                    lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
+                    //Yellow
+                    lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     //Set diagonal disable lights
-                    for (int i = 0; i < 12; i++)
-                        lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 }
-                else {  //Display morphed state
-                    float brightness;
-                    updateSceneBrightnesses();
-                    //Set scene lights
-                    //Set base scene light
-                    for (int i = 0; i < 3; i++) {
-                        //Set yellow component to off
-                        lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                        //Set purple component depending on inverse morph
-                        lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(i == (baseScene + sceneOffset[0]) % 3 ? 1.f - rescale(relativeMorphMagnitude[0], 0.f, 1.f, 0.f, .635f) : 0.f, args.sampleTime * lightDivider.getDivision());
-                    }
-                    //Set morph target light's purple component depending on morph
-                    lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
-                    //Set op/mod lights
-                    for (int i = 0; i < 4; i++) {
-                        //Purple, yellow, and red lights
-                        for (int j = 0; j < 3; j++) {
-                            lights[OPERATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i][j], sceneBrightnesses[forwardMorphScene[0]][i][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
-                            lights[MODULATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i + 4][j], sceneBrightnesses[forwardMorphScene[0]][i + 4][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
-                        }
-                    }
-                    //Set connection lights
-                    for (int i = 0; i < 12; i++) {
-                        brightness = 0.f;
-                        if (opDestinations[centerMorphScene[0]][i / 3][i % 3]) {
-                            if (opEnabled[centerMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
-                        }
-                        if (opDestinations[forwardMorphScene[0]][i / 3][i % 3]) {
-                            if (opEnabled[forwardMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
-                        }
-                        //Purple lights
-                        lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
-                        //Yellow
-                        lights[CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                        //Set diagonal disable lights
-                        lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                    }
-                    //Set horizontal disable lights
-                    for (int i = 0; i < 4; i++)
-                        lights[H_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                }
+                //Set horizontal disable lights
+                for (int i = 0; i < 4; i++)
+                    lights[H_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
             }
         }
 
