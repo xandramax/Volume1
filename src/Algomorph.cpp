@@ -172,8 +172,10 @@ struct Algomorph4 : Module {
         void updateVoltage() {
             if (module->inputs[OPTION_INPUT].isConnected()) {
                 for (int i = 0; i < NUM_MODES; i++) {
-                    if (mode[i])
-                        module->inputs[OPTION_INPUT].readVoltages(voltage[i]);
+                    if (mode[i]) {
+                        for (int c = 0; c < 16; c++)
+                            voltage[i][c] = module->inputs[OPTION_INPUT].getPolyVoltage(c);
+                    }
                 }
             }
             else {
@@ -183,14 +185,6 @@ struct Algomorph4 : Module {
                 }
                 module->running = true;
             }
-        }
-
-        float getPolyVoltage(Modes reqMode, int channel) {
-            updateVoltage();
-            if (channels == 1)
-                return voltage[reqMode][0];
-            else
-                return voltage[reqMode][channel];
         }
     };
     OptionInput optionInput = OptionInput(this);
@@ -441,13 +435,13 @@ struct Algomorph4 : Module {
         optionInput.channels = channels;
 
         //Reset trigger
-        if (resetCVTrigger.process(inputs[RESET_INPUT].getVoltage() + optionInput.getPolyVoltage(OptionInput::RESET, 0))) {
+        if (resetCVTrigger.process(inputs[RESET_INPUT].getVoltage() + optionInput.voltage[OptionInput::RESET][0])) {
 			initRun();// must be after sequence reset
 			sceneAdvCVTrigger.reset();
 		}
 
         //Run trigger
-		if (optionInput.runCVTrigger.process(optionInput.getPolyVoltage(OptionInput::RUN, 0))) {
+		if (optionInput.runCVTrigger.process(optionInput.voltage[OptionInput::RUN][0])) {
 			running ^= true;
 			if (running) {
 				if (resetOnRun)
@@ -458,7 +452,7 @@ struct Algomorph4 : Module {
         //Check to change scene
         //Option input
         for (int c = 0; c < channels; c++) {
-            float sceneOffsetVoltage = optionInput.getPolyVoltage(OptionInput::SCENE_OFFSET, c);
+            float sceneOffsetVoltage = optionInput.voltage[OptionInput::SCENE_OFFSET][c];
             if (sceneOffsetVoltage > FIVE_D_THREE)
                 sceneOffset[c] = 1;
             else if (sceneOffsetVoltage < -FIVE_D_THREE)
@@ -505,7 +499,7 @@ struct Algomorph4 : Module {
                 baseScene = (baseScene + 2) % 3;
                 graphDirty = true;
             }
-            if (optionInput.sceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::CLOCK, 0))) {
+            if (optionInput.sceneAdvCVTrigger.process(optionInput.voltage[OptionInput::CLOCK][0])) {
                 //Advance base scene
                 if (!ccwSceneSelection)
                 baseScene = (baseScene + 1) % 3;
@@ -513,7 +507,7 @@ struct Algomorph4 : Module {
                 baseScene = (baseScene + 2) % 3;
                 graphDirty = true;
             }
-            if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::REVERSE_CLOCK, 0))) {
+            if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.voltage[OptionInput::REVERSE_CLOCK][0])) {
                 //Advance base scene
                 if (!ccwSceneSelection)
                 baseScene = (baseScene + 2) % 3;
@@ -525,10 +519,10 @@ struct Algomorph4 : Module {
 
         // Only redraw display if morph on channel 1 has changed
         float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
-                            * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f)
+                            * clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f)
                             + params[MORPH_KNOB].getValue()
-                            + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, 0) / 5.f, -1.f, 1.f)
-                            + clamp(optionInput.getPolyVoltage(OptionInput::TRIPLE_MORPH_CV, 0) / FIVE_D_THREE, -3.f, 3.f);
+                            + clamp(optionInput.voltage[OptionInput::MORPH_CV][0] / 5.f, -1.f, 1.f)
+                            + clamp(optionInput.voltage[OptionInput::TRIPLE_MORPH_CV][0] / FIVE_D_THREE, -3.f, 3.f);
         newMorph0 = clamp(newMorph0, -3.f, 3.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
@@ -536,7 +530,7 @@ struct Algomorph4 : Module {
         }
 
         for (int c = 1; c < channels; c++)
-            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.getPolyVoltage(OptionInput::MORPH_ATTEN, 0) / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.getPolyVoltage(OptionInput::MORPH_CV, c) / 5.f, -1.f, 1.f);
+            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.voltage[OptionInput::MORPH_CV][c] / 5.f, -1.f, 1.f);
 
         for (int c = 0; c < channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
@@ -688,7 +682,7 @@ struct Algomorph4 : Module {
         if (clickFilterDivider.process()) {
             for (int c = 0; c < 16; c++) {
                 //+/-5V = 0V-2V
-                float clickFilterGain = (clamp(optionInput.getPolyVoltage(OptionInput::CLICK_FILTER, c) / 5.f, -1.f, 1.f) + 1.001f);
+                float clickFilterGain = (clamp(optionInput.voltage[OptionInput::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
                 float clickFilterResult = clickFilterSlew * clickFilterGain;
                 optionInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
                 optionInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
@@ -717,19 +711,19 @@ struct Algomorph4 : Module {
             runClickFilterGain = 1.f;
         for (int c = 0; c < channels; c++) {
             //Grab values from Option Input
-            wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
+            wildcardMod[c] = optionInput.voltage[OptionInput::WILDCARD_MOD][c];
             optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
-            wildcardSum[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_SUM, c);
+            wildcardSum[c] = optionInput.voltage[OptionInput::WILDCARD_SUM][c];
             optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
-            modAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::MOD_GAIN, c) / 5.f, -1.f, 1.f);
-            opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
-            sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
+            modAttenuversion[c] = clamp(optionInput.voltage[OptionInput::MOD_GAIN][c] / 5.f, -1.f, 1.f);
+            opAttenuversion[c] = clamp(optionInput.voltage[OptionInput::OP_GAIN][c] / 5.f, -1.f, 1.f);
+            sumAttenuversion[c] = clamp(optionInput.voltage[OptionInput::SUM_GAIN][c] / 5.f, -1.f, 1.f);
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
             sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c] * runClickFilterGain;
             for (int i = 0; i < 4; i++) {
                 modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c] * runClickFilterGain;
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    shadowOp[c] = optionInput.getPolyVoltage(static_cast<OptionInput::Modes>(OptionInput::SHADOW + i), c);
+                    shadowOp[c] = optionInput.voltage[static_cast<OptionInput::Modes>(OptionInput::SHADOW + i)][c];
                     in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
                     //Simple case, do not check adjacent algorithms
                     if (morphless[c]) {
@@ -797,7 +791,7 @@ struct Algomorph4 : Module {
                 //Set purple component to off
                 lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Set yellow component
-                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 2048.f + 0.014325f + clamp(optionInput.getPolyVoltage(OptionInput::SCREEN_BRIGHTNESS, 0), 0.f, 10.f) / 1536.f, args.sampleTime * lightDivider.getDivision());
+                lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 2048.f + 0.014325f + clamp(optionInput.voltage[OptionInput::SCREEN_BRIGHTNESS][0], 0.f, 10.f) / 1536.f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
                 //Set scene lights
@@ -815,8 +809,8 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(configOp == i ?
                             blinkStatus ?
                                 0.f
-                                : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
-                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
+                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow Lights
                         lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Red lights
@@ -844,9 +838,9 @@ struct Algomorph4 : Module {
                             opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
                                 blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
-                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
+                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             (opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
@@ -858,11 +852,11 @@ struct Algomorph4 : Module {
                         //Purple lights
                         lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
-                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
+                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
                                 : blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
@@ -908,7 +902,7 @@ struct Algomorph4 : Module {
                 //Set yellow component to off
                 lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Set purple component
-                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f + clamp(optionInput.getPolyVoltage(OptionInput::SCREEN_BRIGHTNESS, 0), 0.f, 10.f) / 768.f, args.sampleTime * lightDivider.getDivision());
+                lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getPortBrightness(outputs[SUM_OUTPUT]) / 1024.f + 0.014325f + clamp(optionInput.voltage[OptionInput::SCREEN_BRIGHTNESS][0], 0.f, 10.f) / 768.f, args.sampleTime * lightDivider.getDivision());
                 //Set edit light
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 if (morphless[0]) {  //Display state without morph
@@ -924,7 +918,7 @@ struct Algomorph4 : Module {
                         if (opEnabled[centerMorphScene[0]][i]) {
                             //Set op lights
                             //Purple lights
-                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                            lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                             //Red lights
                             lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
 
@@ -941,7 +935,7 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Set mod lights
                         //Purple lights
-                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     }
@@ -950,7 +944,7 @@ struct Algomorph4 : Module {
                         //Purple lights
                         lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(opEnabled[centerMorphScene[0]][i / 3] ? 
                             opDestinations[centerMorphScene[0]][i / 3][i % 3] ?
-                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f
+                                getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f
                                 : 0.f
                             : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
@@ -989,11 +983,11 @@ struct Algomorph4 : Module {
                         brightness = 0.f;
                         if (opDestinations[centerMorphScene[0]][i / 3][i % 3]) {
                             if (opEnabled[centerMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f;
+                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * (1.f - relativeMorphMagnitude[0]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
                         }
                         if (opDestinations[forwardMorphScene[0]][i / 3][i % 3]) {
                             if (opEnabled[forwardMorphScene[0]][i / 3])
-                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 16.f;
+                                brightness += getPortBrightness(inputs[OPERATOR_INPUTS + i / 3]) * relativeMorphMagnitude[0] + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 16.f;
                         }
                         //Purple lights
                         lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
@@ -1033,10 +1027,10 @@ struct Algomorph4 : Module {
                 if (opEnabled[i][j]) {
                     //Op lights
                     //Purple lights
-                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f;
+                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
                     //Mod lights
                     //Purple lights
-                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + clamp(optionInput.getPolyVoltage(OptionInput::CONNECTION_BRIGHTNESS, 0), 0.f, 10.f) / 8.f;
+                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
                 }
                 else {
                     //Op lights
