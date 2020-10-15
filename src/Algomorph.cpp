@@ -5,6 +5,7 @@
 constexpr float BLINK_INTERVAL = 0.42857142857f;
 constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 constexpr float FIVE_D_THREE = 5.f / 3.f;
+constexpr float CLOCK_IGNORE_DURATION = 0.001f;// disable clock on powerup and reset for 1 ms (so that the first step plays)
 
 struct Algomorph4 : Module {
     enum ParamIds {
@@ -180,6 +181,7 @@ struct Algomorph4 : Module {
                     for (int c = 0; c < channels; c++)
                         voltage[lastSetMode][c] = defVoltage[lastSetMode];
                 }
+                module->running = true;
             }
         }
 
@@ -214,6 +216,7 @@ struct Algomorph4 : Module {
     bool configMode = true;
     int configOp = -1;      // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
+    bool running = true;
 
     bool graphDirty = true;
     bool debug = false;
@@ -226,15 +229,21 @@ struct Algomorph4 : Module {
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     bool glowingInk = false;
     bool vuLights = true;
+    bool runSilencer = true;
+    bool resetOnRun = false;
+    int resetScene = 1;
     float clickFilterSlew = DEF_CLICK_FILTER_SLEW;
 
-    dsp::BooleanTrigger sceneButtonTrigger[3];
-    dsp::BooleanTrigger sceneAdvButtonTrigger;
     dsp::SchmittTrigger sceneAdvCVTrigger;
+    dsp::SchmittTrigger resetCVTrigger;
+    long clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * APP->engine->getSampleRate());
+
+    dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger editTrigger;
     dsp::BooleanTrigger operatorTrigger[4];
     dsp::BooleanTrigger modulatorTrigger[4];
 
+    dsp::SlewLimiter runClickFilter;
     dsp::SlewLimiter clickFilters[2][4][4][16];    // [noRing/ring][op][legal mod][channel], [op][3] = Sum output
     dsp::ClockDivider clickFilterDivider;
 
@@ -262,6 +271,7 @@ struct Algomorph4 : Module {
                 }
             }
         }
+        runClickFilter.setRiseFall(400.f, 400.f);
         lightDivider.setDivision(16);
         clickFilterDivider.setDivision(16);
 
@@ -318,6 +328,11 @@ struct Algomorph4 : Module {
         randomRingMorph = false;
         exitConfigOnConnect = false;
         ccwSceneSelection = true;
+        running = true;
+        runSilencer = true;
+        resetOnRun = false;
+        resetScene = 1;
+
         blinkStatus = true;
         blinkTimer = BLINK_INTERVAL;
         graphDirty = true;
@@ -425,6 +440,21 @@ struct Algomorph4 : Module {
             channels = inputs[OPTION_INPUT].getChannels();
         optionInput.channels = channels;
 
+        //Reset trigger
+        if (resetCVTrigger.process(inputs[RESET_INPUT].getVoltage() + optionInput.getPolyVoltage(OptionInput::RESET, 0))) {
+			initRun();// must be after sequence reset
+			sceneAdvCVTrigger.reset();
+		}
+
+        //Run trigger
+		if (optionInput.runCVTrigger.process(optionInput.getPolyVoltage(OptionInput::RUN, 0))) {
+			running ^= true;
+			if (running) {
+				if (resetOnRun)
+					initRun();
+			}
+		}
+
         //Check to change scene
         //Option input
         for (int c = 0; c < channels; c++) {
@@ -464,30 +494,33 @@ struct Algomorph4 : Module {
                 graphDirty = true;
             }
         }
-        //Scene advance trigger input
-        if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
-            //Advance base scene
-            if (!ccwSceneSelection)
-               baseScene = (baseScene + 1) % 3;
-            else
-               baseScene = (baseScene + 2) % 3;
-            graphDirty = true;
-        }
-        if (optionInput.sceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::CLOCK, 0))) {
-            //Advance base scene
-            if (!ccwSceneSelection)
-               baseScene = (baseScene + 1) % 3;
-            else
-               baseScene = (baseScene + 2) % 3;
-            graphDirty = true;
-        }
-        if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::REVERSE_CLOCK, 0))) {
-            //Advance base scene
-            if (!ccwSceneSelection)
-               baseScene = (baseScene + 2) % 3;
-            else
-               baseScene = (baseScene + 1) % 3;
-            graphDirty = true;
+
+        if (running && clockIgnoreOnReset == 0l) {
+            //Scene advance trigger input
+            if (sceneAdvCVTrigger.process(inputs[SCENE_ADV_INPUT].getVoltage())) {
+                //Advance base scene
+                if (!ccwSceneSelection)
+                baseScene = (baseScene + 1) % 3;
+                else
+                baseScene = (baseScene + 2) % 3;
+                graphDirty = true;
+            }
+            if (optionInput.sceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::CLOCK, 0))) {
+                //Advance base scene
+                if (!ccwSceneSelection)
+                baseScene = (baseScene + 1) % 3;
+                else
+                baseScene = (baseScene + 2) % 3;
+                graphDirty = true;
+            }
+            if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.getPolyVoltage(OptionInput::REVERSE_CLOCK, 0))) {
+                //Advance base scene
+                if (!ccwSceneSelection)
+                baseScene = (baseScene + 2) % 3;
+                else
+                baseScene = (baseScene + 1) % 3;
+                graphDirty = true;
+            }
         }
 
         // Only redraw display if morph on channel 1 has changed
@@ -677,6 +710,11 @@ struct Algomorph4 : Module {
         float modAttenuversion[16] = {0.f};
         float opAttenuversion[16] = {0.f};
         float sumAttenuversion[16] = {0.f};
+        float runClickFilterGain;
+        if (runSilencer)
+            runClickFilterGain = runClickFilter.process(args.sampleTime, running);
+        else
+            runClickFilterGain = 1.f;
         for (int c = 0; c < channels; c++) {
             //Grab values from Option Input
             wildcardMod[c] = optionInput.getPolyVoltage(OptionInput::WILDCARD_MOD, c);
@@ -687,9 +725,9 @@ struct Algomorph4 : Module {
             opAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::OP_GAIN, c) / 5.f, -1.f, 1.f);
             sumAttenuversion[c] = clamp(optionInput.getPolyVoltage(OptionInput::SUM_GAIN, c) / 5.f, -1.f, 1.f);
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
-            sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c];
+            sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c] * runClickFilterGain;
             for (int i = 0; i < 4; i++) {
-                modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c];
+                modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c] * runClickFilterGain;
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
                     shadowOp[c] = optionInput.getPolyVoltage(static_cast<OptionInput::Modes>(OptionInput::SHADOW + i), c);
                     in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
@@ -700,12 +738,12 @@ struct Algomorph4 : Module {
                             carrier[centerMorphScene[c]][i] = connected ? false : carrier[centerMorphScene[c]][i];
                             clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
                             optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c];
+                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                         }
                         bool sumConnected = carrier[centerMorphScene[c]][i] && opEnabled[centerMorphScene[c]][i];
                         clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
                         optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * sumAttenuversion[c];
+                        sumOut[c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * sumAttenuversion[c] * runClickFilterGain;
                     }
                     //Check current algorithm and morph target
                     else {
@@ -723,7 +761,7 @@ struct Algomorph4 : Module {
                             carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                             clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                             optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                            modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c];
+                            modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
                         }
                         if (ringMorph) {
                             float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
@@ -734,7 +772,7 @@ struct Algomorph4 : Module {
                                             +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
                         clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
                         optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * sumAttenuversion[c];
+                        sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * sumAttenuversion[c] * runClickFilterGain;
                     }
                 }
             }
@@ -970,7 +1008,15 @@ struct Algomorph4 : Module {
                 }
             }
         }
+
+        if (clockIgnoreOnReset > 0l)
+			clockIgnoreOnReset--;
     }
+
+    void initRun() {
+		clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * APP->engine->getSampleRate());
+        baseScene = resetScene;
+	}
 
     inline float getPortBrightness(Port port) {
         if (vuLights)
@@ -1007,7 +1053,7 @@ struct Algomorph4 : Module {
     }
 
     void swapAlgorithms(int a, int b) {
-        bool swap[4][3];
+        bool swap[4][3] = {false};
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 swap[i][j] = opDestinations[a][i][j];
@@ -1023,10 +1069,12 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Config Mode", json_integer(configOp));
         json_object_set_new(rootJ, "Config Scene", json_integer(configOp));
         json_object_set_new(rootJ, "Current Scene", json_integer(baseScene));
+        json_object_set_new(rootJ, "Reset Scene", json_integer(resetScene));
         json_object_set_new(rootJ, "Ring Morph", json_boolean(ringMorph));
         json_object_set_new(rootJ, "Randomize Ring Morph", json_boolean(randomRingMorph));
         json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
         json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
+        json_object_set_new(rootJ, "Reset on Run", json_boolean(resetOnRun));
         json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
         json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
         json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
@@ -1074,10 +1122,12 @@ struct Algomorph4 : Module {
         configOp = json_integer_value(json_object_get(rootJ, "Config Mode"));
         configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
         baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
+        resetScene = json_integer_value(json_object_get(rootJ, "Reset Scene"));
         ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
         randomRingMorph = json_boolean_value(json_object_get(rootJ, "Randomize Ring Morph"));
         exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
         ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
+        resetOnRun = json_boolean_value(json_object_get(rootJ, "Reset on Run"));
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
         glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
         vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
@@ -1505,6 +1555,46 @@ struct BrightnessInputMenuItem : MenuItem {
 	}
 };
 
+struct ResetOnRunItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->resetOnRun ^= true;
+    }
+};
+
+struct RunSilencerItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        module->runSilencer ^= true;
+    }
+};
+
+template < typename MODULE >
+void createRunOptionMenu(MODULE* module, ui::Menu* menu) {
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[2], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[2]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(2)));
+    menu->addChild(new MenuSeparator());
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Run Options"));
+
+    ResetOnRunItem *resetOnRunItem = createMenuItem<ResetOnRunItem>("Reset on Run trigger", CHECKMARK(module->resetOnRun));
+    resetOnRunItem->module = module;
+    menu->addChild(resetOnRunItem);
+    
+    RunSilencerItem *runSilencerItem = createMenuItem<RunSilencerItem>("Silence when not running", CHECKMARK(module->runSilencer));
+    runSilencerItem->module = module;
+    menu->addChild(runSilencerItem);
+}
+
+template < typename MODULE >
+struct RunOptionMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createRunOptionMenu(module, menu);
+		return menu;
+	}
+};
+
 template < typename MODULE >
 void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     // for (int i = 0; i < Algomorph4::OptionInput::Modes::NUM_MODES; i++)
@@ -1517,6 +1607,8 @@ void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[3], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[3]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(3)));
     menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[4], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[4]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(4)));
+    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionModeLabels[5], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[5]), &OptionModeItem::mode, static_cast<Algomorph4::OptionInput::Modes>(5)));
+    menu->addChild(construct<RunOptionMenuItem<Algomorph4>>(&MenuItem::text, "Run", &MenuItem::rightText, RIGHT_ARROW, &RunOptionMenuItem<Algomorph4>::module, module));
    
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "CV"));
@@ -1554,6 +1646,34 @@ struct ForgetOptionVoltageItem : MenuItem {
     void onAction(const event::Action &e) override {
         module->optionInput.toggleForgetVoltage();
     }
+};
+
+
+struct ResetSceneItem : MenuItem {
+    Algomorph4 *module;
+    int scene;
+
+    void onAction(const event::Action &e) override {
+        module->resetScene = scene;
+    }
+};
+
+template < typename MODULE >
+void createResetSceneMenu(MODULE* module, ui::Menu* menu) {
+    menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "1", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 0), &ResetSceneItem::scene, 0));
+    menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "2", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 1), &ResetSceneItem::scene, 1));
+    menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "3", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 2), &ResetSceneItem::scene, 2));
+}
+
+template < typename MODULE >
+struct ResetSceneMenuItem : MenuItem {
+	MODULE* module;
+	
+	Menu* createChildMenu() override {
+		Menu* menu = new Menu;
+		createResetSceneMenu(module, menu);
+		return menu;
+	}
 };
 
 struct RingMorphItem : MenuItem {
@@ -1792,6 +1912,8 @@ struct Algomorph4Widget : ModuleWidget {
         CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Trigger input - reverse sequence", CHECKMARK(!module->ccwSceneSelection));
         ccwScenesItem->module = module;
         menu->addChild(ccwScenesItem);
+        
+		menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Reset Scene", &MenuItem::rightText, RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
