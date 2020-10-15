@@ -518,8 +518,9 @@ struct Algomorph4 : Module {
         }
 
         // Only redraw display if morph on channel 1 has changed
+        float morphAttenInput = clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f);
         float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
-                            * clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f)
+                            * morphAttenInput
                             + params[MORPH_KNOB].getValue()
                             + clamp(optionInput.voltage[OptionInput::MORPH_CV][0] / 5.f, -1.f, 1.f)
                             + clamp(optionInput.voltage[OptionInput::TRIPLE_MORPH_CV][0] / FIVE_D_THREE, -3.f, 3.f);
@@ -530,78 +531,47 @@ struct Algomorph4 : Module {
         }
 
         for (int c = 1; c < channels; c++)
-            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f) + params[MORPH_KNOB].getValue() + clamp(optionInput.voltage[OptionInput::MORPH_CV][c] / 5.f, -1.f, 1.f);
+            morph[c] = clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f) * morphAttenInput + params[MORPH_KNOB].getValue() + clamp(optionInput.voltage[OptionInput::MORPH_CV][c] / 5.f, -1.f, 1.f);
 
         for (int c = 0; c < channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
-            if (morph[c] == 0) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-            }
-            else if (morph[c] == 1.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-            }
-            else if (morph[c] == 2.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-            }
-            else if (morph[c] == 3.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-            }
-            else if (morph[c] == -1.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-            }
-            else if (morph[c] == -2.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-            }
-            else if (morph[c] == -3.f) {
-                morphless[c] = true;
-                centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-            }
-            else {
-                morphless[c] = false;
-                if (morph[c] > 0.f) {
-                    if (morph[c] < 1.f) {
-                        centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                    }
-                    else if (morph[c] < 2.f) {
-                        relativeMorphMagnitude[c] -= 1.f;
-                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                    }
-                    else {
-                        relativeMorphMagnitude[c] -= 2.f;
-                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                    }
+            if (morph[c] > 0.f) {
+                if (morph[c] < 1.f) {
+                    centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                }
+                else if (morph[c] < 2.f) {
+                    relativeMorphMagnitude[c] -= 1.f;
+                    centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
                 else {
-                    relativeMorphMagnitude[c] *= -1.f;
-                    if (morph[c] > -1.f) {
-                        centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                    }
-                    else if (morph[c] > -2.f) {
-                        relativeMorphMagnitude[c] -= 1.f;
-                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                    }
-                    else {
-                        relativeMorphMagnitude[c] -= 2.f;
-                        centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
-                        forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
-                        backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
-                    }
+                    relativeMorphMagnitude[c] -= 2.f;
+                    centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                }
+            }
+            else {
+                relativeMorphMagnitude[c] *= -1.f;
+                if (morph[c] > -1.f) {
+                    centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                }
+                else if (morph[c] > -2.f) {
+                    relativeMorphMagnitude[c] -= 1.f;
+                    centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                }
+                else {
+                    relativeMorphMagnitude[c] -= 2.f;
+                    centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
+                    forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
+                    backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                 }
             }
         }        
@@ -679,19 +649,21 @@ struct Algomorph4 : Module {
         }
 
         //Update clickfilter rise/fall times
-        if (clickFilterDivider.process()) {
-            for (int c = 0; c < 16; c++) {
-                //+/-5V = 0V-2V
-                float clickFilterGain = (clamp(optionInput.voltage[OptionInput::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
-                float clickFilterResult = clickFilterSlew * clickFilterGain;
-                optionInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
-                optionInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
-                for (int i = 0; i < 4; i++) {
-                    for (int j = 0; j < 4; j++) {
-                        clickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
-                        clickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
-                        optionInput.shadowOpClickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
-                        optionInput.shadowOpClickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+        if (optionInput.mode[OptionInput::CLICK_FILTER]) {
+            if (clickFilterDivider.process()) {
+                for (int c = 0; c < 16; c++) {
+                    //+/-5V = 0V-2V
+                    float clickFilterGain = (clamp(optionInput.voltage[OptionInput::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
+                    float clickFilterResult = clickFilterSlew * clickFilterGain;
+                    optionInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                    optionInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                    for (int i = 0; i < 4; i++) {
+                        for (int j = 0; j < 4; j++) {
+                            clickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                            clickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                            optionInput.shadowOpClickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                            optionInput.shadowOpClickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                        }
                     }
                 }
             }
@@ -710,66 +682,118 @@ struct Algomorph4 : Module {
         else
             runClickFilterGain = 1.f;
         for (int c = 0; c < channels; c++) {
-            //Grab values from Option Input
-            wildcardMod[c] = optionInput.voltage[OptionInput::WILDCARD_MOD][c];
-            optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
-            wildcardSum[c] = optionInput.voltage[OptionInput::WILDCARD_SUM][c];
-            optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
             modAttenuversion[c] = clamp(optionInput.voltage[OptionInput::MOD_GAIN][c] / 5.f, -1.f, 1.f);
             opAttenuversion[c] = clamp(optionInput.voltage[OptionInput::OP_GAIN][c] / 5.f, -1.f, 1.f);
             sumAttenuversion[c] = clamp(optionInput.voltage[OptionInput::SUM_GAIN][c] / 5.f, -1.f, 1.f);
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
-            sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c] * runClickFilterGain;
-            for (int i = 0; i < 4; i++) {
-                modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c] * runClickFilterGain;
-                if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                    shadowOp[c] = optionInput.voltage[static_cast<OptionInput::Modes>(OptionInput::SHADOW + i)][c];
-                    in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
-                    //Simple case, do not check adjacent algorithms
-                    if (morphless[c]) {
-                        for (int j = 0; j < 3; j++) {
-                            bool connected = opDestinations[centerMorphScene[c]][i][j] && opEnabled[centerMorphScene[c]][i];
-                            carrier[centerMorphScene[c]][i] = connected ? false : carrier[centerMorphScene[c]][i];
-                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, connected) : connected;
-                            modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
-                        }
-                        bool sumConnected = carrier[centerMorphScene[c]][i] && opEnabled[centerMorphScene[c]][i];
-                        clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnected) : sumConnected;
-                        sumOut[c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * sumAttenuversion[c] * runClickFilterGain;
-                    }
-                    //Check current algorithm and morph target
-                    else {
-                        for (int j = 0; j < 3; j++) {
-                            if (ringMorph) {
+            if (ringMorph) {
+                for (int i = 0; i < 4; i++) {
+                    if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
+                        if (!optionInput.mode[OptionInput::SHADOW + i]) {
+                            //Check current algorithm and morph target
+                            for (int j = 0; j < 3; j++) {
                                 float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                                 carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && opEnabled[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
                                 clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
-                                optionInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
+                                float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                                float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                                float morphedConnection = connectionA + connectionB;
+                                carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
+                                clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                             }
-                            float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
-                            float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
-                            float morphedConnection = connectionA + connectionB;
-                            carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
-                            carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                            clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                            optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                            modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
-                        }
-                        if (ringMorph) {
                             float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
                             clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
-                            optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                            float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                                                +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                            sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * sumAttenuversion[c] * runClickFilterGain;
                         }
-                        float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
-                                            +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
-                        clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                        sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * sumAttenuversion[c] * runClickFilterGain;
+                        else {
+                            shadowOp[c] = optionInput.voltage[static_cast<OptionInput::Modes>(OptionInput::SHADOW + i)][c];
+                            //Check current algorithm and morph target
+                            for (int j = 0; j < 3; j++) {
+                                float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
+                                carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && opEnabled[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
+                                clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
+                                float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                                float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                                float morphedConnection = connectionA + connectionB;
+                                carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
+                                clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                optionInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
+                                modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
+                            }
+                            float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * opEnabled[backwardMorphScene[c]][i];
+                            clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                            float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                                                +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                            optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                            sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * sumAttenuversion[c] * runClickFilterGain;
+                        }
                     }
                 }
             }
+            else {
+                for (int i = 0; i < 4; i++) {
+                    if (inputs[OPERATOR_INPUTS + i].isConnected()) {
+                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * opAttenuversion[c];
+                        if (!optionInput.mode[OptionInput::SHADOW + i]) {
+                            //Check current algorithm and morph target
+                            for (int j = 0; j < 3; j++) {
+                                float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                                float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                                float morphedConnection = connectionA + connectionB;
+                                carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
+                                clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c])  * modAttenuversion[c] * runClickFilterGain;
+                            }
+                            float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                                                +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                            sumOut[c] += in[c] * clickGain[0][i][3][c] * sumAttenuversion[c] * runClickFilterGain;
+                        }
+                        else {
+                            shadowOp[c] = optionInput.voltage[static_cast<OptionInput::Modes>(OptionInput::SHADOW + i)][c];
+                            //Check current algorithm and morph target
+                            for (int j = 0; j < 3; j++) {
+                                float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i];
+                                float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                                float morphedConnection = connectionA + connectionB;
+                                carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
+                                clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
+                            }
+                            float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * opEnabled[centerMorphScene[c]][i]
+                                                +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * opEnabled[forwardMorphScene[c]][i];
+                            clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                            optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                            sumOut[c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * sumAttenuversion[c] * runClickFilterGain;
+                        }
+                    }
+                }
+            }
+            if (optionInput.mode[OptionInput::WILDCARD_MOD]) {
+                wildcardMod[c] = optionInput.voltage[OptionInput::WILDCARD_MOD][c];
+                optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_MOD]) : optionInput.mode[OptionInput::WILDCARD_MOD]);
+                for (int i = 0; i < 4; i++) {
+                    modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * modAttenuversion[c] * runClickFilterGain;
+
+                }
+            }
+            if (optionInput.mode[OptionInput::WILDCARD_SUM]) {
+                wildcardSum[c] = optionInput.voltage[OptionInput::WILDCARD_SUM][c];
+                optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInput::WILDCARD_SUM]) : optionInput.mode[OptionInput::WILDCARD_SUM]);
+                sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * sumAttenuversion[c] * runClickFilterGain;
+            }
+            //Grab values from Option Input
         }
 
         //Set outputs
@@ -786,6 +810,7 @@ struct Algomorph4 : Module {
 
         //Set lights
         if (lightDivider.process()) {
+            float connectionBrightnessInput = clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
             if (configMode) {   //Display state without morph, highlight configScene
                 //Set backlight
                 //Set purple component to off
@@ -809,8 +834,8 @@ struct Algomorph4 : Module {
                         lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(configOp == i ?
                             blinkStatus ?
                                 0.f
-                                : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
-                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + connectionBrightnessInput
+                            : getPortBrightness(inputs[OPERATOR_INPUTS + i]) + connectionBrightnessInput, args.sampleTime * lightDivider.getDivision());
                         //Yellow Lights
                         lights[OPERATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Red lights
@@ -838,9 +863,9 @@ struct Algomorph4 : Module {
                             opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
                                 blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
-                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput
+                                : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             (opDestinations[configScene][configOp][i < configOp ? i : i - 1] ?
@@ -852,11 +877,11 @@ struct Algomorph4 : Module {
                         //Purple lights
                         lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
-                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
+                                getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput
                                 : blinkStatus ?
                                     0.f
-                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f
-                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f, args.sampleTime * lightDivider.getDivision());
+                                    : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput
+                            : getPortBrightness(outputs[MODULATOR_OUTPUTS + i]) + connectionBrightnessInput, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
                         lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
                             opEnabled[configScene][configOp] ?
@@ -1022,15 +1047,16 @@ struct Algomorph4 : Module {
     }
 
     void updateSceneBrightnesses() {
+        float connectionBrightnessInput = clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 if (opEnabled[i][j]) {
                     //Op lights
                     //Purple lights
-                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
+                    sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + connectionBrightnessInput;
                     //Mod lights
                     //Purple lights
-                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + clamp(optionInput.voltage[OptionInput::CONNECTION_BRIGHTNESS][0], 0.f, 10.f) / 8.f;
+                    sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + connectionBrightnessInput;
                 }
                 else {
                     //Op lights
@@ -1347,9 +1373,6 @@ struct AlgoScreenWidget : FramebufferWidget {
         void draw(const Widget::DrawArgs& args) override {
             if (!module) return;
 
-            xOrigin = box.size.x / 2.f;
-            yOrigin = box.size.y / 2.f;
-
             for (int i = 0; i < 3; i++) {
                 int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
                 if (name != -1)
@@ -1357,14 +1380,10 @@ struct AlgoScreenWidget : FramebufferWidget {
                 else
                     graphs[i] = alGraph(0);
             }
-
-            bool noMorph = false;                
+              
             int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
             int morphScene = module->forwardMorphScene[0];
             float morph = module->relativeMorphMagnitude[0];
-
-            if (module->morphless[0] || module->configMode)
-                noMorph = true;
 
             nvgBeginPath(args.vg);
             nvgRoundedRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y, 3.675f);
@@ -1375,7 +1394,7 @@ struct AlgoScreenWidget : FramebufferWidget {
             float radius = 8.35425f;
             nvgBeginPath(args.vg);
             for (int i = 0; i < 4; i++) {
-                if (noMorph)    //Display state without morph
+                if (module->configMode)    //Display state without morph
                     nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
                 else {  //Display morphed state
                     nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph),
@@ -1400,7 +1419,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                 nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
                 float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
                 float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                if (noMorph)    //Display state without morph
+                if (module->configMode)    //Display state without morph
                     nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
                 else {  //Display moprhed state
                     nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph) - xOffset,
@@ -1410,7 +1429,7 @@ struct AlgoScreenWidget : FramebufferWidget {
             }
 
             // Draw edges +/ arrows
-            if (noMorph) {
+            if (module->configMode) {
                 // Draw edges
                 nvgBeginPath(args.vg);
                 for (int i = 0; i < graphs[scene].numEdges; i++) {
