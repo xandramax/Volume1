@@ -680,9 +680,9 @@ struct Algomorph4 : Module {
         float wildcardMod[16] = {0.f};
         float wildcardSum[16] = {0.f};
         float shadowOp[16] = {0.f};
-        float modAttenuversion[16] = {0.f};
-        float opAttenuversion[16] = {0.f};
-        float sumAttenuversion[16] = {0.f};
+        float modAttenuversion[16] = {1.f};
+        float opAttenuversion[16] = {1.f};
+        float sumAttenuversion[16] = {1.f};
         float runClickFilterGain;
         if (runSilencer)
             runClickFilterGain = runClickFilter.process(args.sampleTime, running);
