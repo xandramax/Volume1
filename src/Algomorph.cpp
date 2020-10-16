@@ -77,7 +77,7 @@ struct Algomorph4 : Module {
         int activeModes = 0;
         Modes lastSetMode;
         bool forgetVoltage = true;
-        // Modes mode = MORPH_CV;
+        bool connected = false;
         Algomorph4* module;
         dsp::SchmittTrigger runCVTrigger;
         dsp::SchmittTrigger sceneAdvCVTrigger;
@@ -113,11 +113,19 @@ struct Algomorph4 : Module {
             }
         }
 
-        void resetVoltages() {
+        void forgetVoltages() {
             for (int i = 0; i < NUM_MODES; i++) {
                 for (int j = 0; j < 16; j++) {
                     if (!mode[i])
                         voltage[i][j] = defVoltage[i];
+                }
+            }
+        }
+        
+        void resetVoltages() {
+            for (int i = 0; i < NUM_MODES; i++) {
+                for (int j = 0; j < 16; j++) {
+                    voltage[i][j] = defVoltage[i];
                 }
             }
         }
@@ -164,22 +172,18 @@ struct Algomorph4 : Module {
             if (forgetVoltage)
                 forgetVoltage = false;
             else {
-                resetVoltages();
+                forgetVoltages();
                 forgetVoltage = true;
             }
         }
 
         void updateVoltage() {
-            if (module->inputs[OPTION_INPUT].isConnected()) {
-                for (int i = 0; i < NUM_MODES; i++) {
-                    if (mode[i]) {
-                        for (int c = 0; c < channels; c++)
-                            voltage[i][c] = module->inputs[OPTION_INPUT].getPolyVoltage(c);
-                    }
+            for (int i = 0; i < NUM_MODES; i++) {
+                if (mode[i]) {
+                    for (int c = 0; c < channels; c++)
+                        voltage[i][c] = module->inputs[OPTION_INPUT].getPolyVoltage(c);
                 }
             }
-            else
-                module->running = true;
         }
     };
     OptionInput optionInput = OptionInput(this);
@@ -420,8 +424,17 @@ struct Algomorph4 : Module {
         int sceneOffset[16] = {0};                               //Offset to the base scene
         int channels = 1;                                       // Max channels of operator inputs
 
-        if (inputs[OPTION_INPUT].isConnected())
+        if (inputs[OPTION_INPUT].isConnected()) {
+            optionInput.connected = true;
             optionInput.updateVoltage();
+        }
+        else {
+            if (optionInput.connected) {
+                optionInput.connected = false;
+                optionInput.resetVoltages();
+                running = true;
+            }
+        }
 
         //Determine polyphony count
         for (int i = 0; i < 4; i++) {
