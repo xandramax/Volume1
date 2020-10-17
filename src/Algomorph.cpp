@@ -46,6 +46,7 @@ struct Algomorph4 : Module {
         THREE_LIGHT,
         ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         SCREEN_BUTTON_LIGHT,
+        ENUMS(CARRIER_INDICATORS, 4),
         NUM_LIGHTS
     };
     struct OptionInput {
@@ -191,8 +192,9 @@ struct Algomorph4 : Module {
     float morph[16] = {0.f};            // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
     int centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
-    bool horizontalDestinations[3][4];    // [scene][op]
+    bool horizontalDestinations[3][4];  // [scene][op]
     bool opDestinations[3][4][3];       // [scene][op][legal mod]
+    bool forcedCarrier[3][4];           // [scene][op]
     std::bitset<12> algoName[3];        // 12-bit IDs of the three stored algorithms
     int sixteenToTwelve[4089];          // Graph ID conversion
                                         // The algorithm graph data are stored with IDs in 12-bit space:
@@ -209,6 +211,9 @@ struct Algomorph4 : Module {
     int configOp = -1;                  // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
     bool running = true;
+
+    int opButtonPressed[4] = {0};
+    bool noReaction[4] = {true, true, true, true};
 
     bool graphDirty = true;
     bool debug = false;
@@ -306,6 +311,7 @@ struct Algomorph4 : Module {
             algoName[i].reset();
             for (int j = 0; j < 4; j++) {
                 horizontalDestinations[i][j] = false;
+                forcedCarrier[i][j] = false;
                 for (int k = 0; k < 3; k++) {
                     opDestinations[i][j][k] = false;
                 }
@@ -338,7 +344,6 @@ struct Algomorph4 : Module {
     }
 
     void onRandomize() override {
-        bool carrier[3][4];
         //If in config mode, only randomize the current algorithm,
         //do not change the base scene and do not enable/disable ring morph
         if (configMode) {
@@ -346,32 +351,34 @@ struct Algomorph4 : Module {
             algoName[configScene].reset();    //Initialize
             for (int j = 0; j < 4; j++) {
                 horizontalDestinations[configScene][j] = false;   //Initialize
+                forcedCarrier[configScene][j] = false;   //Initialize
                 if (random::uniform() > .5f) {
-                    carrier[configScene][j] = true;
+                    forcedCarrier[configScene][j] = true;
                     noCarrier = false;
                 }
-                if (!carrier[configScene][j])
-                    horizontalDestinations[configScene][j] = random::uniform() > .5f;
+                horizontalDestinations[configScene][j] = random::uniform() > .5f;
                 if (horizontalAllowed) {
                     for (int k = 0; k < 3; k++) {
                         opDestinations[configScene][j][k] = false;    //Initialize
-                        if (!carrier[configScene][j]) {
+                        if (random::uniform() > .5f) {
+                            opDestinations[configScene][j][k] = true;
+                            algoName[configScene].flip(j * 3 + k);    
+                        }
+                    }
+                }
+                else {
+                    if (!horizontalDestinations[configScene][j]) {
+                        for (int k = 0; k < 3; k++) {
+                            opDestinations[configScene][j][k] = false;    //Initialize
                             if (random::uniform() > .5f) {
                                 opDestinations[configScene][j][k] = true;
                                 algoName[configScene].flip(j * 3 + k);    
                             }
                         }
                     }
-                }
-                else {
-                    for (int k = 0; k < 3; k++) {
-                        opDestinations[configScene][j][k] = false;    //Initialize
-                        if (!carrier[configScene][j] && !horizontalDestinations[configScene][j]) {
-                            if (random::uniform() > .5f) {
-                                opDestinations[configScene][j][k] = true;
-                                algoName[configScene].flip(j * 3 + k);    
-                            }
-                        }
+                    else {
+                        for (int k = 0; k < 3; k++)
+                            opDestinations[configScene][j][k] = false;
                     }
                 }
             }
@@ -379,7 +386,7 @@ struct Algomorph4 : Module {
                 int shortStraw = std::floor(random::uniform() * 4);
                 while (shortStraw == 4)
                     shortStraw = std::floor(random::uniform() * 4);
-                carrier[configScene][shortStraw] = true;
+                forcedCarrier[configScene][shortStraw] = true;
                 horizontalDestinations[configScene][shortStraw] = false;
                 for (int k = 0; k < 3; k++) {
                     opDestinations[configScene][shortStraw][k] = false;
@@ -394,32 +401,34 @@ struct Algomorph4 : Module {
                 algoName[i].reset();    //Initialize
                 for (int j = 0; j < 4; j++) {
                     horizontalDestinations[i][j] = false;   //Initialize
+                    forcedCarrier[configScene][j] = false;   //Initialize
                     if (random::uniform() > .5f) {
-                        carrier[i][j] = true;
+                        forcedCarrier[i][j] = true;
                         noCarrier = false;
                     }
-                    if (!carrier[i][j])
-                        horizontalDestinations[i][j] = random::uniform() > .5f;
+                    horizontalDestinations[i][j] = random::uniform() > .5f;
                     if (horizontalAllowed) {
                         for (int k = 0; k < 3; k++) {
                             opDestinations[i][j][k] = false;    //Initialize
-                            if (!carrier[i][j]) {
+                            if (random::uniform() > .5f) {
+                                opDestinations[i][j][k] = true;
+                                algoName[i].flip(j * 3 + k);    
+                            }
+                        }
+                    }
+                    else {
+                        if (!horizontalDestinations[i][j]) {
+                            for (int k = 0; k < 3; k++) {
+                                opDestinations[i][j][k] = false;    //Initialize
                                 if (random::uniform() > .5f) {
                                     opDestinations[i][j][k] = true;
                                     algoName[i].flip(j * 3 + k);    
                                 }
                             }
                         }
-                    }
-                    else {
-                        for (int k = 0; k < 3; k++) {
-                            opDestinations[i][j][k] = false;    //Initialize
-                            if (!carrier[i][j] && !horizontalDestinations[i][j]) {
-                                if (random::uniform() > .5f) {
-                                    opDestinations[i][j][k] = true;
-                                    algoName[i].flip(j * 3 + k);    
-                                }
-                            }
+                        else {
+                            for (int k = 0; k < 3; k++)
+                                opDestinations[i][j][k] = false;
                         }
                     }
                 }
@@ -427,7 +436,7 @@ struct Algomorph4 : Module {
                     int shortStraw = std::floor(random::uniform() * 4);
                     while (shortStraw == 4)
                         shortStraw = std::floor(random::uniform() * 4);
-                    carrier[i][shortStraw] = true;
+                    forcedCarrier[i][shortStraw] = true;
                     horizontalDestinations[i][shortStraw] = false;
                     for (int k = 0; k < 3; k++) {
                         opDestinations[i][shortStraw][k] = false;
@@ -580,6 +589,20 @@ struct Algomorph4 : Module {
             //Check to select/deselect operators
             for (int i = 0; i < 4; i++) {
                 if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
+                    if (noReaction[i]) {
+                        opButtonPressed[i]++;
+                        if (opButtonPressed[i] >= 1.5 * args.sampleRate * cvDivider.getDivision()) {
+                            opButtonPressed[i] = 0;
+                            noReaction[i] = false;
+                            if (configMode)
+                                forcedCarrier[configScene][i] = true;
+                            else
+                                forcedCarrier[baseScene][i] = true;
+                        }
+                    }
+                }
+                else if (opButtonPressed[i] > 0) {
+                    opButtonPressed[i] = 0;
                     if (!configMode) {
                         configMode = true;
                         configOp = i;
@@ -602,6 +625,7 @@ struct Algomorph4 : Module {
                         blinkStatus = true;
                         blinkTimer = 0.f;
                     }
+                    noReaction[i] = true;
                     graphDirty = true;
                     break;
                 }
@@ -849,8 +873,11 @@ struct Algomorph4 : Module {
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                                     modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -869,8 +896,11 @@ struct Algomorph4 : Module {
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * !horizontalDestinations[backwardMorphScene[c]][i];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -907,9 +937,12 @@ struct Algomorph4 : Module {
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                                     modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                                 optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -931,9 +964,12 @@ struct Algomorph4 : Module {
                                     optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * !horizontalDestinations[backwardMorphScene[c]][i];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                                 optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -969,6 +1005,8 @@ struct Algomorph4 : Module {
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                                     modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -984,6 +1022,8 @@ struct Algomorph4 : Module {
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                                     modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -1012,6 +1052,8 @@ struct Algomorph4 : Module {
                                     optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -1029,6 +1071,8 @@ struct Algomorph4 : Module {
                                     optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * modAttenuversion[c] * runClickFilterGain;
                                 }
+                                carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
+                                carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
@@ -1466,6 +1510,15 @@ struct Algomorph4 : Module {
             }
         }
         json_object_set_new(rootJ, "Operators Enabled", horizontalConnectionsJ);
+        json_t* forcedCarriersJ = json_array();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                json_t* forcedCarrierJ = json_object();
+                json_object_set_new(forcedCarrierJ, "Forced Operator", json_boolean(forcedCarrier[i][j]));
+                json_array_append_new(forcedCarriersJ, forcedCarrierJ);
+            }
+        }
+        json_object_set_new(rootJ, "Forced Operators", forcedCarriersJ);
         return rootJ;
     }
 
@@ -1514,7 +1567,19 @@ struct Algomorph4 : Module {
         json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
             algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
         }
-        json_t* horizontalConnectionsJ = json_object_get(rootJ, "Op Enabled");
+        json_t* forcedCarriersJ = json_object_get(rootJ, "Forced Carriers");
+        json_t* forcedCarrierJ;
+        size_t forcedCarrierIndex;
+        i = j = 0;
+        json_array_foreach(forcedCarriersJ, forcedCarrierIndex, forcedCarrierJ) {
+            forcedCarrier[i][j] = !json_boolean_value(json_object_get(forcedCarrierJ, "Forced Carrier"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
+        }
+        json_t* horizontalConnectionsJ = json_object_get(rootJ, "Operators Enabled");
         json_t* connectionJ;
         size_t horizontalConnectionIndex;
         i = j = 0;
