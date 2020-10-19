@@ -345,6 +345,43 @@ TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* mod
 	return o;
 }
 
+struct DLXRingIndicator : DLXMultiLight {
+	float angle = 0.f;
+	float transform[6];
+	float radius = 1.f;
+	float strokeSize = 0.f;
+	
+	DLXRingIndicator(float r, float s = 1.3) {
+		radius = r;
+		strokeSize = s;
+	}
+
+	void draw(const DrawArgs& args) override {
+		if (angle >= 2.f * M_PI)
+			angle = 0.f;
+		else
+			angle += 0.1f;
+		math::Vec center = Vec(radius, radius);
+		nvgTransformIdentity(transform);
+		float t[6];
+		nvgTransformTranslate(t, center.x, center.y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformRotate(t, angle);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformTranslate(t, center.neg().x, center.neg().y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
+
+		nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, 2.6f, 2.6f, 1.3);
+		nvgFillColor(args.vg, this->color);
+		nvgFill(args.vg);
+
+		Widget::draw(args);
+	}
+};
+
 struct SvgLight : ModuleLightWidget {
 	widget::SvgWidget* sw;
 

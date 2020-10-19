@@ -6,6 +6,8 @@ constexpr float BLINK_INTERVAL = 0.42857142857f;
 constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 constexpr float FIVE_D_THREE = 5.f / 3.f;
 constexpr float CLOCK_IGNORE_DURATION = 0.001f;// disable clock on powerup and reset for 1 ms (so that the first step plays)
+constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
+constexpr float INDICATOR_BRIGHTNESS = 0.325f;
 
 struct Algomorph4 : Module {
     enum ParamIds {
@@ -46,7 +48,7 @@ struct Algomorph4 : Module {
         THREE_LIGHT,
         ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         SCREEN_BUTTON_LIGHT,
-        ENUMS(CARRIER_INDICATORS, 4),
+        ENUMS(CARRIER_INDICATORS, 12),      //3 colors per light
         NUM_LIGHTS
     };
     struct OptionInput {
@@ -212,7 +214,7 @@ struct Algomorph4 : Module {
     int configScene = 1;
     bool running = true;
 
-    int opButtonPressed[4] = {0};
+    float opButtonPressed[4] = {0};
     bool noReaction[4] = {true, true, true, true};
 
     bool graphDirty = true;
@@ -248,10 +250,9 @@ struct Algomorph4 : Module {
     dsp::ClockDivider clickFilterDivider;
 
     dsp::ClockDivider lightDivider;
-    float sceneBrightnesses[3][8][3] = {{{}}};
+    float sceneBrightnesses[3][12][3] = {{{}}};
     float blinkTimer = BLINK_INTERVAL;
     bool blinkStatus = true;
-    const float DEF_RED_BRIGHTNESS = 0.4975f;
 
     Algomorph4() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -275,16 +276,6 @@ struct Algomorph4 : Module {
         clickFilterDivider.setDivision(128);
         lightDivider.setDivision(64);
         cvDivider.setDivision(32);
-
-        //  Initialize opEnabled[] to true and opDestinations[] to false;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                horizontalDestinations[i][j] = false;
-                for (int k = 0; k < 3; k++) {
-                    opDestinations[i][j][k] = false;
-                }
-            }
-        }
 
         // Map 3-bit operator-relative mod output indices to 4-bit generalized equivalents
         for (int i = 0; i < 4; i++) {
@@ -589,71 +580,76 @@ struct Algomorph4 : Module {
             //Check to select/deselect operators
             for (int i = 0; i < 4; i++) {
                 if (operatorTrigger[i].process(params[OPERATOR_BUTTONS + i].getValue() > 0.f)) {
-                    if (noReaction[i]) {
-                        opButtonPressed[i]++;
-                        if (opButtonPressed[i] >= 1.5 * args.sampleRate * cvDivider.getDivision()) {
-                            opButtonPressed[i] = 0;
-                            noReaction[i] = false;
-                            if (configMode)
-                                forcedCarrier[configScene][i] = true;
+                    if (params[OPERATOR_BUTTONS + i].getValue() > 0.f) {
+                        if (!configMode) {
+                            configMode = true;
+                            configOp = i;
+                            if (morph[0] > .5f)
+                                configScene = (baseScene + sceneOffset[0] + 1) % 3;
+                            else if (morph[0] < -.5f)
+                                configScene = (baseScene + sceneOffset[0] + 2) % 3;
                             else
-                                forcedCarrier[baseScene][i] = true;
+                                configScene = baseScene + sceneOffset[0];
+                            blinkStatus = true;
+                            blinkTimer = 0.f;
                         }
+                        else if (configOp == i) {  
+                            //Deselect operator
+                            configOp = -1;
+                            configMode = false;
+                        }
+                        else {
+                            configOp = i;
+                            blinkStatus = true;
+                            blinkTimer = 0.f;
+                        }
+                        graphDirty = true;
+                        break;
                     }
-                }
-                else if (opButtonPressed[i] > 0) {
-                    opButtonPressed[i] = 0;
-                    if (!configMode) {
-                        configMode = true;
-                        configOp = i;
-                        if (morph[0] > .5f)
-                            configScene = (baseScene + sceneOffset[0] + 1) % 3;
-                        else if (morph[0] < -.5f)
-                            configScene = (baseScene + sceneOffset[0] + 2) % 3;
-                        else
-                            configScene = baseScene + sceneOffset[0];
-                        blinkStatus = true;
-                        blinkTimer = 0.f;
-                    }
-                    else if (configOp == i) {  
-                        //Deselect operator
-                        configOp = -1;
-                        configMode = false;
-                    }
-                    else {
-                        configOp = i;
-                        blinkStatus = true;
-                        blinkTimer = 0.f;
-                    }
-                    noReaction[i] = true;
-                    graphDirty = true;
-                    break;
                 }
             }
 
-            //Check for config mode destination selection
-            if (configMode && configOp > -1) {
-                if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
-                    horizontalDestinations[configScene][configOp] ^= true;
+            //Check for config mode destination selection and forced operator designation
+            if (configMode) {
+                if (configOp > -1) {
+                    if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
+                        horizontalDestinations[configScene][configOp] ^= true;
 
-                    if (exitConfigOnConnect)
-                        configMode = false;
-                    
-                    graphDirty = true;
+                        if (exitConfigOnConnect)
+                            configMode = false;
+                        
+                        graphDirty = true;
+                    }
+                    else {
+                        for (int i = 0; i < 3; i++) {
+                            if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
+
+                                opDestinations[configScene][configOp][i] ^= true;
+                                algoName[configScene].flip(configOp * 3 + i);
+
+                                if (exitConfigOnConnect)
+                                    configMode = false;
+
+                                graphDirty = true;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else {
-                    for (int i = 0; i < 3; i++) {
-                        if (modulatorTrigger[threeToFour[configOp][i]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][i]].getValue() > 0.f)) {
-
-                            opDestinations[configScene][configOp][i] ^= true;
-                            algoName[configScene].flip(configOp * 3 + i);
-
-                            if (exitConfigOnConnect)
-                                configMode = false;
-
-                            graphDirty = true;
+                    for (int i = 0; i < 4; i++) {
+                        if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
+                            forcedCarrier[configScene][i] ^= true;
                             break;
                         }
+                    }
+                }
+            }
+            else {
+                for (int i = 0; i < 4; i++) {
+                    if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
+                        forcedCarrier[centerMorphScene[0]][i] ^= true;
+                        break;
                     }
                 }
             }
@@ -680,6 +676,7 @@ struct Algomorph4 : Module {
             }
         }
 
+        //  Update morph status
         // Only redraw display if morph on channel 1 has changed
         float morphAttenInput = clamp(optionInput.voltage[OptionInput::MORPH_ATTEN][0] / 5.f, -1.f, 1.f);
         float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
@@ -787,7 +784,6 @@ struct Algomorph4 : Module {
                     }
                     else if (morph[c] <= 3.f) {
                         relativeMorphMagnitude[c] -= (relativeMorphMagnitude[c] - 1.f) * 2.f;
-                        relativeMorphMagnitude[c] *= -1.f;
                         centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                         forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                         backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
@@ -993,8 +989,6 @@ struct Algomorph4 : Module {
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
                                 carrier[centerMorphScene[c]][i] = horizontalConnectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] = horizontalConnectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                                if (debug)
-                                    int x = 0;
                                 modOut[i][c] += in[c] * clickGain[0][i][3][c] * modAttenuversion[c] * runClickFilterGain;
                                 for (int j = 0; j < 3; j++) {
                                     float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c]);
@@ -1135,6 +1129,29 @@ struct Algomorph4 : Module {
                 for (int i = 0; i < 4; i++) {
                     if (horizontalDestinations[configScene][i]) {
                         if (horizontalAllowed) {
+                            //Set carrier indicator
+                            if (forcedCarrier[configScene][i]) {
+                                //Purple light
+                                lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(configOp == i ?
+                                    blinkStatus ?
+                                        0.f
+                                        : INDICATOR_BRIGHTNESS
+                                    : INDICATOR_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
+                                //Yellow light
+                                lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
+                                    blinkStatus
+                                    : 0.f, args.sampleTime * lightDivider.getDivision());
+                                //Red light
+                                lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            }
+                            else {
+                                //Purple light
+                                lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                                //Yellow light
+                                lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                                //Red light
+                                lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            }
                             //Set op lights
                             //Purple lights
                             lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(configOp == i ?
@@ -1150,6 +1167,29 @@ struct Algomorph4 : Module {
                             lights[OPERATOR_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         else {
+                            //Set carrier indicator
+                            if (forcedCarrier[configScene][i]) {
+                                //Purple light
+                                lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                                //Yellow light
+                                lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
+                                    blinkStatus
+                                    : 0.f, args.sampleTime * lightDivider.getDivision());
+                                //Red light
+                                lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(configOp == i ?
+                                    blinkStatus ?
+                                        0.f
+                                        : DEF_RED_BRIGHTNESS
+                                    : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
+                            }
+                            else {
+                                //Purple light
+                                lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                                //Yellow light
+                                lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                                //Red light
+                                lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            }
                             //Set op lights
                             //Purple lights
                             lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
@@ -1166,6 +1206,29 @@ struct Algomorph4 : Module {
                         }
                     }
                     else {
+                        //Set carrier indicator
+                        if (forcedCarrier[configScene][i]) {
+                            //Purple light
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(configOp == i ?
+                                blinkStatus ?
+                                    0.f
+                                    : INDICATOR_BRIGHTNESS
+                                : INDICATOR_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
+                            //Yellow light
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
+                                blinkStatus
+                                : 0.f, args.sampleTime * lightDivider.getDivision());
+                            //Red light
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        }
+                        else {
+                            //Purple light
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            //Yellow light
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                            //Red light
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        }
                         //Set op lights
                         //Purple lights
                         lights[OPERATOR_LIGHTS + i * 3].setSmoothBrightness(configOp == i ?
@@ -1294,7 +1357,6 @@ struct Algomorph4 : Module {
                 lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                 //Display morphed state
                 float brightness;
-                updateSceneBrightnesses();
                 //Set scene lights
                 //Set base scene light
                 for (int i = 0; i < 3; i++) {
@@ -1305,12 +1367,14 @@ struct Algomorph4 : Module {
                 }
                 //Set morph target light's purple component depending on morph
                 lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
-                //Set op/mod lights
+                //Set op/mod lights and carrier indicators
+                updateSceneBrightnesses();
                 for (int i = 0; i < 4; i++) {
                     //Purple, yellow, and red lights
                     for (int j = 0; j < 3; j++) {
                         lights[OPERATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i][j], sceneBrightnesses[forwardMorphScene[0]][i][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
                         lights[MODULATOR_LIGHTS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i + 4][j], sceneBrightnesses[forwardMorphScene[0]][i + 4][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
+                        lights[CARRIER_INDICATORS + i * 3 + j].setSmoothBrightness(crossfade(sceneBrightnesses[centerMorphScene[0]][i + 8][j], sceneBrightnesses[forwardMorphScene[0]][i + 8][j], relativeMorphMagnitude[0]), args.sampleTime * lightDivider.getDivision()); 
                     }
                 }
                 //Set connection lights
@@ -1418,6 +1482,19 @@ struct Algomorph4 : Module {
                     sceneBrightnesses[i][j][1] = 0.f;
                     //Red lights
                     sceneBrightnesses[i][j][2] = 0.f;
+                    //Carrier indicators
+                    if (forcedCarrier[i][j]) {
+                        //Purple lights
+                        sceneBrightnesses[i][j + 8][0] = INDICATOR_BRIGHTNESS;
+                    }
+                    else {
+                        //Purple lights
+                        sceneBrightnesses[i][j + 8][0] = 0.f;
+                    }
+                    //Yellow lights
+                    sceneBrightnesses[i][j + 8][1] = 0.f;
+                    //Red lights
+                    sceneBrightnesses[i][j + 8][2] = 0.f;
                 }
             }
         }
@@ -1431,17 +1508,42 @@ struct Algomorph4 : Module {
                         //Mod lights
                         //Purple lights
                         sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + connectionBrightnessInput;
+                        //Carrier indicators
+                        if (forcedCarrier[i][j]) {
+                            //Purple lights
+                            sceneBrightnesses[i][j + 8][0] = INDICATOR_BRIGHTNESS;
+                        }
+                        else {
+                            //Purple lights
+                            sceneBrightnesses[i][j + 8][0] = 0.f;
+                        }
+                        //Red lights
+                        sceneBrightnesses[i][j + 8][2] = 0.f;
                     }
                     else {
                         //Op lights
                         //Purple lights
                         sceneBrightnesses[i][j][0] = 0.f;
+                        //Carrier indicators
+                        if (forcedCarrier[i][j]) {
+                            //Red lights
+                            sceneBrightnesses[i][j + 8][2] = INDICATOR_BRIGHTNESS;
+                        }
+                        else {
+                            //Red lights
+                            sceneBrightnesses[i][j + 8][2] = 0.f;
+                        }
+                        //Purple lights
+                        sceneBrightnesses[i][j + 8][0] = 0.f;
                     }
                     //Op lights
                     //Yellow Lights
                     sceneBrightnesses[i][j][1] = 0.f;
                     //Red lights
                     sceneBrightnesses[i][j][2] = horizontalDestinations[i][j];
+                    //Carrier indicators
+                    //Yellow lights
+                    sceneBrightnesses[i][j + 8][1] = 0.f;
                 }
             }
         }
@@ -1483,6 +1585,7 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Option Input Modes", opInputModesJ);
         json_object_set_new(rootJ, "Allow Multiple Modes", json_boolean(optionInput.allowMultipleModes));
         json_object_set_new(rootJ, "Forget Option Voltage", json_boolean(optionInput.forgetVoltage));
+        
         json_t* opDestinationsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -1494,6 +1597,7 @@ struct Algomorph4 : Module {
             }
         }
         json_object_set_new(rootJ, "Operator Destinations", opDestinationsJ);
+
         json_t* algoNamesJ = json_array();
         for (int i = 0; i < 3; i++) {
             json_t* nameJ = json_object();
@@ -1501,6 +1605,7 @@ struct Algomorph4 : Module {
             json_array_append_new(algoNamesJ, nameJ);
         }
         json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
+
         json_t* horizontalConnectionsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -1510,15 +1615,17 @@ struct Algomorph4 : Module {
             }
         }
         json_object_set_new(rootJ, "Operators Enabled", horizontalConnectionsJ);
+
         json_t* forcedCarriersJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 json_t* forcedCarrierJ = json_object();
-                json_object_set_new(forcedCarrierJ, "Forced Operator", json_boolean(forcedCarrier[i][j]));
+                json_object_set_new(forcedCarrierJ, "Forced Carrier", json_boolean(forcedCarrier[i][j]));
                 json_array_append_new(forcedCarriersJ, forcedCarrierJ);
             }
         }
-        json_object_set_new(rootJ, "Forced Operators", forcedCarriersJ);
+        json_object_set_new(rootJ, "Forced Carriers", forcedCarriersJ);
+
         return rootJ;
     }
 
@@ -1537,16 +1644,18 @@ struct Algomorph4 : Module {
         clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled"));
         glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
         vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
+
         //Set allowMultipleModes and forgetVoltage before loading modes
         optionInput.allowMultipleModes = json_boolean_value(json_object_get(rootJ, "Allow Multiple Modes"));
         optionInput.forgetVoltage = json_boolean_value(json_object_get(rootJ, "Forget Option Voltage"));
-        optionInput.setMode(static_cast<OptionInput::Modes>(json_integer_value(json_object_get(rootJ, "Option Input Mode"))));
+
         json_t* opInputModesJ = json_object_get(rootJ, "Option Input Modes");
         json_t* inputModeJ; size_t inputModeIndex;
         json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
             if (json_boolean_value(json_object_get(inputModeJ, "Destination")))
                 optionInput.setMode(static_cast<OptionInput::Modes>(inputModeIndex));
         }
+
         json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
         json_t* destinationJ; size_t destinationIndex;
         int i = 0, j = 0, k = 0;
@@ -1562,23 +1671,26 @@ struct Algomorph4 : Module {
                 }
             }
         }
+
         json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
         json_t* nameJ; size_t sixteenToTwelve;
         json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
             algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
         }
+
         json_t* forcedCarriersJ = json_object_get(rootJ, "Forced Carriers");
         json_t* forcedCarrierJ;
         size_t forcedCarrierIndex;
         i = j = 0;
         json_array_foreach(forcedCarriersJ, forcedCarrierIndex, forcedCarrierJ) {
-            forcedCarrier[i][j] = !json_boolean_value(json_object_get(forcedCarrierJ, "Forced Carrier"));
+            forcedCarrier[i][j] = json_boolean_value(json_object_get(forcedCarrierJ, "Forced Carrier"));
             j++;
             if (j > 3) {
                 j = 0;
                 i++;
             }
         }
+
         json_t* horizontalConnectionsJ = json_object_get(rootJ, "Operators Enabled");
         json_t* connectionJ;
         size_t horizontalConnectionIndex;
@@ -1591,6 +1703,7 @@ struct Algomorph4 : Module {
                 i++;
             }
         }
+
         //Legacy opDisabled
         json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
         json_t* disabledOpJ;
@@ -1604,6 +1717,7 @@ struct Algomorph4 : Module {
                 i++;
             }
         }
+
         graphDirty = true;
     }
 };
@@ -2121,11 +2235,11 @@ struct RandomizeRingMorphItem : MenuItem {
 
 template < typename MODULE >
 void createRandomizationMenu(MODULE* module, ui::Menu* menu) {
-    RandomizeAllowHorizontalItem *ramdomizeAllowHorizontalItem = createMenuItem<RandomizeAllowHorizontalItem>("Allow horizontal connections", CHECKMARK(module->randomAllowHorizontal));
+    RandomizeAllowHorizontalItem *ramdomizeAllowHorizontalItem = createMenuItem<RandomizeAllowHorizontalItem>("Allowing horizontal connections", CHECKMARK(module->randomAllowHorizontal));
     ramdomizeAllowHorizontalItem->module = module;
     menu->addChild(ramdomizeAllowHorizontalItem);
     
-    RandomizeRingMorphItem *ramdomizeRingMorphItem = createMenuItem<RandomizeRingMorphItem>("Randomization includes Ring Morph", CHECKMARK(module->randomRingMorph));
+    RandomizeRingMorphItem *ramdomizeRingMorphItem = createMenuItem<RandomizeRingMorphItem>("Enabling Ring Morph", CHECKMARK(module->randomRingMorph));
     ramdomizeRingMorphItem->module = module;
     menu->addChild(ramdomizeRingMorphItem);
 }
@@ -2274,6 +2388,20 @@ struct Algomorph4Widget : ModuleWidget {
                                         {mm2px(38.732), mm2px(82.677)} };
     DLXGlowingInk* ink;
     
+    DLXRingIndicator* createRingIndicator(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
+        DLXRingIndicator* o = new DLXRingIndicator(r, s);
+        o->box.pos = pos;
+        o->module = module;
+        o->firstLightId = firstLightId;
+        return o;
+    }
+
+    DLXRingIndicator* createRingIndicatorCentered(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
+        DLXRingIndicator* o = createRingIndicator(pos, r, module, firstLightId, s);
+        o->box.pos.x -= r;
+        o->box.pos.y -= r;
+        return o;
+    }
 
     Algomorph4Widget(Algomorph4* module) {
         setModule(module);
@@ -2397,6 +2525,11 @@ struct Algomorph4Widget : ModuleWidget {
         addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[1], module, Algomorph4::MODULATOR_BUTTONS + 1));
         addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[2], module, Algomorph4::MODULATOR_BUTTONS + 2));
         addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[3], module, Algomorph4::MODULATOR_BUTTONS + 3));
+      
+        addChild(createRingIndicatorCentered(OpButtonCenters[0], 8.862, module, Algomorph4::CARRIER_INDICATORS + 0));
+        addChild(createRingIndicatorCentered(OpButtonCenters[1], 8.862, module, Algomorph4::CARRIER_INDICATORS + 3));
+        addChild(createRingIndicatorCentered(OpButtonCenters[2], 8.862, module, Algomorph4::CARRIER_INDICATORS + 6));
+        addChild(createRingIndicatorCentered(OpButtonCenters[3], 8.862, module, Algomorph4::CARRIER_INDICATORS + 9));
     }
 
     void appendContextMenu(Menu* menu) override {
