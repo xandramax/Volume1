@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-#include "GraphData.hpp"
+#include "GraphStructure.hpp"
 #include <bitset>
 
 constexpr float BLINK_INTERVAL = 0.42857142857f;
@@ -2580,9 +2580,9 @@ struct Algomorph4Widget : ModuleWidget {
         disallowHorizontalItem->module = module;
         menu->addChild(disallowHorizontalItem);
 
-        DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
-        debugItem->module = module;
-        menu->addChild(debugItem);
+        // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+        // debugItem->module = module;
+        // menu->addChild(debugItem);
     }
 
     void step() override {
