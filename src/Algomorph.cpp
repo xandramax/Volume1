@@ -1154,10 +1154,18 @@ struct Algomorph4 : Module {
                 lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
                 //Set scene lights
                 for (int i = 0; i < 3; i++) {
+                    //Set purple components to off
+                    lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    lights[SCENE_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    //Set yellow components depending on config scene and blink status
+                    lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(configScene == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
+                    lights[SCENE_INDICATORS + i * 3 + 1].setSmoothBrightness(configScene == i ?
+                        INDICATOR_BRIGHTNESS
+                        : 0.f, args.sampleTime * lightDivider.getDivision());
+                }
+                for (int i = 0; i < 3; i++) {
                     //Set purple component to off
                     lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                    //Set yellow component depending on config scene and blink status
-                    lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(configScene == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
                 }
                 //Set op/mod lights
                 float ringBrightnessInput = 0.f;
@@ -1517,14 +1525,17 @@ struct Algomorph4 : Module {
                     //Op lights
                     //Purple lights
                     sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + connectionBrightnessInput;
+
                     //Mod lights
                     //Purple lights
                     sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + connectionBrightnessInput;
+
                     //Op lights
                     //Yellow Lights
                     sceneBrightnesses[i][j][1] = 0.f;
                     //Red lights
                     sceneBrightnesses[i][j][2] = 0.f;
+
                     //Carrier indicators
                     if (forcedCarrier[i][j]) {
                         //Purple lights
@@ -1548,9 +1559,13 @@ struct Algomorph4 : Module {
                         //Op lights
                         //Purple lights
                         sceneBrightnesses[i][j][0] = getPortBrightness(inputs[OPERATOR_INPUTS + j]) + connectionBrightnessInput;
+                        //Red lights
+                        sceneBrightnesses[i][j][2] = 0.f;
+
                         //Mod lights
                         //Purple lights
                         sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + connectionBrightnessInput;
+
                         //Carrier indicators
                         if (forcedCarrier[i][j]) {
                             //Purple lights
@@ -1567,6 +1582,13 @@ struct Algomorph4 : Module {
                         //Op lights
                         //Purple lights
                         sceneBrightnesses[i][j][0] = 0.f;
+                        //Red lights
+                        sceneBrightnesses[i][j][2] = DEF_RED_BRIGHTNESS;
+
+                        //Mod lights
+                        //Purple lights
+                        sceneBrightnesses[i][j + 4][0] = getPortBrightness(outputs[MODULATOR_OUTPUTS + j]) + connectionBrightnessInput;
+
                         //Carrier indicators
                         if (forcedCarrier[i][j]) {
                             //Red lights
@@ -1579,11 +1601,11 @@ struct Algomorph4 : Module {
                         //Purple lights
                         sceneBrightnesses[i][j + 8][0] = 0.f;
                     }
+
                     //Op lights
                     //Yellow Lights
                     sceneBrightnesses[i][j][1] = 0.f;
-                    //Red lights
-                    sceneBrightnesses[i][j][2] = horizontalDestinations[i][j];
+                    
                     //Carrier indicators
                     //Yellow lights
                     sceneBrightnesses[i][j + 8][1] = 0.f;
@@ -2506,7 +2528,7 @@ struct Algomorph4Widget : ModuleWidget {
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(30.545, 87.440)), 8.862, module, Algomorph4::EDIT_LIGHT, .4));
         addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(30.545, 87.440)), module, Algomorph4::EDIT_BUTTON));
-        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(30.545 - 0.01, 87.440 - 0.387)), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
+        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(30.545 + 0.07, 87.440 - 0.297)), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 85.526)), module, Algomorph4::OPERATOR_INPUTS + 0));
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 95.546)), module, Algomorph4::OPERATOR_INPUTS + 1));
@@ -2565,10 +2587,10 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 6));
         addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 9));
       
-        addChild(createRingIndicatorCentered(OpButtonCenters[0], 8.862, module, Algomorph4::CARRIER_INDICATORS + 0, 1.f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[1], 8.862, module, Algomorph4::CARRIER_INDICATORS + 3, 1.f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[2], 8.862, module, Algomorph4::CARRIER_INDICATORS + 6, 1.f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[3], 8.862, module, Algomorph4::CARRIER_INDICATORS + 9, 1.f));
+        addChild(createRingIndicatorCentered(OpButtonCenters[0], 8.862, module, Algomorph4::CARRIER_INDICATORS + 0, 0.8f));
+        addChild(createRingIndicatorCentered(OpButtonCenters[1], 8.862, module, Algomorph4::CARRIER_INDICATORS + 3, 0.8f));
+        addChild(createRingIndicatorCentered(OpButtonCenters[2], 8.862, module, Algomorph4::CARRIER_INDICATORS + 6, 0.8f));
+        addChild(createRingIndicatorCentered(OpButtonCenters[3], 8.862, module, Algomorph4::CARRIER_INDICATORS + 9, 0.8f));
 
         addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 0));
         addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 3));
