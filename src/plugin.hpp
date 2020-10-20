@@ -330,7 +330,11 @@ typedef TRingLight<> RingLight;
 
 template <typename TBase = DLXPurpleLight>
 TRingLight<TBase>* createRingLight(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-	TRingLight<TBase>* o = new TRingLight<TBase>(r, s);
+	TRingLight<TBase>* o;
+	if (s == 0)
+		o = new TRingLight<TBase>(r);
+	else
+		o = new TRingLight<TBase>(r, s);
 	o->box.pos = pos;
 	o->module = module;
 	o->firstLightId = firstLightId;
@@ -374,7 +378,7 @@ struct DLXRingIndicator : DLXMultiLight {
 
 		nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
 		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, 2.6f, 2.6f, 1.3);
+		nvgCircle(args.vg, 2.6f, 2.6f, strokeSize);
 		nvgFillColor(args.vg, this->color);
 		nvgFill(args.vg);
 
