@@ -17,6 +17,640 @@ static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 
 
+/// Undo/Redo History
+
+template < typename MODULE >
+struct AlgorithmDiagonalChangeAction : history::ModuleAction {
+    int scene, op, mod;
+
+	AlgorithmDiagonalChangeAction() {
+		name = "Delexandra Algomorph diagonal connection";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->opDestinations[scene][op][mod] ^= true;
+        m->algoName[scene].flip(op * 3 + mod);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->opDestinations[scene][op][mod] ^= true;
+        m->algoName[scene].flip(op * 3 + mod);
+	}
+};
+
+template < typename MODULE >
+struct AlgorithmHorizontalChangeAction : history::ModuleAction {
+    int scene, op;
+
+	AlgorithmHorizontalChangeAction() {
+		name = "Delexandra Algomorph horizontal connection";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->horizontalDestinations[scene][op] ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->horizontalDestinations[scene][op] ^= true;
+	}
+};
+
+template < typename MODULE >
+struct AlgorithmForcedCarrierChangeAction : history::ModuleAction {
+    int scene, op;
+
+	AlgorithmForcedCarrierChangeAction() {
+		name = "Delexandra Algomorph forced carrier";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->forcedCarrier[scene][op] ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->forcedCarrier[scene][op] ^= true;
+	}
+};
+
+template < typename MODULE >
+struct AlgorithmSceneChangeAction : history::ModuleAction {
+    int oldScene, newScene;
+
+	AlgorithmSceneChangeAction() {
+		name = "Delexandra Algomorph base scene";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->baseScene = oldScene;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->baseScene = newScene;
+	}
+};
+
+template < typename MODULE >
+struct OptionInputSetAndRememberAction : history::ModuleAction {
+    int mode, channels;
+	float voltage[16], scaledVoltage[16];
+
+	OptionInputSetAndRememberAction() {
+		name = "Delexandra Algomorph AUX In mode set & remember";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(mode);
+		for (int c = 0; c < channels; c++) {
+			m->optionInput.voltage[mode][c] = voltage[c];
+			m->scaledOptionVoltage[mode][c] = scaledVoltage[c];
+		}
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.setMode(mode);
+	}
+};
+
+template < typename MODULE >
+struct OptionInputSetAndForgetAction : history::ModuleAction {
+    int mode, channels;
+
+	OptionInputSetAndForgetAction() {
+		name = "Delexandra Algomorph AUX In mode set & forget";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(mode);
+		for (int c = 0; c < channels; c++)
+			m->optionInput.voltage[mode][c] = m->optionInput.defVoltage[mode];
+		m->rescaleVoltage(mode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.setMode(mode);
+	}
+};
+
+template < typename MODULE >
+struct OptionInputSwitchAndRememberAction : history::ModuleAction {
+    int oldMode, newMode, channels;
+	float oldVoltage[16], newVoltage[16], oldScaledVoltage[16], newScaledVoltage[16];
+
+	OptionInputSwitchAndRememberAction() {
+		name = "Delexandra Algomorph AUX In mode switch & remember";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(newMode);
+		for (int c = 0; c < 16; c++) {
+			m->optionInput.voltage[newMode][c] = newVoltage[c];
+			m->scaledOptionVoltage[newMode][c] = newScaledVoltage[c];
+		}
+		m->optionInput.setMode(oldMode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(oldMode);
+		for (int c = 0; c < 16; c++) {
+			m->optionInput.voltage[oldMode][c] = oldVoltage[c];
+			m->scaledOptionVoltage[oldMode][c] = oldScaledVoltage[c];
+		}
+		m->optionInput.setMode(newMode);
+	}
+};
+
+template < typename MODULE >
+struct OptionInputSwitchAndForgetAction : history::ModuleAction {
+    bool forgetOldVoltage, forgetNewVoltage;
+	int oldMode, newMode, channels;
+	float oldVoltage[16], oldScaledVoltage[16], newVoltage[16], newScaledVoltage[16];
+
+	OptionInputSwitchAndForgetAction() {
+		name = "Delexandra Algomorph AUX In mode switch & forget";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(newMode);
+		if (forgetNewVoltage) {
+			for (int c = 0; c < channels; c++)
+				m->optionInput.voltage[newMode][c] = m->optionInput.defVoltage[newMode];
+			m->rescaleVoltage(newMode);
+		}
+		else {
+			for (int c = 0; c < channels; c++) {
+				m->optionInput.voltage[newMode][c] = newVoltage[c];
+				m->scaledOptionVoltage[newMode][c] = newScaledVoltage[c];
+			}
+		}
+		m->optionInput.setMode(oldMode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(oldMode);
+		if (forgetOldVoltage) {
+			for (int c = 0; c < channels; c++)
+				m->optionInput.voltage[oldMode][c] = m->optionInput.defVoltage[oldMode];
+			m->rescaleVoltage(oldMode);
+		}
+		else {
+			for (int c = 0; c < channels; c++) {
+				m->optionInput.voltage[oldMode][c] = oldVoltage[c];
+				m->scaledOptionVoltage[oldMode][c] = oldScaledVoltage[c];
+			}
+		}
+		m->optionInput.setMode(newMode);
+	}
+};
+
+template < typename MODULE >
+struct OptionInputUnsetAndRememberAction : history::ModuleAction {
+    int mode, channels;
+	float voltage[16], scaledVoltage[16];
+
+	OptionInputUnsetAndRememberAction() {
+		name = "Delexandra Algomorph AUX In mode unset & remember";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.setMode(mode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(mode);
+		for (int c = 0; c < channels; c++) {
+			m->optionInput.voltage[mode][c] = voltage[c];
+			m->scaledOptionVoltage[mode][c] = scaledVoltage[c];
+		}
+	}
+};
+
+template < typename MODULE >
+struct OptionInputUnsetAndForgetAction : history::ModuleAction {
+    int mode, channels;
+
+	OptionInputUnsetAndForgetAction() {
+		name = "Delexandra Algomorph AUX In mode unset & forget";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.setMode(mode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.unsetMode(mode);
+		for (int c = 0; c < channels; c++)
+			m->optionInput.voltage[mode][c] = m->optionInput.defVoltage[mode];
+		m->rescaleVoltage(mode);
+	}
+};
+
+template < typename MODULE >
+struct RememberOptionVoltageAction : history::ModuleAction {
+	RememberOptionVoltageAction() {
+		name = "Delexandra Algomorph remember option voltage";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.forgetVoltage = true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.forgetVoltage = false;
+	}
+};
+
+template < typename MODULE >
+struct AllowMultipleModesAction : history::ModuleAction {
+	AllowMultipleModesAction() {
+		name = "Delexandra Algomorph allow multiple modes";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.allowMultipleModes = false;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->optionInput.allowMultipleModes = true;
+	}
+};
+
+template < typename MODULE >
+struct ResetSceneAction : history::ModuleAction {
+	int oldResetScene, newResetScene;
+
+	ResetSceneAction() {
+		name = "Delexandra Algomorph change reset scene";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->resetScene = oldResetScene;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->resetScene = newResetScene;
+	}
+};
+
+template < typename MODULE >
+struct ToggleModeBAction : history::ModuleAction {
+	ToggleModeBAction() {
+		name = "Delexandra Algomorph toggle mode B";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->modeB ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->modeB ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleRingMorphAction : history::ModuleAction {
+	ToggleRingMorphAction() {
+		name = "Delexandra Algomorph toggle ring morph";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->ringMorph ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->ringMorph ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleRandomizeRingMorphAction : history::ModuleAction {
+	ToggleRandomizeRingMorphAction() {
+		name = "Delexandra Algomorph toggle randomize ring morph";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->randomRingMorph ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->randomRingMorph ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleExitConfigOnConnectAction : history::ModuleAction {
+	ToggleExitConfigOnConnectAction() {
+		name = "Delexandra Algomorph toggle exit config on connect";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->exitConfigOnConnect ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->exitConfigOnConnect ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleCCWSceneSelectionAction : history::ModuleAction {
+	ToggleCCWSceneSelectionAction() {
+		name = "Delexandra Algomorph toggle CCW scene selection";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->ccwSceneSelection ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->ccwSceneSelection ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleClickFilterAction : history::ModuleAction {
+	ToggleClickFilterAction() {
+		name = "Delexandra Algomorph toggle click filter";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->clickFilterEnabled ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->clickFilterEnabled ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleGlowingInkAction : history::ModuleAction {
+	ToggleGlowingInkAction() {
+		name = "Delexandra Algomorph toggle glowing ink";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->glowingInk ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->glowingInk ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleVULightsAction : history::ModuleAction {
+	ToggleVULightsAction() {
+		name = "Delexandra Algomorph toggle VU lights";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->vuLights ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->vuLights ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleResetOnRunAction : history::ModuleAction {
+	ToggleResetOnRunAction() {
+		name = "Delexandra Algomorph toggle reset on run";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->resetOnRun ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->resetOnRun ^= true;
+	}
+};
+
+template < typename MODULE >
+struct ToggleRunSilencerAction : history::ModuleAction {
+	ToggleRunSilencerAction() {
+		name = "Delexandra Algomorph toggle run silencer";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->runSilencer ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->runSilencer ^= true;
+	}
+};
+
+template < typename MODULE >
+struct SetClickFilterAction : history::ModuleAction {
+	float oldSlew, newSlew;
+
+	SetClickFilterAction() {
+		name = "Delexandra Algomorph set click filter slew";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->clickFilterSlew = oldSlew;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->clickFilterSlew = newSlew;
+	}
+};
+
+
 /// Params
 
 struct DLXPortPoly : SvgPort {
