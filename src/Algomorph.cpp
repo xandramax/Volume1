@@ -149,6 +149,13 @@ struct Algomorph4 : Module {
             mode[oldMode] = false;
         }
 
+        void clearModes() {
+            activeModes = 0;
+
+            for (int i = 0; i < NUM_MODES; i++)
+                mode[i] = false;
+        }
+
         void updateVoltage() {
             for (int i = 0; i < NUM_MODES; i++) {
                 if (mode[i]) {
@@ -277,7 +284,7 @@ struct Algomorph4 : Module {
                 }
             }
         }
-        optionInput.setMode(OptionInput::WILDCARD_MOD);
+        optionInput.setMode(OptionInput::MORPH_CV);
         optionInput.resetVoltages();
         rescaleVoltages();
         optionInput.allowMultipleModes = false;
@@ -1795,6 +1802,7 @@ struct Algomorph4 : Module {
 
         json_t* opInputModesJ = json_object_get(rootJ, "Option Input Modes");
         json_t* inputModeJ; size_t inputModeIndex;
+        optionInput.clearModes();
         json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
             if (json_boolean_value(json_object_get(inputModeJ, "Mode")))
                 optionInput.setMode(static_cast<OptionInput::Modes>(inputModeIndex));
