@@ -183,7 +183,7 @@ struct Algomorph4 : Module {
                                                                 // At least one operator is a carrier (no mod destinations, all bits zero).
                                                                 // However, the algorithms are accessed via 16-bit IDs:
                                                                 //       0000 0000 0000 0000 -> 1110 1101 1011 0000
-                                                                // In 16-bit space, the the feedback destinations are included but never equal 1.  
+                                                                // In 16-bit space, the feedback destinations are included but never equal 1.  
                                                                 // sixteenToTwelve is indexed by 16-bit ID and returns equivalent 12-bit ID.
     int threeToFour[4][3];                                      // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
     bool configMode = true;
@@ -1902,6 +1902,7 @@ struct AlgoScreenWidget : FramebufferWidget {
         float borderStroke = 0.45f;
         float labelStroke = 0.5f;
         float nodeStroke = 0.75f;
+        float radius = 8.35425f;
         float edgeStroke = 0.925f;
         static constexpr float arrowStroke1 = (2.65f/4.f) + (1.f/3.f);
         static constexpr float arrowStroke2 = (7.65f/4.f) + (1.f/3.f);
@@ -1909,6 +1910,84 @@ struct AlgoScreenWidget : FramebufferWidget {
         AlgoDrawWidget(MODULE* module) {
             this->module = module;
             font = APP->window->loadFont(asset::plugin(pluginInstance, "res/terminal-grotesque.ttf"));
+        }
+
+        void drawNodes(NVGcontext* ctx, alGraph source, alGraph destination, float morph) {
+            if (source.numNodes >= destination.numNodes)
+                renderNodes(ctx, source, destination, morph, false);
+            else
+                renderNodes(ctx, destination, source, morph, true);
+        }
+
+        void renderNodes(NVGcontext* ctx, alGraph mostNodes, alGraph leastNodes, float morph, bool flipped) {
+            for (int i = 0; i< mostNodes.numNodes; i++) {
+                Node node[2];
+                nvgBeginPath(ctx);
+                if (leastNodes.numNodes == 0) {
+                    if (!flipped) {
+                        node[0] = mostNodes.nodes[i];
+                        node[1] = mostNodes.nodes[i];
+                        nodeFillColor.a = crossfade(NODE_FILL_COLOR.a, 0x00, morph);
+                        nodeStrokeColor.a = crossfade(NODE_STROKE_COLOR.a, 0x00, morph);
+                        textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
+                    }
+                    else {
+                        node[0] = mostNodes.nodes[i];
+                        node[1] = mostNodes.nodes[i];
+                        nodeFillColor.a = crossfade(0x00, NODE_FILL_COLOR.a, morph);
+                        nodeStrokeColor.a = crossfade(0x00, NODE_STROKE_COLOR.a, morph);
+                        textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
+                    }
+                }
+                else if (i < leastNodes.numNodes) {
+                    if (!flipped) {
+                        node[0] = mostNodes.nodes[i];
+                        node[1] = leastNodes.nodes[i];
+                    }
+                    else {
+                        node[0] = leastNodes.nodes[i];
+                        node[1] = mostNodes.nodes[i];
+                    }
+                    nodeFillColor = NODE_FILL_COLOR;
+                    nodeStrokeColor = NODE_STROKE_COLOR;
+                    textColor = TEXT_COLOR;
+                }
+                else {
+                    if (!flipped) {
+                        node[0] = mostNodes.nodes[i];
+                        node[1] = leastNodes.nodes[std::max(0, leastNodes.numNodes - 1)];
+                    }
+                    else {
+                        node[0] = leastNodes.nodes[std::max(0, leastNodes.numNodes - 1)];
+                        node[1] = mostNodes.nodes[i];
+                    }
+                    nodeFillColor = NODE_FILL_COLOR;
+                    nodeStrokeColor = NODE_STROKE_COLOR;
+                    textColor = TEXT_COLOR;
+                }
+                
+                nvgCircle(ctx,  crossfade(node[0].coords.x, node[1].coords.x, morph),
+                                crossfade(node[0].coords.y, node[1].coords.y, morph),
+                                radius);
+                nvgFillColor(ctx, nodeFillColor);
+                nvgFill(ctx);
+                nvgStrokeColor(ctx, nodeStrokeColor);
+                nvgStrokeWidth(ctx, nodeStroke);
+                nvgStroke(ctx);
+
+                nvgBeginPath(ctx);
+                nvgFontSize(ctx, 10.f);
+                nvgFontFaceId(ctx, font->handle);
+                nvgFillColor(ctx, textColor);
+                std::string s = std::to_string(i + 1);
+                char const *id = s.c_str();
+                nvgTextBounds(ctx, node[0].coords.x, node[0].coords.y, id, id + 1, textBounds);
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                nvgText(ctx,    crossfade(node[0].coords.x, node[1].coords.x, morph) - xOffset,
+                                    crossfade(node[0].coords.y, node[1].coords.y, morph) + yOffset,
+                                    id, id + 1);
+            }
         }
 
         void drawEdges(NVGcontext* ctx, alGraph source, alGraph destination, float morph) {
@@ -1949,7 +2028,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                         edge[1] = mostEdges.edges[i];
                     }
                     nvgMoveTo(ctx, crossfade(edge[0].moveCoords.x, edge[1].moveCoords.x, morph), crossfade(edge[0].moveCoords.y, edge[1].moveCoords.y, morph));
-                    edgeColor = nvgRGBA(0x9a, 0x9a, 0x6f, 0xff);
+                    edgeColor = EDGE_COLOR;
                     arrow[0] = mostEdges.arrows[i];
                     arrow[1] = leastEdges.arrows[i];
                 }
@@ -2050,7 +2129,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                 if (name != -1)
                     graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
                 else
-                    graphs[i] = alGraph(0);
+                    graphs[i] = alGraph(1695);
             }
               
             int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
@@ -2062,42 +2141,36 @@ struct AlgoScreenWidget : FramebufferWidget {
             nvgStrokeWidth(args.vg, borderStroke);
             nvgStroke(args.vg);
 
-            // Draw nodes
-            float radius = 8.35425f;
-            nvgBeginPath(args.vg);
-            for (int i = 0; i < 4; i++) {
-                if (module->configMode)    //Display state without morph
+            if (module->configMode) {   //Display state without morph
+                // Draw nodes
+                nvgBeginPath(args.vg);
+                for (int i = 0; i < 4; i++) {
                     nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
-                else {  //Display morphed state
-                    nvgCircle(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph),
-                                        crossfade(graphs[scene].nodes[i].coords.y, graphs[morphScene].nodes[i].coords.y, morph),
-                                        radius);
+                }
+                nvgFillColor(args.vg, nodeFillColor);
+                nvgFill(args.vg);
+                nvgStrokeColor(args.vg, nodeStrokeColor);
+                nvgStrokeWidth(args.vg, nodeStroke);
+                nvgStroke(args.vg);
+
+                // Draw numbers
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 10.f);
+                nvgFontFaceId(args.vg, font->handle);
+                nvgFillColor(args.vg, textColor);
+                for (int i = 0; i < 4; i++) {
+                    std::string s = std::to_string(i + 1);
+                    char const *id = s.c_str();
+                    nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
+                    float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                    float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                    nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
                 }
             }
-            nvgFillColor(args.vg, nodeFillColor);
-            nvgFill(args.vg);
-            nvgStrokeColor(args.vg, nodeStrokeColor);
-            nvgStrokeWidth(args.vg, nodeStroke);
-            nvgStroke(args.vg);
-
-            // Draw node numbers
-            nvgBeginPath(args.vg);
-            nvgFontSize(args.vg, 10.f);
-            nvgFontFaceId(args.vg, font->handle);
-            nvgFillColor(args.vg, textColor);
-            for (int i = 0; i < 4; i++) {
-                std::string s = std::to_string(i + 1);
-                char const *id = s.c_str();
-                nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
-                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                if (module->configMode)    //Display state without morph
-                    nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
-                else {  //Display morphed state
-                    nvgText(args.vg,  crossfade(graphs[scene].nodes[i].coords.x, graphs[morphScene].nodes[i].coords.x, morph) - xOffset,
-                                        crossfade(graphs[scene].nodes[i].coords.y, graphs[morphScene].nodes[i].coords.y, morph) + yOffset,
-                                        id, id + 1);
-                }
+            else {
+                // Draw nodes and numbers
+                nvgBeginPath(args.vg);
+                drawNodes(args.vg, graphs[scene], graphs[morphScene], morph);
             }
 
             // Draw edges +/ arrows
