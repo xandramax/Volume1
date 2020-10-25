@@ -2173,6 +2173,26 @@ struct AlgoScreenWidget : FramebufferWidget {
                 drawNodes(args.vg, graphs[scene], graphs[morphScene], morph);
             }
 
+            if (graphs[scene].numNodes == 0 || graphs[morphScene].numNodes == 0) {
+                // Draw question mark
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 64.f);
+                nvgFontFaceId(args.vg, font->handle);
+                if (graphs[scene].numNodes == 0 && graphs[morphScene].numNodes == 0)
+                    textColor = TEXT_COLOR;
+                else if (graphs[scene].numNodes == 0)
+                    textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
+                else
+                    textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
+                nvgFillColor(args.vg, textColor);
+                std::string s = "?";
+                char const *id = s.c_str();
+                nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
+            }
+
             // Draw edges +/ arrows
             if (module->configMode) {
                 // Draw edges
