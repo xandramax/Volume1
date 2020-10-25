@@ -38,6 +38,7 @@ struct alGraph {
     Edge edges[9];
     Arrow arrows[9];
     int numEdges = 0;
+    int numNodes = 0;
 
 	alGraph() {
 		for (int i = 0; i < 4; i++) {
@@ -49,9 +50,12 @@ struct alGraph {
 	alGraph(int graphId) {
 		for (int i = 0; i < 4; i++) {
             int id = -xNodeData[graphId][i*2+1];
-			nodes[id - 1].coords = Vec(xNodeData[graphId][i * 2 + 2], yNodeData[graphId][i * 2 + 2]);
+            if (id > 0) {
+                numNodes++;
+    			nodes[id - 1].coords = Vec(xNodeData[graphId][i * 2 + 2], yNodeData[graphId][i * 2 + 2]);
+            }
         }
-        if (graphId != 0) {
+        if (graphId > 0 && graphId < 1695) {
             int curveDataIndex = 1;
             for (int i = 0; i < 9; i++) {
                 if (moveCurveData[graphId][i].x != -2) {
