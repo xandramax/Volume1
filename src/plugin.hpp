@@ -22,6 +22,7 @@ static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 template < typename MODULE >
 struct AlgorithmDiagonalChangeAction : history::ModuleAction {
     int scene, op, mod;
+	std::bitset<16> displayAlgoName;
 
 	AlgorithmDiagonalChangeAction() {
 		name = "Delexander Algomorph diagonal connection";
@@ -34,6 +35,32 @@ struct AlgorithmDiagonalChangeAction : history::ModuleAction {
 		assert(m);
 		m->opDestinations[scene][op][mod] ^= true;
         m->algoName[scene].flip(op * 3 + mod);
+		if (m->modeB || !m->horizontalDestinations[scene][op])
+        	m->displayAlgoName[scene].flip(op * 3 + mod);
+		if (!m->modeB) {
+			// If the mod output in question corresponds to a disabled operator
+			if (!m->horizontalDestinations[scene][op] && m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
+				// If a connection has been made, enable that operator visually
+				if (m->opDestinations[scene][op][mod]) {
+					m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
+				}
+				// If a connection has been broken, 
+				else {
+					if (m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
+						bool disabled = true;
+						for (int j = 0; j < 4; j++) {
+							if (j != op && j != m->threeToFour[op][mod] && m->opDestinations[scene][j][m->fourToThree[j][op]])
+								disabled = false;
+						}
+						if (disabled)
+							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], true);
+						else
+							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
+					}
+				}
+			}
+		}
+		m->graphDirty = true;
 	}
 
 	void redo() override {
@@ -43,6 +70,32 @@ struct AlgorithmDiagonalChangeAction : history::ModuleAction {
 		assert(m);
 		m->opDestinations[scene][op][mod] ^= true;
         m->algoName[scene].flip(op * 3 + mod);
+		if (m->modeB || !m->horizontalDestinations[scene][op])
+        	m->displayAlgoName[scene].flip(op * 3 + mod);
+		if (!m->modeB) {
+			// If the mod output in question corresponds to a disabled operator
+			if (!m->horizontalDestinations[scene][op] && m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
+				// If a connection has been made, enable that operator visually
+				if (m->opDestinations[scene][op][mod]) {
+					m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
+				}
+				// If a connection has been broken, 
+				else {
+					if (m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
+						bool disabled = true;
+						for (int j = 0; j < 4; j++) {
+							if (j != op && j != m->threeToFour[op][mod] && m->opDestinations[scene][j][m->fourToThree[j][op]])
+								disabled = false;
+						}
+						if (disabled)
+							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], true);
+						else
+							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
+					}	
+				}
+			}
+		}
+		m->graphDirty = true;
 	}
 };
 
@@ -60,6 +113,40 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->horizontalDestinations[scene][op] ^= true;
+		if (!m->modeB) {
+			m->algoName[scene].flip(12 + op);
+			m->displayAlgoName[scene].set(12 + op, m->algoName[scene][12 + op]);
+			for (int j = 0; j < 4; j++) {
+				if (m->horizontalDestinations[scene][j]) {
+					bool fullDisable = true;
+					for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
+						m->displayAlgoName[scene].set(j * 3 + i, false);
+					for (int i = 0; i < 4; i++) {     // Check if any other operators are modulating this operator
+						if (i != j && !m->horizontalDestinations[scene][i] && m->opDestinations[scene][i][m->fourToThree[i][j]])
+							fullDisable = false;
+					}
+					// If anything is modulating the operator, set it enabled in the display. Otherwise, disable it in the display.
+					if (fullDisable)
+						m->displayAlgoName[scene].set(12 + j, true);
+					else
+						m->displayAlgoName[scene].set(12 + j, false);
+				}
+				else {
+					if (j == op) {
+						// Reenable destinations in the display and handle the consequences
+						for (int i = 0; i < 3; i++) {
+							if (m->opDestinations[scene][op][i]) {
+								m->displayAlgoName[scene].set(op * 3 + i, true);
+								// the consequences
+								if (m->horizontalDestinations[scene][m->threeToFour[op][i]])
+									m->displayAlgoName[scene].set(12 + m->threeToFour[op][i], false);
+							}
+						}  
+					}
+				}
+			}
+		}
+		m->graphDirty = true;
 	}
 
 	void redo() override {
@@ -68,6 +155,40 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->horizontalDestinations[scene][op] ^= true;
+		if (!m->modeB) {
+			m->algoName[scene].flip(12 + op);
+			m->displayAlgoName[scene].set(12 + op, m->algoName[scene][12 + op]);
+			for (int j = 0; j < 4; j++) {
+				if (m->horizontalDestinations[scene][j]) {
+					bool fullDisable = true;
+					for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
+						m->displayAlgoName[scene].set(j * 3 + i, false);
+					for (int i = 0; i < 4; i++) {     // Check if any other operators are modulating this operator
+						if (i != j && !m->horizontalDestinations[scene][i] && m->opDestinations[scene][i][m->fourToThree[i][j]])
+							fullDisable = false;
+					}
+					// If anything is modulating the operator, set it enabled in the display. Otherwise, disable it in the display.
+					if (fullDisable)
+						m->displayAlgoName[scene].set(12 + j, true);
+					else
+						m->displayAlgoName[scene].set(12 + j, false);
+				}
+				else {
+					if (j == op) {
+						// Reenable destinations in the display and handle the consequences
+						for (int i = 0; i < 3; i++) {
+							if (m->opDestinations[scene][op][i]) {
+								m->displayAlgoName[scene].set(op * 3 + i, true);
+								// the consequences
+								if (m->horizontalDestinations[scene][m->threeToFour[op][i]])
+									m->displayAlgoName[scene].set(12 + m->threeToFour[op][i], false);
+							}
+						}  
+					}
+				}
+			}
+		}
+		m->graphDirty = true;
 	}
 };
 
@@ -110,6 +231,7 @@ struct AlgorithmSceneChangeAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->baseScene = oldScene;
+		m->graphDirty = true;
 	}
 
 	void redo() override {
@@ -118,6 +240,7 @@ struct AlgorithmSceneChangeAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->baseScene = newScene;
+		m->graphDirty = true;
 	}
 };
 
@@ -397,6 +520,9 @@ struct ResetSceneAction : history::ModuleAction {
 
 template < typename MODULE >
 struct ToggleModeBAction : history::ModuleAction {
+	std::bitset<16> algoName[3];
+	std::bitset<16> displayAlgoName[3];
+
 	ToggleModeBAction() {
 		name = "Delexander Algomorph toggle mode B";
 	}
@@ -407,6 +533,11 @@ struct ToggleModeBAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->modeB ^= true;
+		for (int i = 0; i < 3; i++) {
+			m->algoName[i] = algoName[i];
+			m->displayAlgoName[i] = displayAlgoName[i];
+		}
+		m->graphDirty = true;
 	}
 
 	void redo() override {
@@ -415,6 +546,26 @@ struct ToggleModeBAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		m->modeB ^= true;
+		if (m->modeB) {
+			for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++)
+                    m->algoName[i].set(12 + j, false);
+				m->displayAlgoName[i] = m->algoName[i];
+            }
+		}
+		else {
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 4; j++) {
+					if (m->horizontalDestinations[i][j]) {
+						m->algoName[i].set(12 + j, true);
+						m->displayAlgoName[i] = m->algoName[i];
+						for (int k = 0; k < 3; k++)
+							m->displayAlgoName[i].set(j * 3 + k, false);
+					}
+				}
+			}
+		}
+		m->graphDirty = true;
 	}
 };
 

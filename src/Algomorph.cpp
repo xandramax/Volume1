@@ -174,18 +174,21 @@ struct Algomorph4 : Module {
     bool horizontalDestinations[3][4];                          // [scene][op]
     bool opDestinations[3][4][3];                               // [scene][op][legal mod]
     bool forcedCarrier[3][4];                                   // [scene][op]
-    std::bitset<12> algoName[3];                                // 12-bit IDs of the three stored algorithms
-    int sixteenToTwelve[4089];                                  // Graph ID conversion
+    std::bitset<16> algoName[3];                                // 16-bit IDs of the three stored algorithms
+    std::bitset<16> displayAlgoName[3];                         // When operators are disabled, remove their mod destinations from here
+    int graphAddressTranslation[0xFFFF];                         // Graph ID conversion
                                                                 // The algorithm graph data are stored with IDs in 12-bit space:
-                                                                //       000 000 000 000 -> 111 111 111 000
+                                                                //       0000 000 000 000 000 -> 1111 000 000 000 000
+                                                                // The first 4 bits mark which operators are disabled (1) vs enabled (0).
                                                                 // Each set of 3 bits corresponds to an operator.
-                                                                // Each bit represents an oscillator's "legal" mod destinations.
-                                                                // At least one operator is a carrier (no mod destinations, all bits zero).
-                                                                // However, the algorithms are accessed via 16-bit IDs:
-                                                                //       0000 0000 0000 0000 -> 1110 1101 1011 0000
+                                                                // Each bit represents one of an oscillator's "legal" mod destinations.
+                                                                // At least one operator is a carrier (having no mod destinations, i.e. all bits zero).
+                                                                // However, the algorithms are accessed via 20-bit IDs:
+                                                                //       0000 0000 0000 0000 0000 -> 1111 0000 0000 0000 0000
                                                                 // In 16-bit space, the feedback destinations are included but never equal 1.  
-                                                                // sixteenToTwelve is indexed by 16-bit ID and returns equivalent 12-bit ID.
+                                                                // graphAddressTranslation is indexed by 20-bit ID and returns equivalent 12-bit ID.
     int threeToFour[4][3];                                      // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
+    int fourToThree[4][4];
     bool configMode = true;
     int configOp = -1;                                          // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
@@ -258,16 +261,19 @@ struct Algomorph4 : Module {
             for (int j = 0; j < 4; j++) {
                 if (i != j) {
                     threeToFour[i][i > j ? j : j - 1] = j;
+                    fourToThree[i][j] = i > j ? j : j - 1;
                 }
+                else
+                    fourToThree[i][j] = -1;
             }
         }
 
-        // Initialize sixteenToTwelve[] to -1, then index 9-bit IDs by the 12-bit equivalents
-        for (int i = 0; i < 4089; i++) {
-            sixteenToTwelve[i] = -1;
+        // Initialize graphAddressTranslation[] to -1, then index local ids by generalized 16-bit equivalents
+        for (int i = 0; i < 0xFFFF; i++) {
+            graphAddressTranslation[i] = -1;
         }
-        for (int i = 0; i < 1695; i++) {
-            sixteenToTwelve[(int)xNodeData[i][0]] = i;
+        for (int i = 0; i < 1980; i++) {
+            graphAddressTranslation[(int)xNodeData[i][0]] = i;
         }
 
         onReset();
@@ -276,6 +282,7 @@ struct Algomorph4 : Module {
     void onReset() override {
         for (int i = 0; i < 3; i++) {
             algoName[i].reset();
+            displayAlgoName[i].reset();
             for (int j = 0; j < 4; j++) {
                 horizontalDestinations[i][j] = false;
                 forcedCarrier[i][j] = false;
@@ -319,28 +326,43 @@ struct Algomorph4 : Module {
             for (int j = 0; j < 4; j++) {
                 horizontalDestinations[configScene][j] = false;   //Initialize
                 if (modeB) {
+                    bool disabled = true;
                     forcedCarrier[configScene][j] = false;   //Initialize
                     if (random::uniform() > .5f) {
                         forcedCarrier[configScene][j] = true;
                         noCarrier = false;
+                        disabled = false;
                     }
-                    horizontalDestinations[configScene][j] = random::uniform() > .5f;
+                    if (random::uniform() > .5f) {
+                        horizontalDestinations[configScene][j] = true;
+                        //Do not set algoName, because the operator is not disabled
+                        disabled = false;
+                    }
                     for (int k = 0; k < 3; k++) {
                         opDestinations[configScene][j][k] = false;    //Initialize
                         if (random::uniform() > .5f) {
                             opDestinations[configScene][j][k] = true;
-                            algoName[configScene].flip(j * 3 + k);    
+                            algoName[configScene].flip(j * 3 + k);
+                            disabled = false;    
                         }
                     }
+                    if (disabled)
+                        algoName[configScene].flip(12 + j);
                 }
                 else {
                     forcedCarrier[configScene][j] = false;  //Disable
                     if (random::uniform() > .5f) {      //If true, operator is a carrier
                         noCarrier = false;
+                        for (int k = 0; k < 3; k++)
+                            opDestinations[configScene][j][k] = false;
                     }
                     else {
-                        if (random::uniform() > .5)     //If true, operator is disabled
-                           horizontalDestinations[configScene][j] = true;
+                        if (random::uniform() > .5) {    //If true, operator is disabled
+                            horizontalDestinations[configScene][j] = true;
+                            algoName[configScene].flip(12 + j);
+                            for (int k = 0; k < 3; k++)
+                                opDestinations[configScene][j][k] = false;
+                        }
                         else {
                             for (int k = 0; k < 3; k++) {
                                 opDestinations[configScene][j][k] = false;    //Initialize
@@ -357,13 +379,29 @@ struct Algomorph4 : Module {
                 int shortStraw = std::floor(random::uniform() * 4);
                 while (shortStraw == 4)
                     shortStraw = std::floor(random::uniform() * 4);
-                if (modeB)
+                if (modeB) {
                     forcedCarrier[configScene][shortStraw] = true;
+                    algoName[configScene].set(12 + shortStraw, false);
+                }
                 else {
                     horizontalDestinations[configScene][shortStraw] = false;
+                    algoName[configScene].set(12 + shortStraw, false);
                     for (int k = 0; k < 3; k++) {
                         opDestinations[configScene][shortStraw][k] = false;
                         algoName[configScene].set(shortStraw * 3 + k, false);
+                    }
+                }
+            }
+            displayAlgoName[configScene] = algoName[configScene];   // Sync
+            if (!modeB) {
+                for (int i = 0; i < 4; i++) {
+                    if (horizontalDestinations[configScene][i]) {
+                        for (int j = 0; j < 3; j++) {
+                            displayAlgoName[configScene].set(i * 3 + j, false);     // Set destinations to false in the display
+                            // If another operator is modulating this one, enable this operator in the display
+                            if (!horizontalDestinations[configScene][threeToFour[i][j]] && opDestinations[configScene][threeToFour[i][j]][fourToThree[threeToFour[i][j]][i]])
+                                displayAlgoName[configScene].set(12 + i, false);
+                        }
                     }
                 }
             }
@@ -376,19 +414,28 @@ struct Algomorph4 : Module {
                 for (int j = 0; j < 4; j++) {
                     horizontalDestinations[i][j] = false;   //Initialize
                     if (modeB) {
-                        forcedCarrier[i][j] = false;   //Initialize
+                        bool disabled = true;           //Initialize
+                        forcedCarrier[i][j] = false;    //Initialize
                         if (random::uniform() > .5f) {
                             forcedCarrier[i][j] = true;
                             noCarrier = false;
+                            disabled = false;
                         }
-                        horizontalDestinations[i][j] = random::uniform() > .5f;
+                        if (random::uniform() > .5f) {
+                            horizontalDestinations[i][j] = true;
+                            //Do not set algoName, because the operator is not disabled
+                            disabled = false;
+                        }
                         for (int k = 0; k < 3; k++) {
                             opDestinations[i][j][k] = false;    //Initialize
                             if (random::uniform() > .5f) {
                                 opDestinations[i][j][k] = true;
-                                algoName[i].flip(j * 3 + k);    
+                                algoName[i].flip(j * 3 + k);
+                                disabled = false;
                             }
                         }
+                        if (disabled)
+                            algoName[configScene].flip(12 + j);
                     }
                     else {
                         forcedCarrier[i][j] = false;   //Disable
@@ -400,6 +447,7 @@ struct Algomorph4 : Module {
                         else {
                             if (random::uniform() > .5) {     //If true, operator is disabled
                                 horizontalDestinations[i][j] = true;
+                                algoName[i].flip(12 + j);
                                 for (int k = 0; k < 3; k++)
                                     opDestinations[i][j][k] = false;
                             }
@@ -419,13 +467,29 @@ struct Algomorph4 : Module {
                     int shortStraw = std::floor(random::uniform() * 4);
                     while (shortStraw == 4)
                         shortStraw = std::floor(random::uniform() * 4);
-                    if (modeB)
+                    if (modeB) {
                         forcedCarrier[i][shortStraw] = true;
+                        algoName[i].set(12 + shortStraw, false);
+                    }
                     else {
                         horizontalDestinations[i][shortStraw] = false;
+                        algoName[i].set(12 + shortStraw, false);
                         for (int k = 0; k < 3; k++) {
                             opDestinations[i][shortStraw][k] = false;
                             algoName[i].set(shortStraw * 3 + k, false);
+                        }
+                    }
+                }
+                displayAlgoName[i] = algoName[i];   // Sync
+                if (!modeB) {
+                    for (int j = 0; j < 4; j++) {
+                        if (horizontalDestinations[i][j]) {
+                            for (int k = 0; k < 3; k++) {
+                                displayAlgoName[i].set(j * 3 + k, false);     // Set destinations to false in the display
+                                // If another operator is modulating this one, enable this operator in the display
+                                if (!horizontalDestinations[i][threeToFour[j][k]] && opDestinations[i][threeToFour[j][k]][fourToThree[threeToFour[j][k]][j]])
+                                    displayAlgoName[i].set(12 + j, false);
+                            }
                         }
                     }
                 }
@@ -786,6 +850,41 @@ struct Algomorph4 : Module {
                         h->op = configOp;
 
                         horizontalDestinations[configScene][configOp] ^= true;
+                        if (!modeB) {
+                            algoName[configScene].flip(12 + configOp);
+                            displayAlgoName[configScene].set(12 + configOp, algoName[configScene][12 + configOp]);
+                            for (int j = 0; j < 4; j++) {
+                                if (debug)
+                                    int x = 0;
+                                if (horizontalDestinations[configScene][j]) {
+                                    bool fullDisable = true;
+                                    for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
+                                        displayAlgoName[configScene].set(j * 3 + i, false);
+                                    for (int i = 0; i < 4; i++) {     // Check if any other operators are modulating this operator
+                                        if (i != j && !horizontalDestinations[configScene][i] && opDestinations[configScene][i][fourToThree[i][j]])
+                                            fullDisable = false;
+                                    }
+                                    // If anything is modulating the operator, set it enabled in the display. Otherwise, disable it in the display.
+                                    if (fullDisable)
+                                        displayAlgoName[configScene].set(12 + j, true);
+                                    else
+                                        displayAlgoName[configScene].set(12 + j, false);
+                                }
+                                else {
+                                    if (j == configOp) {
+                                        // Reenable destinations in the display and handle the consequences
+                                        for (int i = 0; i < 3; i++) {
+                                            if (opDestinations[configScene][configOp][i]) {
+                                                displayAlgoName[configScene].set(configOp * 3 + i, true);
+                                                // the consequences
+                                                if (horizontalDestinations[configScene][threeToFour[configOp][i]])
+                                                    displayAlgoName[configScene].set(12 + threeToFour[configOp][i], false);
+                                            }
+                                        }  
+                                    }
+                                }
+                            }
+                        }
 
                         APP->history->push(h);
 
@@ -803,9 +902,35 @@ struct Algomorph4 : Module {
                                 h->scene = configScene;
                                 h->op = configOp;
                                 h->mod = i;
+                                h->displayAlgoName = displayAlgoName[configScene];
 
                                 opDestinations[configScene][configOp][i] ^= true;
                                 algoName[configScene].flip(configOp * 3 + i);
+                                if (modeB || !horizontalDestinations[configScene][configOp])
+                                    displayAlgoName[configScene].flip(configOp * 3 + i);
+                                if (!modeB) {
+                                    // If the configOp is not disabled and the mod output in question corresponds to a disabled operator
+                                    if (!horizontalDestinations[configScene][configOp] && horizontalDestinations[configScene][threeToFour[configOp][i]]) {
+                                        // If a connection has been made, enable that operator visually
+                                        if (opDestinations[configScene][configOp][i]) {
+                                            displayAlgoName[configScene].set(12 + threeToFour[configOp][i], false);
+                                        }
+                                        // If a connection has been broken, 
+                                        else {
+                                            if (horizontalDestinations[configScene][threeToFour[configOp][i]]) {
+                                                bool disabled = true;
+                                                for (int j = 0; j < 4; j++) {
+                                                    if (j != configOp && j != threeToFour[configOp][i] && opDestinations[configScene][j][fourToThree[j][configOp]])
+                                                        disabled = false;
+                                                }
+                                                if (disabled)
+                                                    displayAlgoName[configScene].set(12 + threeToFour[configOp][i], true);
+                                                else
+                                                    displayAlgoName[configScene].set(12 + threeToFour[configOp][i], false);
+                                            }
+                                        }
+                                    }
+                                }
                                 
                                 APP->history->push(h);
 
@@ -1165,7 +1290,7 @@ struct Algomorph4 : Module {
                     lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     lights[SCENE_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     //Set yellow components depending on config scene and blink status
-                    lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(configScene == i ? blinkStatus : 0.f, args.sampleTime * lightDivider.getDivision());
+                    lights[SCENE_LIGHTS + i * 3 + 1].setSmoothBrightness(configScene == i ? 1.f : 0.f, args.sampleTime * lightDivider.getDivision());
                     lights[SCENE_INDICATORS + i * 3 + 1].setSmoothBrightness(configScene == i ?
                         INDICATOR_BRIGHTNESS
                         : 0.f, args.sampleTime * lightDivider.getDivision());
@@ -1343,16 +1468,6 @@ struct Algomorph4 : Module {
                     blinkTimer += args.sampleTime;
                 //Set connection lights
                 if (modeB) {
-                    for (int i = 0; i < 4; i++) {
-                        //Purple lights
-                        lights[H_CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                        //Yellow lights
-                        lights[H_CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(horizontalDestinations[configScene][i] ?
-                            0.4f
-                            : 0.f, args.sampleTime * lightDivider.getDivision());
-                        //Red lights
-                        lights[H_CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-                    }
                     for (int i = 0; i < 12; i++) {
                         //Purple lights
                         lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
@@ -1362,6 +1477,16 @@ struct Algomorph4 : Module {
                             : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Set diagonal disable lights
                         lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        //Purple lights
+                        lights[H_CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        //Yellow lights
+                        lights[H_CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(horizontalDestinations[configScene][i] ?
+                            0.4f
+                            : 0.f, args.sampleTime * lightDivider.getDivision());
+                        //Red lights
+                        lights[H_CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     }
                 }
                 else {
@@ -1374,25 +1499,24 @@ struct Algomorph4 : Module {
                                 0.4f
                                 : 0.f
                             : 0.f, args.sampleTime * lightDivider.getDivision());
+                        //Set diagonal disable lights
+                        lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(!horizontalDestinations[configScene][i / 3] ? 
+                            0.f
+                            : opDestinations[configScene][i / 3][i % 3] ?
+                                DEF_RED_BRIGHTNESS
+                                : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     //Set horizontal lights
                     for (int i = 0; i < 4; i++) {
                         //Purple lights
                         lights[H_CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
-                        lights[H_CONNECTION_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        lights[H_CONNECTION_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Red lights
                         lights[H_CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(!horizontalDestinations[configScene][i] ?
                             0.f
                             : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                     }
-                    //Set diagonal disable lights
-                    for (int i = 0; i < 12; i++)
-                        lights[D_DISABLE_LIGHTS + i].setSmoothBrightness(!horizontalDestinations[configScene][i / 3] ? 
-                            0.f
-                            : opDestinations[configScene][i / 3][i % 3] ?
-                                DEF_RED_BRIGHTNESS
-                                : 0.f, args.sampleTime * lightDivider.getDivision());
                 }
             } 
             else {
@@ -1758,6 +1882,14 @@ struct Algomorph4 : Module {
         }
         json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
 
+        json_t* displayAlgoNamesJ = json_array();
+        for (int i = 0; i < 3; i++) {
+            json_t* displayNameJ = json_object();
+            json_object_set_new(displayNameJ, "Display Name", json_integer(displayAlgoName[i].to_ullong()));
+            json_array_append_new(displayAlgoNamesJ, displayNameJ);
+        }
+        json_object_set_new(rootJ, "Display Algorithm Names", displayAlgoNamesJ);
+
         json_t* horizontalConnectionsJ = json_array();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -1830,9 +1962,15 @@ struct Algomorph4 : Module {
         }
 
         json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
-        json_t* nameJ; size_t sixteenToTwelve;
-        json_array_foreach(algoNamesJ, sixteenToTwelve, nameJ) {
-            algoName[sixteenToTwelve] = json_integer_value(json_object_get(nameJ, "Name"));
+        json_t* nameJ; size_t nameIndex;
+        json_array_foreach(algoNamesJ, nameIndex, nameJ) {
+            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
+        }
+
+        json_t* displayAlgoNamesJ = json_object_get(rootJ, "Display Algorithm Names");
+        json_t* displayNameJ; size_t displayNameIndex;
+        json_array_foreach(displayAlgoNamesJ, displayNameIndex, displayNameJ) {
+            displayAlgoName[displayNameIndex] = json_integer_value(json_object_get(displayNameJ, "Display Name"));
         }
 
         json_t* forcedCarriersJ = json_object_get(rootJ, "Forced Carriers");
@@ -1910,7 +2048,7 @@ struct AlgoScreenWidget : FramebufferWidget {
 
         AlgoDrawWidget(MODULE* module) {
             this->module = module;
-            font = APP->window->loadFont(asset::plugin(pluginInstance, "res/terminal-grotesque.ttf"));
+            font = APP->window->loadFont(asset::plugin(pluginInstance, "res/MiriamLibre-Regular.ttf"));
         }
 
         void drawNodes(NVGcontext* ctx, alGraph source, alGraph destination, float morph) {
@@ -1921,73 +2059,115 @@ struct AlgoScreenWidget : FramebufferWidget {
         }
 
         void renderNodes(NVGcontext* ctx, alGraph mostNodes, alGraph leastNodes, float morph, bool flipped) {
-            for (int i = 0; i< mostNodes.numNodes; i++) {
-                Node node[2];
+            for (int i = 0; i< 4; i++) {
+                Node nodes[2];
+                float nodeX[2] = {0.f};
+                float nodeY[2] = {0.f};
+                float nodeAlpha[2] = {0.f};
+                float textAlpha[2] = {0.f};
+                nodeFillColor = NODE_FILL_COLOR;
+                nodeStrokeColor = NODE_STROKE_COLOR;
+                textColor = TEXT_COLOR;
+                bool draw = true;
+
                 nvgBeginPath(ctx);
-                if (leastNodes.numNodes == 0) {
-                    if (!flipped) {
-                        node[0] = mostNodes.nodes[i];
-                        node[1] = mostNodes.nodes[i];
-                        nodeFillColor.a = crossfade(NODE_FILL_COLOR.a, 0x00, morph);
-                        nodeStrokeColor.a = crossfade(NODE_STROKE_COLOR.a, 0x00, morph);
-                        textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
-                    }
+                if (mostNodes.nodes[i].id == 404) {
+                    if (leastNodes.nodes[i].id == 404)
+                        draw = false;
                     else {
-                        node[0] = mostNodes.nodes[i];
-                        node[1] = mostNodes.nodes[i];
-                        nodeFillColor.a = crossfade(0x00, NODE_FILL_COLOR.a, morph);
-                        nodeStrokeColor.a = crossfade(0x00, NODE_STROKE_COLOR.a, morph);
-                        textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
+                        nodes[0] = leastNodes.nodes[i];
+                        nodes[1] = leastNodes.nodes[i];
+                        if (!flipped) {
+                            nodeAlpha[0] = 0.f;
+                            textAlpha[0] = 0.f;
+                            nodeAlpha[1] = NODE_FILL_COLOR.a;
+                            textAlpha[1] = TEXT_COLOR.a;
+                            nodeX[0] = xOrigin;
+                            nodeY[0] = yOrigin;
+                            nodeX[1] = nodes[1].coords.x;
+                            nodeY[1] = nodes[1].coords.y;
+                        }
+                        else {
+                            nodeAlpha[0] = NODE_FILL_COLOR.a;
+                            textAlpha[0] = TEXT_COLOR.a;
+                            nodeAlpha[1] = 0.f;
+                            textAlpha[1] = 0.f;
+                            nodeX[0] = nodes[0].coords.x;
+                            nodeY[0] = nodes[0].coords.y;
+                            nodeX[1] = xOrigin;
+                            nodeY[1] = yOrigin;
+                        }
                     }
                 }
-                else if (i < leastNodes.numNodes) {
+                else if (leastNodes.nodes[i].id == 404) {
+                    nodes[0] = mostNodes.nodes[i];
+                    nodes[1] = mostNodes.nodes[i];
                     if (!flipped) {
-                        node[0] = mostNodes.nodes[i];
-                        node[1] = leastNodes.nodes[i];
+                        nodeAlpha[0] = NODE_FILL_COLOR.a;
+                        textAlpha[0] = TEXT_COLOR.a;
+                        nodeAlpha[1] = 0.f;
+                        textAlpha[1] = 0.f;
+                        nodeX[0] = nodes[0].coords.x;
+                        nodeY[0] = nodes[0].coords.y;
+                        nodeX[1] = xOrigin;
+                        nodeY[1] = yOrigin;
                     }
                     else {
-                        node[0] = leastNodes.nodes[i];
-                        node[1] = mostNodes.nodes[i];
+                        nodeAlpha[0] = 0.f;
+                        textAlpha[0] = 0.f;
+                        nodeAlpha[1] = NODE_FILL_COLOR.a;
+                        textAlpha[1] = TEXT_COLOR.a;
+                        nodeX[0] = xOrigin;
+                        nodeY[0] = yOrigin;
+                        nodeX[1] = nodes[0].coords.x;
+                        nodeY[1] = nodes[0].coords.y;
                     }
-                    nodeFillColor = NODE_FILL_COLOR;
-                    nodeStrokeColor = NODE_STROKE_COLOR;
-                    textColor = TEXT_COLOR;
                 }
                 else {
                     if (!flipped) {
-                        node[0] = mostNodes.nodes[i];
-                        node[1] = leastNodes.nodes[std::max(0, leastNodes.numNodes - 1)];
+                        nodes[0] = mostNodes.nodes[i];
+                        nodes[1] = leastNodes.nodes[i];
                     }
                     else {
-                        node[0] = leastNodes.nodes[std::max(0, leastNodes.numNodes - 1)];
-                        node[1] = mostNodes.nodes[i];
+                        nodes[0] = leastNodes.nodes[i];
+                        nodes[1] = mostNodes.nodes[i];
                     }
-                    nodeFillColor = NODE_FILL_COLOR;
-                    nodeStrokeColor = NODE_STROKE_COLOR;
-                    textColor = TEXT_COLOR;
+                    nodeAlpha[0] = NODE_FILL_COLOR.a;
+                    textAlpha[0] = TEXT_COLOR.a;
+                    nodeAlpha[1] = NODE_FILL_COLOR.a;
+                    textAlpha[1] = TEXT_COLOR.a;
+                    nodeX[0] = nodes[0].coords.x;
+                    nodeX[1] = nodes[1].coords.x;
+                    nodeY[0] = nodes[0].coords.y;
+                    nodeY[1] = nodes[1].coords.y;
                 }
-                
-                nvgCircle(ctx,  crossfade(node[0].coords.x, node[1].coords.x, morph),
-                                crossfade(node[0].coords.y, node[1].coords.y, morph),
-                                radius);
-                nvgFillColor(ctx, nodeFillColor);
-                nvgFill(ctx);
-                nvgStrokeColor(ctx, nodeStrokeColor);
-                nvgStrokeWidth(ctx, nodeStroke);
-                nvgStroke(ctx);
+                if (draw) {
+                    nodeFillColor.a = crossfade(nodeAlpha[0], nodeAlpha[1], morph);
+                    nodeStrokeColor.a = crossfade(nodeAlpha[0], nodeAlpha[1], morph);
+                    textColor.a = crossfade(textAlpha[0], textAlpha[1], morph);
+                    
+                    nvgCircle(ctx,  crossfade(nodeX[0], nodeX[1], morph),
+                                    crossfade(nodeY[0], nodeY[1], morph),
+                                    radius);
+                    nvgFillColor(ctx, nodeFillColor);
+                    nvgFill(ctx);
+                    nvgStrokeColor(ctx, nodeStrokeColor);
+                    nvgStrokeWidth(ctx, nodeStroke);
+                    nvgStroke(ctx);
 
-                nvgBeginPath(ctx);
-                nvgFontSize(ctx, 10.f);
-                nvgFontFaceId(ctx, font->handle);
-                nvgFillColor(ctx, textColor);
-                std::string s = std::to_string(i + 1);
-                char const *id = s.c_str();
-                nvgTextBounds(ctx, node[0].coords.x, node[0].coords.y, id, id + 1, textBounds);
-                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                nvgText(ctx,    crossfade(node[0].coords.x, node[1].coords.x, morph) - xOffset,
-                                    crossfade(node[0].coords.y, node[1].coords.y, morph) + yOffset,
+                    nvgBeginPath(ctx);
+                    nvgFontSize(ctx, 11.f);
+                    nvgFontFaceId(ctx, font->handle);
+                    nvgFillColor(ctx, textColor);
+                    std::string s = std::to_string(i + 1);
+                    char const *id = s.c_str();
+                    nvgTextBounds(ctx, nodes[0].coords.x, nodes[0].coords.y, id, id + 1, textBounds);
+                    float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                    float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                    nvgText(ctx,    crossfade(nodeX[0], nodeX[1], morph) - xOffset,
+                                    crossfade(nodeY[0], nodeY[1], morph) + yOffset,
                                     id, id + 1);
+                }
             }
         }
 
@@ -2126,11 +2306,13 @@ struct AlgoScreenWidget : FramebufferWidget {
             yOrigin = box.size.y / 2.f;
 
             for (int i = 0; i < 3; i++) {
-                int name = module->sixteenToTwelve[module->algoName[i].to_ullong()];
+                int name = module->graphAddressTranslation[module->displayAlgoName[i].to_ullong()];
                 if (name != -1)
-                    graphs[i] = alGraph(module->sixteenToTwelve[(int)module->algoName[i].to_ullong()]);
-                else
-                    graphs[i] = alGraph(1695);
+                    graphs[i] = alGraph(module->graphAddressTranslation[(int)module->displayAlgoName[i].to_ullong()]);
+                else {
+                    graphs[i] = alGraph(1979);
+                    graphs[i].mystery = true;
+                }
             }
               
             int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
@@ -2146,8 +2328,9 @@ struct AlgoScreenWidget : FramebufferWidget {
                 if (graphs[scene].numNodes > 0) {
                     // Draw nodes
                     nvgBeginPath(args.vg);
-                    for (int i = 0; i < graphs[scene].numNodes; i++) {
-                        nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
+                    for (int i = 0; i < 4; i++) {
+                        if (graphs[scene].nodes[i].id != 404)
+                            nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
                     }
                     nvgFillColor(args.vg, nodeFillColor);
                     nvgFill(args.vg);
@@ -2157,16 +2340,18 @@ struct AlgoScreenWidget : FramebufferWidget {
 
                     // Draw numbers
                     nvgBeginPath(args.vg);
-                    nvgFontSize(args.vg, 10.f);
+                    nvgFontSize(args.vg, 11.f);
                     nvgFontFaceId(args.vg, font->handle);
                     nvgFillColor(args.vg, textColor);
-                    for (int i = 0; i < graphs[scene].numNodes; i++) {
-                        std::string s = std::to_string(i + 1);
-                        char const *id = s.c_str();
-                        nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
-                        float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                        float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                        nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
+                    for (int i = 0; i < 4; i++) {
+                        if (graphs[scene].nodes[i].id != 404) {
+                            std::string s = std::to_string(i + 1);
+                            char const *id = s.c_str();
+                            nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
+                            float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                            float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                            nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
+                        }
                     }
                 }
             }
@@ -2178,9 +2363,9 @@ struct AlgoScreenWidget : FramebufferWidget {
 
             // Draw question mark
             if (module->configMode) {
-                if (graphs[scene].numNodes == 0) {
+                if (graphs[scene].mystery) {
                     nvgBeginPath(args.vg);
-                    nvgFontSize(args.vg, 64.f);
+                    nvgFontSize(args.vg, 92.f);
                     nvgFontFaceId(args.vg, font->handle);
                     textColor = TEXT_COLOR;
                     nvgFillColor(args.vg, textColor);
@@ -2188,18 +2373,18 @@ struct AlgoScreenWidget : FramebufferWidget {
                     char const *id = s.c_str();
                     nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
                     float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                    float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                    float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
                     nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
                 }
             }
             else {
-                if (graphs[scene].numNodes == 0 || graphs[morphScene].numNodes == 0) {
+                if (graphs[scene].mystery || graphs[morphScene].mystery) {
                     nvgBeginPath(args.vg);
-                    nvgFontSize(args.vg, 64.f);
+                    nvgFontSize(args.vg, 92.f);
                     nvgFontFaceId(args.vg, font->handle);
-                    if (graphs[scene].numNodes == 0 && graphs[morphScene].numNodes == 0)
+                    if (graphs[scene].mystery && graphs[morphScene].mystery)
                         textColor = TEXT_COLOR;
-                    else if (graphs[scene].numNodes == 0)
+                    else if (graphs[scene].mystery)
                         textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
                     else
                         textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
@@ -2208,7 +2393,7 @@ struct AlgoScreenWidget : FramebufferWidget {
                     char const *id = s.c_str();
                     nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
                     float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                    float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                    float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
                     nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
                 }
             }
@@ -2812,6 +2997,30 @@ struct ToggleModeBItem : MenuItem {
         h->moduleId = module->id;
 
         module->modeB ^= true;
+        if (module->modeB) {
+            for (int i = 0; i < 3; i++) {
+                h->algoName[i] = module->algoName[i];
+                h->displayAlgoName[i] = module->displayAlgoName[i];
+                for (int j = 0; j < 4; j++)
+                    module->algoName[i].set(12 + j, false);
+                module->displayAlgoName[i] = module->algoName[i];
+            }
+        }
+        else {
+            for (int i = 0; i < 3; i++) {
+                h->algoName[i] = module->algoName[i];
+                h->displayAlgoName[i] = module->displayAlgoName[i];
+                for (int j = 0; j < 4; j++) {
+                    if (module->horizontalDestinations[i][j]) {
+                        module->algoName[i].set(12 + j, true);
+                        module->displayAlgoName[i] = module->algoName[i];
+                        for (int k = 0; k < 3; k++)
+                            module->displayAlgoName[i].set(j * 3 + k, false);
+                    }
+                }
+            }
+        }
+        module->graphDirty = true;
 
         APP->history->push(h);
     }
