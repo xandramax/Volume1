@@ -17,6 +17,51 @@ static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 
 
+/// Constants
+
+static constexpr float BLINK_INTERVAL = 0.42857142857f;
+static constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
+static constexpr float FIVE_D_TWO = 5.f / 2.f;
+static constexpr float FIVE_D_THREE = 5.f / 3.f;
+static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
+static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
+static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
+
+/// Auxiliary input and knob
+
+struct AuxSourceModes {
+	static const int MORPH = 0;
+	static const int MORPH_ATTEN = 1;
+	static const int CLICK_FILTER = 2;
+	static const int DOUBLE_MORPH = 3;
+	static const int TRIPLE_MORPH = 4;
+	static const int NUM_MODES = 5;
+};
+
+struct OptionInputModes : AuxSourceModes {
+	static const int SUM_ATTEN = 		AuxSourceModes::NUM_MODES;
+	static const int MOD_ATTEN = 		AuxSourceModes::NUM_MODES + 1;
+	static const int CLOCK = 			AuxSourceModes::NUM_MODES + 2;
+	static const int REVERSE_CLOCK = 	AuxSourceModes::NUM_MODES + 3;
+	static const int RESET = 			AuxSourceModes::NUM_MODES + 4;
+	static const int RUN = 				AuxSourceModes::NUM_MODES + 5;
+	static const int SCENE_OFFSET = 	AuxSourceModes::NUM_MODES + 6;
+	static const int WILDCARD_MOD = 	AuxSourceModes::NUM_MODES + 7;
+	static const int WILDCARD_SUM = 	AuxSourceModes::NUM_MODES + 8;
+	static const int SHADOW = 			AuxSourceModes::NUM_MODES + 9;
+	// 4 shadow modes
+	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 13;
+};
+
+struct AuxKnobModes : AuxSourceModes {
+	static const int MORPH_GAIN = 	AuxSourceModes::NUM_MODES;
+	static const int SUM_GAIN = 	AuxSourceModes::NUM_MODES + 1;
+	static const int MOD_GAIN = 	AuxSourceModes::NUM_MODES + 2;
+	static const int OP_GAIN = 		AuxSourceModes::NUM_MODES + 3;
+	static const int UNI_MORPH = 	AuxSourceModes::NUM_MODES + 4;
+	static const int NUM_MODES = 	AuxSourceModes::NUM_MODES + 5;
+};
+
 /// Undo/Redo History
 
 template < typename MODULE >
