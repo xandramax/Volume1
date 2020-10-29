@@ -6,7 +6,7 @@ constexpr float BLINK_INTERVAL = 0.42857142857f;
 constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 constexpr float FIVE_D_TWO = 5.f / 2.f;
 constexpr float FIVE_D_THREE = 5.f / 3.f;
-constexpr float CLOCK_IGNORE_DURATION = 0.001f;// disable clock on powerup and reset for 1 ms (so that the first step plays)
+constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
 constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
 constexpr float INDICATOR_BRIGHTNESS = 0.325f;
 
@@ -827,6 +827,7 @@ struct Algomorph4 : Module {
                         else if (configOp == i) {  
                             //Deselect operator
                             configOp = -1;
+                            configMode = false;
                         }
                         else {
                             configOp = i;
