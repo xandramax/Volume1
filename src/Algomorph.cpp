@@ -10,7 +10,7 @@ struct Algomorph4 : Module {
         MORPH_KNOB,
         EDIT_BUTTON,
         SCREEN_BUTTON,
-        AUX_KNOB,
+        ENUMS(AUX_KNOBS, AuxKnobModes::NUM_MODES),
         NUM_PARAMS
     };
     enum InputIds {
@@ -18,7 +18,7 @@ struct Algomorph4 : Module {
         MORPH_INPUT,
         SCENE_ADV_INPUT,    //Clk input
         RESET_INPUT,
-        OPTION_INPUT,
+        AUX_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
@@ -44,12 +44,13 @@ struct Algomorph4 : Module {
         THREE_LIGHT,
         SCREEN_BUTTON_LIGHT,
         ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
+        ENUMS(AUX_KNOB_LIGHTS, AuxKnobModes::NUM_MODES),
         NUM_LIGHTS
     };
     template < typename MODULE >
-    struct OptionInput {
-        bool mode[OptionInputModes::NUM_MODES] = {false};
-        bool mustForget[OptionInputModes::NUM_MODES] = {false};
+    struct AuxInput {
+        bool mode[AuxInputModes::NUM_MODES] = {false};
+        bool mustForget[AuxInputModes::NUM_MODES] = {false};
         bool allowMultipleModes = false;
         int activeModes = 0;
         int lastSetMode;
@@ -65,19 +66,18 @@ struct Algomorph4 : Module {
         float wildcardModClickGain = 0.f;
         dsp::SlewLimiter wildcardSumClickFilter[16];
         float wildcardSumClickGain = 0.f;
-        float voltage[OptionInputModes::NUM_MODES][16];
-        float defVoltage[OptionInputModes::NUM_MODES] = { 0.f };
+        float voltage[AuxInputModes::NUM_MODES][16];
+        float defVoltage[AuxInputModes::NUM_MODES] = { 0.f };
         int channels = 0;
 
-        OptionInput(MODULE* m) {
+        AuxInput(MODULE* m) {
             module = m;
-            defVoltage[OptionInputModes::MORPH_ATTEN] = 5.f;
-            defVoltage[OptionInputModes::MOD_ATTEN] = 5.f;
-            defVoltage[OptionInputModes::SUM_ATTEN] = 5.f;
+            defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
+            defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
             resetVoltages();
-            for (int i = OptionInputModes::CLOCK; i <= OptionInputModes::RUN; i++)
+            for (int i = AuxInputModes::CLOCK; i <= AuxInputModes::RUN; i++)
                 mustForget[i] = true;
-            for (int i = OptionInputModes::WILDCARD_MOD; i <= OptionInputModes::SHADOW + 3; i++)
+            for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::SHADOW + 3; i++)
                 mustForget[i] = true;
             for (int c = 0; c < 16; c++) {
                 wildcardModClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
@@ -92,7 +92,7 @@ struct Algomorph4 : Module {
         }
 
         void forgetVoltages() {
-            for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+            for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
                 for (int j = 0; j < 16; j++) {
                     if (!mode[i])
                         voltage[i][j] = defVoltage[i];
@@ -101,7 +101,7 @@ struct Algomorph4 : Module {
         }
         
         void resetVoltages() {
-            for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+            for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
                 for (int j = 0; j < 16; j++) {
                     voltage[i][j] = defVoltage[i];
                 }
@@ -124,31 +124,36 @@ struct Algomorph4 : Module {
         void clearModes() {
             activeModes = 0;
 
-            for (int i = 0; i < OptionInputModes::NUM_MODES; i++)
+            for (int i = 0; i < AuxInputModes::NUM_MODES; i++)
                 mode[i] = false;
         }
 
         void updateVoltage() {
-            for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+            for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
                 if (mode[i]) {
                     for (int c = 0; c < channels; c++)
-                        voltage[i][c] = module->inputs[MODULE::OPTION_INPUT].getPolyVoltage(c);
+                        voltage[i][c] = module->inputs[MODULE::AUX_INPUT].getPolyVoltage(c);
                 }
             }
         }
     };
-    OptionInput<Algomorph4> optionInput = OptionInput<Algomorph4>(this);
-    float scaledOptionVoltage[OptionInputModes::NUM_MODES][16];      // store processed (ready-to-use) values from optionInput.voltage[][], so they can be remembered if necessary
+    AuxInput<Algomorph4> auxInput = AuxInput<Algomorph4>(this);
+    float scaledAuxVoltage[AuxInputModes::NUM_MODES][16];      // store processed (ready-to-use) values from auxInput.voltage[][], so they can be remembered if necessary
+
+    int knobMode = 1;
+
     int baseScene = 1;                                          // Center the Morph knob on saved algorithm 0, 1, or 2
     float morph[16] = {0.f};                                    // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
     int centerMorphScene[16] = { baseScene }, forwardMorphScene[16] = { (baseScene + 1) % 3 }, backwardMorphScene[16] = { (baseScene + 2) % 3 };
+
     bool horizontalDestinations[3][4];                          // [scene][op]
     bool opDestinations[3][4][3];                               // [scene][op][legal mod]
     bool forcedCarrier[3][4];                                   // [scene][op]
     std::bitset<16> algoName[3];                                // 16-bit IDs of the three stored algorithms
     std::bitset<16> displayAlgoName[3];                         // When operators are disabled, remove their mod destinations from here
-    int graphAddressTranslation[0xFFFF];                         // Graph ID conversion
+
+    int graphAddressTranslation[0xFFFF];                        // Graph ID conversion
                                                                 // The algorithm graph data are stored with IDs in 12-bit space:
                                                                 //       0000 000 000 000 000 -> 1111 000 000 000 000
                                                                 // The first 4 bits mark which operators are disabled (1) vs enabled (0).
@@ -161,13 +166,11 @@ struct Algomorph4 : Module {
                                                                 // graphAddressTranslation is indexed by 20-bit ID and returns equivalent 12-bit ID.
     int threeToFour[4][3];                                      // Modulator ID conversion ([op][x] = y, where x is 0..2 and y is 0..3)
     int fourToThree[4][4];
+    
     bool configMode = true;
     int configOp = -1;                                          // Set to 0-3 when configuring mod destinations for operators 1-4
     int configScene = 1;
     bool running = true;
-
-    float opButtonPressed[4] = {0};
-    bool noReaction[4] = {true, true, true, true};
 
     bool graphDirty = true;
     bool debug = false;
@@ -207,7 +210,16 @@ struct Algomorph4 : Module {
 
     Algomorph4() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-        configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Algorithm Morph", "", 0, 100);
+        configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+        configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
+        configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
+        configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
+        configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
         for (int i = 0; i < 4; i++) {
             configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
             configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
@@ -263,11 +275,11 @@ struct Algomorph4 : Module {
                 }
             }
         }
-        optionInput.setMode(OptionInputModes::MORPH);
-        optionInput.resetVoltages();
+        auxInput.setMode(AuxInputModes::MORPH);
+        auxInput.resetVoltages();
         rescaleVoltages();
-        optionInput.allowMultipleModes = false;
-        optionInput.forgetVoltage = true;
+        auxInput.allowMultipleModes = false;
+        auxInput.forgetVoltage = true;
         configMode = false;
         configOp = -1;
         configScene = 1;
@@ -483,14 +495,14 @@ struct Algomorph4 : Module {
         int channels = 1;                                       // Max channels of operator inputs
         bool processCV = cvDivider.process();
 
-        if (inputs[OPTION_INPUT].isConnected()) {
-            optionInput.connected = true;
-            optionInput.updateVoltage();
+        if (inputs[AUX_INPUT].isConnected()) {
+            auxInput.connected = true;
+            auxInput.updateVoltage();
         }
         else {
-            if (optionInput.connected) {
-                optionInput.connected = false;
-                optionInput.resetVoltages();
+            if (auxInput.connected) {
+                auxInput.connected = false;
+                auxInput.resetVoltages();
                 rescaleVoltages();
                 running = true;
             }
@@ -503,19 +515,19 @@ struct Algomorph4 : Module {
         }
         if (channels < inputs[MORPH_INPUT].getChannels())
             channels = inputs[MORPH_INPUT].getChannels();
-        if (channels < inputs[OPTION_INPUT].getChannels())
-            channels = inputs[OPTION_INPUT].getChannels();
-        optionInput.channels = channels;
+        if (channels < inputs[AUX_INPUT].getChannels())
+            channels = inputs[AUX_INPUT].getChannels();
+        auxInput.channels = channels;
 
         if (processCV) {
             //Reset trigger
-            if (resetCVTrigger.process(inputs[RESET_INPUT].getVoltage() + optionInput.voltage[OptionInputModes::RESET][0])) {
+            if (resetCVTrigger.process(inputs[RESET_INPUT].getVoltage() + auxInput.voltage[AuxInputModes::RESET][0])) {
                 initRun();// must be after sequence reset
                 sceneAdvCVTrigger.reset();
             }
 
             //Run trigger
-            if (optionInput.runCVTrigger.process(optionInput.voltage[OptionInputModes::RUN][0])) {
+            if (auxInput.runCVTrigger.process(auxInput.voltage[AuxInputModes::RUN][0])) {
                 running ^= true;
                 if (running) {
                     if (resetOnRun)
@@ -568,7 +580,7 @@ struct Algomorph4 : Module {
                     baseScene = (baseScene + 2) % 3;
                     graphDirty = true;
                 }
-                if (optionInput.sceneAdvCVTrigger.process(optionInput.voltage[OptionInputModes::CLOCK][0])) {
+                if (auxInput.sceneAdvCVTrigger.process(auxInput.voltage[AuxInputModes::CLOCK][0])) {
                     //Advance base scene
                     if (!ccwSceneSelection)
                     baseScene = (baseScene + 1) % 3;
@@ -576,7 +588,7 @@ struct Algomorph4 : Module {
                     baseScene = (baseScene + 2) % 3;
                     graphDirty = true;
                 }
-                if (optionInput.reverseSceneAdvCVTrigger.process(optionInput.voltage[OptionInputModes::REVERSE_CLOCK][0])) {
+                if (auxInput.reverseSceneAdvCVTrigger.process(auxInput.voltage[AuxInputModes::REVERSE_CLOCK][0])) {
                     //Advance base scene
                     if (!ccwSceneSelection)
                     baseScene = (baseScene + 2) % 3;
@@ -589,7 +601,7 @@ struct Algomorph4 : Module {
 
         //Update scene offset
         for (int c = 0; c < channels; c++) {
-            float sceneOffsetVoltage = optionInput.voltage[OptionInputModes::SCENE_OFFSET][c];
+            float sceneOffsetVoltage = auxInput.voltage[AuxInputModes::SCENE_OFFSET][c];
             if (sceneOffsetVoltage > FIVE_D_THREE)
                 sceneOffset[c] = 1;
             else if (sceneOffsetVoltage < -FIVE_D_THREE)
@@ -600,13 +612,20 @@ struct Algomorph4 : Module {
 
         //  Update morph status
         // Only redraw display if morph on channel 1 has changed
-        float morphAttenInput = clamp(optionInput.voltage[OptionInputModes::MORPH_ATTEN][0] / 5.f, -1.f, 1.f);
+        float morphAttenuversion = clamp(auxInput.voltage[AuxInputModes::MORPH_ATTEN][0] / 5.f + params[AUX_KNOBS + AuxKnobModes::MORPH_ATTEN].getValue(), -1.f, 1.f);
         float newMorph0 =  clamp(inputs[MORPH_INPUT].getVoltage(0) / 5.f, -1.f, 1.f)
-                            * morphAttenInput
+                            * morphAttenuversion
                             + params[MORPH_KNOB].getValue()
-                            + clamp(optionInput.voltage[OptionInputModes::MORPH][0] / 5.f, -1.f, 1.f)
-                            + clamp(optionInput.voltage[OptionInputModes::DOUBLE_MORPH][0] / FIVE_D_TWO, -2.f, 2.f)
-                            + clamp(optionInput.voltage[OptionInputModes::TRIPLE_MORPH][0] / FIVE_D_THREE, -3.f, 3.f);
+                            + params[AUX_KNOBS + AuxKnobModes::MORPH].getValue()
+                            + params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH].getValue()
+                            + params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH].getValue()
+                            + params[AUX_KNOBS + AuxKnobModes::UNI_MORPH].getValue()
+                            + clamp(auxInput.voltage[AuxInputModes::MORPH][0] / 5.f, -1.f, 1.f)
+                            * morphAttenuversion
+                            + clamp(auxInput.voltage[AuxInputModes::DOUBLE_MORPH][0] / FIVE_D_TWO, -2.f, 2.f)
+                            * morphAttenuversion
+                            + clamp(auxInput.voltage[AuxInputModes::TRIPLE_MORPH][0] / FIVE_D_THREE, -3.f, 3.f)
+                            * morphAttenuversion;
         newMorph0 = clamp(newMorph0, -3.f, 3.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
@@ -614,11 +633,18 @@ struct Algomorph4 : Module {
         }
         for (int c = 1; c < channels; c++) {
             morph[c] =  clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f)
-                        * morphAttenInput
+                        * morphAttenuversion
                         + params[MORPH_KNOB].getValue()
-                        + clamp(optionInput.voltage[OptionInputModes::MORPH][c] / 5.f, -1.f, 1.f)
-                        + clamp(optionInput.voltage[OptionInputModes::DOUBLE_MORPH][c] / FIVE_D_TWO, -2.f, 2.f)
-                        + clamp(optionInput.voltage[OptionInputModes::TRIPLE_MORPH][c] / FIVE_D_THREE, -3.f, 3.f);
+                        + params[AUX_KNOBS + AuxKnobModes::MORPH].getValue()
+                        + params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH].getValue()
+                        + params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH].getValue()
+                        + params[AUX_KNOBS + AuxKnobModes::UNI_MORPH].getValue()
+                        + clamp(auxInput.voltage[AuxInputModes::MORPH][c] / 5.f, -1.f, 1.f)
+                        * morphAttenuversion
+                        + clamp(auxInput.voltage[AuxInputModes::DOUBLE_MORPH][c] / FIVE_D_TWO, -2.f, 2.f)
+                        * morphAttenuversion
+                        + clamp(auxInput.voltage[AuxInputModes::TRIPLE_MORPH][c] / FIVE_D_THREE, -3.f, 3.f)
+                        * morphAttenuversion;
         }
         float lightRelativeMorphMagnitude[16] = {0.f};
         if (!ringMorph) {
@@ -962,20 +988,20 @@ struct Algomorph4 : Module {
         
         //Update clickfilter rise/fall times
         if (clickFilterDivider.process()) {
-            if (optionInput.mode[OptionInputModes::CLICK_FILTER])
-                scaleOptionClickFilterVoltage(channels);
+            if (auxInput.mode[AuxInputModes::CLICK_FILTER])
+                scaleAuxClickFilterVoltage(channels);
             else {
                 for (int c = 0; c < channels; c++) {
-                    // Still factor-in scaledOptionVoltage, in case it is remembered. Proper bookkeeping ensures it is set to 1.f in all other cases.
-                    float clickFilterResult = clickFilterSlew * scaledOptionVoltage[OptionInputModes::CLICK_FILTER][c];
-                    optionInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
-                    optionInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                    // Still factor-in scaledAuxVoltage, in case it is remembered. Proper bookkeeping ensures it is set to 1.f in all other cases.
+                    float clickFilterResult = clickFilterSlew * scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c] * params[AUX_KNOBS + AuxKnobModes::CLICK_FILTER].getValue();
+                    auxInput.wildcardModClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
+                    auxInput.wildcardSumClickFilter[c].setRiseFall(clickFilterResult, clickFilterResult);
                     for (int i = 0; i < 4; i++) {
                         for (int j = 0; j < 4; j++) {
                             clickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
                             clickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
-                            optionInput.shadowOpClickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
-                            optionInput.shadowOpClickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                            auxInput.shadowOpClickFilters[0][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
+                            auxInput.shadowOpClickFilters[1][i][j][c].setRiseFall(clickFilterResult, clickFilterResult);
                         }
                     }
                 }
@@ -991,17 +1017,17 @@ struct Algomorph4 : Module {
             runClickFilterGain = runClickFilter.process(args.sampleTime, running);
         else
             runClickFilterGain = 1.f;
-        if (optionInput.mode[OptionInputModes::MOD_ATTEN])
-            scaleOptionModAttenVoltage(channels);
-        if (optionInput.mode[OptionInputModes::SUM_ATTEN])
-            scaleOptionSumAttenVoltage(channels);
+        if (auxInput.mode[AuxInputModes::MOD_ATTEN])
+            scaleAuxModAttenVoltage(channels);
+        if (auxInput.mode[AuxInputModes::SUM_ATTEN])
+            scaleAuxSumAttenVoltage(channels);
         for (int c = 0; c < channels; c++) {
             //Note: clickGain[][][][] and clickFilters[][][][] do not convert index j with threeToFour[][], because j = 3 is used for the sum output
             if (ringMorph) {
                 for (int i = 0; i < 4; i++) {
                     if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c);
-                        if (!optionInput.mode[OptionInputModes::SHADOW + i]) {
+                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * params[AUX_KNOBS + AuxKnobModes::OP_GAIN].getValue();
+                        if (!auxInput.mode[AuxInputModes::SHADOW + i]) {
                             //Check current algorithm and morph target
                             if (modeB) {
                                 float ringHorizontalConnection = horizontalDestinations[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
@@ -1010,7 +1036,7 @@ struct Algomorph4 : Module {
                                 float horizontalConnectionB = horizontalDestinations[forwardMorphScene[c]][i] * (relativeMorphMagnitude[c]);
                                 float morphedHorizontalConnection = horizontalConnectionA + horizontalConnectionB;
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                modOut[i][c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                modOut[i][c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 for (int j = 0; j < 3; j++) {
                                     float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c];
                                     clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
@@ -1018,7 +1044,7 @@ struct Algomorph4 : Module {
                                     float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c];
                                     float morphedConnection = connectionA + connectionB;
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[backwardMorphScene[c]][i] = forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
@@ -1028,7 +1054,7 @@ struct Algomorph4 : Module {
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * runClickFilterGain;
+                                sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                             else {
                                 for (int j = 0; j < 3; j++) {
@@ -1041,7 +1067,7 @@ struct Algomorph4 : Module {
                                     carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * !horizontalDestinations[backwardMorphScene[c]][i];
@@ -1051,71 +1077,71 @@ struct Algomorph4 : Module {
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * runClickFilterGain;
+                                sumOut[c] += (in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                         }
                         else {
-                            shadowOp[c] = optionInput.voltage[OptionInputModes::SHADOW + i][c];
+                            shadowOp[c] = auxInput.voltage[AuxInputModes::SHADOW + i][c];
                             //Check current algorithm and morph target
                             if (modeB) {
                                 float ringHorizontalConnection = horizontalDestinations[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringHorizontalConnection) : ringHorizontalConnection;
-                                optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringHorizontalConnection) : ringHorizontalConnection;
+                                auxInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringHorizontalConnection) : ringHorizontalConnection;
                                 float horizontalConnectionA = horizontalDestinations[centerMorphScene[c]][i] * (1.f - relativeMorphMagnitude[c]);
                                 float horizontalConnectionB = horizontalDestinations[forwardMorphScene[c]][i] * (relativeMorphMagnitude[c]);
                                 float morphedHorizontalConnection = horizontalConnectionA + horizontalConnectionB;
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                modOut[i][c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
+                                modOut[i][c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * auxInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * auxInput.shadowOpClickGains[1][i][3][c])) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 for (int j = 0; j < 3; j++) {
                                     float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c];
                                     clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
-                                    optionInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
+                                    auxInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
                                     float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c]);
                                     float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c];
                                     float morphedConnection = connectionA + connectionB;
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    auxInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                    modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * auxInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * auxInput.shadowOpClickGains[1][i][j][c])) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[backwardMorphScene[c]][i] = forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
-                                optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                auxInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                                 carrier[centerMorphScene[c]][i] = forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] = forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                                sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * auxInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * auxInput.shadowOpClickGains[1][i][3][c])) * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                             else {
                                 for (int j = 0; j < 3; j++) {
                                     float ringConnection = opDestinations[backwardMorphScene[c]][i][j] * relativeMorphMagnitude[c] * !horizontalDestinations[backwardMorphScene[c]][i];
                                     clickGain[1][i][j][c] = clickFilterEnabled ? clickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection; 
                                     carrier[backwardMorphScene[c]][i] = ringConnection == 0.f && !horizontalDestinations[backwardMorphScene[c]][i] ? carrier[backwardMorphScene[c]][i] : false;
-                                    optionInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
+                                    auxInput.shadowOpClickGains[1][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[1][i][j][c].process(args.sampleTime, ringConnection) : ringConnection;
                                     float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i];
                                     float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                     float morphedConnection = connectionA + connectionB;
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                                    optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][j][c])) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    auxInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                    modOut[threeToFour[i][j]][c] += ((in[c] * clickGain[0][i][j][c] - in[c] * clickGain[1][i][j][c]) + (shadowOp[c] * auxInput.shadowOpClickGains[0][i][j][c] - shadowOp[c] * auxInput.shadowOpClickGains[1][i][j][c])) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[backwardMorphScene[c]][i] |= forcedCarrier[backwardMorphScene[c]][i];
                                 float ringSumConnection = carrier[backwardMorphScene[c]][i] * relativeMorphMagnitude[c] * !horizontalDestinations[backwardMorphScene[c]][i];
                                 clickGain[1][i][3][c] = clickFilterEnabled ? clickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
-                                optionInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
+                                auxInput.shadowOpClickGains[1][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[1][i][3][c].process(args.sampleTime, ringSumConnection) : ringSumConnection;
                                 carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * optionInput.shadowOpClickGains[1][i][3][c])) * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, sumConnection) : sumConnection;
+                                sumOut[c] += ((in[c] * clickGain[0][i][3][c] - in[c] * clickGain[1][i][3][c]) + (shadowOp[c] * auxInput.shadowOpClickGains[0][i][3][c] - shadowOp[c] * auxInput.shadowOpClickGains[1][i][3][c])) * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                         }
                     }
@@ -1124,28 +1150,28 @@ struct Algomorph4 : Module {
             else {
                 for (int i = 0; i < 4; i++) {
                     if (inputs[OPERATOR_INPUTS + i].isConnected()) {
-                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c);
-                        if (!optionInput.mode[OptionInputModes::SHADOW + i]) {
+                        in[c] = inputs[OPERATOR_INPUTS + i].getPolyVoltage(c) * params[AUX_KNOBS + AuxKnobModes::OP_GAIN].getValue();
+                        if (!auxInput.mode[AuxInputModes::SHADOW + i]) {
                             //Check current algorithm and morph target
                             if (modeB) {
                                 float horizontalConnectionA = horizontalDestinations[centerMorphScene[c]][i] * (1.f - relativeMorphMagnitude[c]);
                                 float horizontalConnectionB = horizontalDestinations[forwardMorphScene[c]][i] * (relativeMorphMagnitude[c]);
                                 float morphedHorizontalConnection = horizontalConnectionA + horizontalConnectionB;
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                modOut[i][c] += in[c] * clickGain[0][i][3][c] * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                modOut[i][c] += in[c] * clickGain[0][i][3][c] * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 for (int j = 0; j < 3; j++) {
                                     float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c]);
                                     float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c];
                                     float morphedConnection = connectionA + connectionB;
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[centerMorphScene[c]][i] = forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] = forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += in[c] * clickGain[0][i][4][c] * runClickFilterGain;
+                                sumOut[c] += in[c] * clickGain[0][i][4][c] * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                             else {
                                 for (int j = 0; j < 3; j++) {
@@ -1155,41 +1181,41 @@ struct Algomorph4 : Module {
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                                    modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    modOut[threeToFour[i][j]][c] += in[c] * clickGain[0][i][j][c]  * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += in[c] * clickGain[0][i][4][c] * runClickFilterGain;
+                                sumOut[c] += in[c] * clickGain[0][i][4][c] * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                         }
                         else {
-                            shadowOp[c] = optionInput.voltage[OptionInputModes::SHADOW + i][c];
+                            shadowOp[c] = auxInput.voltage[AuxInputModes::SHADOW + i][c];
                             //Check current algorithm and morph target
                             if (modeB) {
                                 float horizontalConnectionA = horizontalDestinations[centerMorphScene[c]][i] * (1.f - relativeMorphMagnitude[c]);
                                 float horizontalConnectionB = horizontalDestinations[forwardMorphScene[c]][i] * (relativeMorphMagnitude[c]);
                                 float morphedHorizontalConnection = horizontalConnectionA + horizontalConnectionB;
                                 clickGain[0][i][3][c] = clickFilterEnabled ? clickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                optionInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
-                                modOut[i][c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][3][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][3][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][3][c].process(args.sampleTime, morphedHorizontalConnection) : morphedHorizontalConnection;
+                                modOut[i][c] += (in[c] * clickGain[0][i][3][c] + shadowOp[c] * auxInput.shadowOpClickGains[0][i][3][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 for (int j = 0; j < 3; j++) {
                                     float connectionA = opDestinations[centerMorphScene[c]][i][j]   * (1.f - relativeMorphMagnitude[c]);
                                     float connectionB = opDestinations[forwardMorphScene[c]][i][j]  * relativeMorphMagnitude[c];
                                     float morphedConnection = connectionA + connectionB;
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    auxInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * auxInput.shadowOpClickGains[0][i][j][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[centerMorphScene[c]][i] = forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] = forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                optionInput.shadowOpClickGains[0][i][4][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += (in[c] * clickGain[0][i][4][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][4][c]) * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][4][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
+                                sumOut[c] += (in[c] * clickGain[0][i][4][c] + shadowOp[c] * auxInput.shadowOpClickGains[0][i][4][c]) * runClickFilterGain;
                             }
                             else {
                                 for (int j = 0; j < 3; j++) {
@@ -1199,34 +1225,34 @@ struct Algomorph4 : Module {
                                     clickGain[0][i][j][c] = clickFilterEnabled ? clickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
                                     carrier[centerMorphScene[c]][i]  = connectionA > 0.f ? false : carrier[centerMorphScene[c]][i];
                                     carrier[forwardMorphScene[c]][i] = connectionB > 0.f ? false : carrier[forwardMorphScene[c]][i];
-                                    optionInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
-                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][j][c]) * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                                    auxInput.shadowOpClickGains[0][i][j][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][j][c].process(args.sampleTime, morphedConnection) : morphedConnection;
+                                    modOut[threeToFour[i][j]][c] += (in[c] * clickGain[0][i][j][c] + shadowOp[c] * auxInput.shadowOpClickGains[0][i][j][c]) * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
                                 }
                                 carrier[centerMorphScene[c]][i] |= forcedCarrier[centerMorphScene[c]][i];
                                 carrier[forwardMorphScene[c]][i] |= forcedCarrier[forwardMorphScene[c]][i];
                                 float sumConnection =   carrier[centerMorphScene[c]][i]     * (1.f - relativeMorphMagnitude[c])  * !horizontalDestinations[centerMorphScene[c]][i]
                                                     +   carrier[forwardMorphScene[c]][i]    * relativeMorphMagnitude[c]          * !horizontalDestinations[forwardMorphScene[c]][i];
                                 clickGain[0][i][4][c] = clickFilterEnabled ? clickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                optionInput.shadowOpClickGains[0][i][4][c] = clickFilterEnabled ? optionInput.shadowOpClickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
-                                sumOut[c] += (in[c] * clickGain[0][i][4][c] + shadowOp[c] * optionInput.shadowOpClickGains[0][i][4][c]) * runClickFilterGain;
+                                auxInput.shadowOpClickGains[0][i][4][c] = clickFilterEnabled ? auxInput.shadowOpClickFilters[0][i][4][c].process(args.sampleTime, sumConnection) : sumConnection;
+                                sumOut[c] += (in[c] * clickGain[0][i][4][c] + shadowOp[c] * auxInput.shadowOpClickGains[0][i][4][c]) * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                             }
                         }
                     }
                 }
             }
-            if (inputs[OPTION_INPUT].isConnected()) {
-                if (optionInput.mode[OptionInputModes::WILDCARD_MOD]) {
-                    wildcardMod[c] = optionInput.voltage[OptionInputModes::WILDCARD_MOD][c];
-                    optionInput.wildcardModClickGain = (clickFilterEnabled ? optionInput.wildcardModClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInputModes::WILDCARD_MOD]) : optionInput.mode[OptionInputModes::WILDCARD_MOD]);
+            if (inputs[AUX_INPUT].isConnected()) {
+                if (auxInput.mode[AuxInputModes::WILDCARD_MOD]) {
+                    wildcardMod[c] = auxInput.voltage[AuxInputModes::WILDCARD_MOD][c];
+                    auxInput.wildcardModClickGain = (clickFilterEnabled ? auxInput.wildcardModClickFilter[c].process(args.sampleTime, auxInput.mode[AuxInputModes::WILDCARD_MOD]) : auxInput.mode[AuxInputModes::WILDCARD_MOD]);
                     for (int i = 0; i < 4; i++) {
-                        modOut[i][c] += wildcardMod[c] * optionInput.wildcardModClickGain * scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] * runClickFilterGain;
+                        modOut[i][c] += wildcardMod[c] * auxInput.wildcardModClickGain * scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue() * runClickFilterGain;
 
                     }
                 }
-                if (optionInput.mode[OptionInputModes::WILDCARD_SUM]) {
-                    wildcardSum[c] = optionInput.voltage[OptionInputModes::WILDCARD_SUM][c];
-                    optionInput.wildcardSumClickGain = (clickFilterEnabled ? optionInput.wildcardSumClickFilter[c].process(args.sampleTime, optionInput.mode[OptionInputModes::WILDCARD_SUM]) : optionInput.mode[OptionInputModes::WILDCARD_SUM]);
-                    sumOut[c] += wildcardSum[c] * optionInput.wildcardSumClickGain * runClickFilterGain;
+                if (auxInput.mode[AuxInputModes::WILDCARD_SUM]) {
+                    wildcardSum[c] = auxInput.voltage[AuxInputModes::WILDCARD_SUM][c];
+                    auxInput.wildcardSumClickGain = (clickFilterEnabled ? auxInput.wildcardSumClickFilter[c].process(args.sampleTime, auxInput.mode[AuxInputModes::WILDCARD_SUM]) : auxInput.mode[AuxInputModes::WILDCARD_SUM]);
+                    sumOut[c] += wildcardSum[c] * auxInput.wildcardSumClickGain * scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] * params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue() * runClickFilterGain;
                 }
             }
         }
@@ -1591,35 +1617,35 @@ struct Algomorph4 : Module {
 			clockIgnoreOnReset--;
     }
 
-    inline void scaleOptionSumAttenVoltage(int channels) {
+    inline void scaleAuxSumAttenVoltage(int channels) {
         for (int c = 0; c < channels; c++) {
-            scaledOptionVoltage[OptionInputModes::SUM_ATTEN][c] = clamp(optionInput.voltage[OptionInputModes::SUM_ATTEN][c] / 5.f, -1.f, 1.f);
+            scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] = clamp(auxInput.voltage[AuxInputModes::SUM_ATTEN][c] / 5.f, -1.f, 1.f);
         }    
     }
 
-    inline void scaleOptionModAttenVoltage(int channels) {
+    inline void scaleAuxModAttenVoltage(int channels) {
         for (int c = 0; c < channels; c++) {
-            scaledOptionVoltage[OptionInputModes::MOD_ATTEN][c] = clamp(optionInput.voltage[OptionInputModes::MOD_ATTEN][c] / 5.f, -1.f, 1.f);
+            scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] = clamp(auxInput.voltage[AuxInputModes::MOD_ATTEN][c] / 5.f, -1.f, 1.f);
         }    
     }
 
-    inline void scaleOptionClickFilterVoltage(int channels) {
+    inline void scaleAuxClickFilterVoltage(int channels) {
         for (int c = 0; c < channels; c++) {
             //+/-5V = 0V-2V
-            scaledOptionVoltage[OptionInputModes::CLICK_FILTER][c] = (clamp(optionInput.voltage[OptionInputModes::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
+            scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c] = (clamp(auxInput.voltage[AuxInputModes::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
         }    
     }
 
     void rescaleVoltage(int mode) {
         switch (mode) {
-            case OptionInputModes::CLICK_FILTER:
-                scaleOptionClickFilterVoltage(16);
+            case AuxInputModes::CLICK_FILTER:
+                scaleAuxClickFilterVoltage(16);
                 break;
-            case OptionInputModes::SUM_ATTEN:
-                scaleOptionSumAttenVoltage(16);
+            case AuxInputModes::SUM_ATTEN:
+                scaleAuxSumAttenVoltage(16);
                 break;
-            case OptionInputModes::MOD_ATTEN:
-                scaleOptionModAttenVoltage(16);
+            case AuxInputModes::MOD_ATTEN:
+                scaleAuxModAttenVoltage(16);
                 break;
             default:
                 break;
@@ -1627,9 +1653,9 @@ struct Algomorph4 : Module {
     }
 
     void rescaleVoltages() {
-        scaleOptionClickFilterVoltage(16);
-        scaleOptionSumAttenVoltage(16);
-        scaleOptionModAttenVoltage(16);
+        scaleAuxClickFilterVoltage(16);
+        scaleAuxSumAttenVoltage(16);
+        scaleAuxModAttenVoltage(16);
     }
 
     void initRun() {
@@ -1770,19 +1796,21 @@ struct Algomorph4 : Module {
         json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
         json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
         
-        json_object_set_new(rootJ, "Option Input Last Set Mode", json_integer(optionInput.lastSetMode));
-        json_object_set_new(rootJ, "Option Input Active Modes", json_integer(optionInput.activeModes));
-        json_object_set_new(rootJ, "Allow Multiple Modes", json_boolean(optionInput.allowMultipleModes));
-        json_object_set_new(rootJ, "Forget Option Voltage", json_boolean(optionInput.forgetVoltage));
-        json_object_set_new(rootJ, "Option Input Connected", json_boolean(optionInput.connected));
+        json_object_set_new(rootJ, "Aux Input Last Set Mode", json_integer(auxInput.lastSetMode));
+        json_object_set_new(rootJ, "Aux Input Active Modes", json_integer(auxInput.activeModes));
+        json_object_set_new(rootJ, "Allow Multiple Modes", json_boolean(auxInput.allowMultipleModes));
+        json_object_set_new(rootJ, "Forget Aux Voltage", json_boolean(auxInput.forgetVoltage));
+        json_object_set_new(rootJ, "Aux Input Connected", json_boolean(auxInput.connected));
 
+        json_object_set_new(rootJ, "Aux Knob Mode", json_integer(knobMode));
+        
         json_t* opInputModesJ = json_array();
-        for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+        for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
             json_t* inputModeJ = json_object();
-            json_object_set_new(inputModeJ, "Mode", json_boolean(optionInput.mode[i]));
+            json_object_set_new(inputModeJ, "Mode", json_boolean(auxInput.mode[i]));
             json_array_append_new(opInputModesJ, inputModeJ);
         }
-        json_object_set_new(rootJ, "Option Input Modes", opInputModesJ);
+        json_object_set_new(rootJ, "Aux Input Modes", opInputModesJ);
         
         json_t* opDestinationsJ = json_array();
         for (int i = 0; i < 3; i++) {
@@ -1852,20 +1880,22 @@ struct Algomorph4 : Module {
         vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
 
         //Set allowMultipleModes and forgetVoltage before loading modes
-        optionInput.allowMultipleModes = json_boolean_value(json_object_get(rootJ, "Allow Multiple Modes"));
-        optionInput.forgetVoltage = json_boolean_value(json_object_get(rootJ, "Forget Option Voltage"));
+        auxInput.allowMultipleModes = json_boolean_value(json_object_get(rootJ, "Allow Multiple Modes"));
+        auxInput.forgetVoltage = json_boolean_value(json_object_get(rootJ, "Forget Aux Voltage"));
 
-        json_t* opInputModesJ = json_object_get(rootJ, "Option Input Modes");
+        json_t* opInputModesJ = json_object_get(rootJ, "Aux Input Modes");
         json_t* inputModeJ; size_t inputModeIndex;
-        optionInput.clearModes();
+        auxInput.clearModes();
         json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
             if (json_boolean_value(json_object_get(inputModeJ, "Mode")))
-                optionInput.setMode(inputModeIndex);
+                auxInput.setMode(inputModeIndex);
         }
 
-        optionInput.connected = json_boolean_value(json_object_get(rootJ, "Option Input Connected"));
-        optionInput.lastSetMode = json_integer_value(json_object_get(rootJ, "Option Input Last Set Mode"));
-        optionInput.activeModes = json_integer_value(json_object_get(rootJ, "Option Input Active Modes"));
+        auxInput.connected = json_boolean_value(json_object_get(rootJ, "Aux Input Connected"));
+        auxInput.lastSetMode = json_integer_value(json_object_get(rootJ, "Aux Input Last Set Mode"));
+        auxInput.activeModes = json_integer_value(json_object_get(rootJ, "Aux Input Active Modes"));
+        
+        knobMode = json_integer_value(json_object_get(rootJ, "Aux Knob Mode"));
 
         json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
         json_t* destinationJ; size_t destinationIndex;
@@ -2377,12 +2407,12 @@ struct AlgoScreenWidget : FramebufferWidget {
 
 
 template < typename MODULE >
-struct ForgetOptionVoltageAction : history::ModuleAction {
+struct ForgetAuxVoltageAction : history::ModuleAction {
     int channels;
-	bool multipleActive = false, remember[OptionInputModes::NUM_MODES] = {false};
-	float voltage[OptionInputModes::NUM_MODES][16], scaledVoltage[OptionInputModes::NUM_MODES][16];
+	bool multipleActive = false, remember[AuxInputModes::NUM_MODES] = {false};
+	float voltage[AuxInputModes::NUM_MODES][16], scaledVoltage[AuxInputModes::NUM_MODES][16];
 
-	ForgetOptionVoltageAction() {
+	ForgetAuxVoltageAction() {
 		name = "Delexander Algomorph forget option voltage";
 	}
 
@@ -2392,13 +2422,13 @@ struct ForgetOptionVoltageAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		
-		m->optionInput.forgetVoltage = false;
+		m->auxInput.forgetVoltage = false;
 		if (multipleActive) {
-			for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+			for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
 				if (remember[i]) {
 					for (int c = 0; c < channels; c++) {
-						m->optionInput.voltage[i][c] = voltage[i][c];
-						m->scaledOptionVoltage[i][c] = scaledVoltage[i][c];
+						m->auxInput.voltage[i][c] = voltage[i][c];
+						m->scaledAuxVoltage[i][c] = scaledVoltage[i][c];
 					}
 				}
 			}
@@ -2411,12 +2441,12 @@ struct ForgetOptionVoltageAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		
-		m->optionInput.forgetVoltage = true;
+		m->auxInput.forgetVoltage = true;
 		if (multipleActive) {
-			for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+			for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
 				if (remember[i]) {
 					for (int c = 0; c < channels; c++)
-						m->optionInput.voltage[i][c] = m->optionInput.defVoltage[i];
+						m->auxInput.voltage[i][c] = m->auxInput.defVoltage[i];
 					m->rescaleVoltage(i);
 				}
 			}
@@ -2427,8 +2457,8 @@ struct ForgetOptionVoltageAction : history::ModuleAction {
 template < typename MODULE >
 struct DisallowMultipleModesAction : history::ModuleAction {
     int channels;
-	bool multipleActive = false, enabled[OptionInputModes::NUM_MODES] = {false}, remember[OptionInputModes::NUM_MODES] = {false};
-	float voltage[OptionInputModes::NUM_MODES][16], scaledVoltage[OptionInputModes::NUM_MODES][16];
+	bool multipleActive = false, enabled[AuxInputModes::NUM_MODES] = {false}, remember[AuxInputModes::NUM_MODES] = {false};
+	float voltage[AuxInputModes::NUM_MODES][16], scaledVoltage[AuxInputModes::NUM_MODES][16];
 
 	DisallowMultipleModesAction() {
 		name = "Delexander Algomorph disallow multiple modes";
@@ -2440,11 +2470,11 @@ struct DisallowMultipleModesAction : history::ModuleAction {
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
 		
-		m->optionInput.allowMultipleModes = true;
+		m->auxInput.allowMultipleModes = true;
 		if (multipleActive) {
-			for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+			for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
 				if (enabled[i])
-					m->optionInput.setMode(i);
+					m->auxInput.setMode(i);
 			}
 		}
 	}
@@ -2456,87 +2486,87 @@ struct DisallowMultipleModesAction : history::ModuleAction {
 		assert(m);
 		
 		if (multipleActive) {
-			for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+			for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
 				if (enabled[i]) {
-					m->optionInput.unsetMode(i);
+					m->auxInput.unsetMode(i);
 					if (remember[i]) {
 						for (int c = 0; c < channels; c++) {
-							m->optionInput.voltage[i][c] = voltage[i][c];
-							m->scaledOptionVoltage[i][c] = scaledVoltage[i][c];
+							m->auxInput.voltage[i][c] = voltage[i][c];
+							m->scaledAuxVoltage[i][c] = scaledVoltage[i][c];
 						}
 					}
 					else {
 						for (int c = 0; c < channels; c++)
-							m->optionInput.voltage[i][c] = m->optionInput.defVoltage[i];
+							m->auxInput.voltage[i][c] = m->auxInput.defVoltage[i];
 						m->rescaleVoltage(i);
 					}
 				}
 			}
 		}
-		m->optionInput.allowMultipleModes = false;
+		m->auxInput.allowMultipleModes = false;
 	}
 };
 
-struct OptionModeItem : MenuItem {
+struct AuxModeItem : MenuItem {
     Algomorph4 *module;
     int mode;
 
     void onAction(const event::Action &e) override {
-        if (module->optionInput.mode[mode]) {
-            if (module->optionInput.forgetVoltage || module->optionInput.mustForget[mode]) {
+        if (module->auxInput.mode[mode]) {
+            if (module->auxInput.forgetVoltage || module->auxInput.mustForget[mode]) {
                 // History
-                OptionInputUnsetAndForgetAction<Algomorph4>* h = new OptionInputUnsetAndForgetAction<Algomorph4>;
+                AuxInputUnsetAndForgetAction<Algomorph4>* h = new AuxInputUnsetAndForgetAction<Algomorph4>;
                 h->moduleId = module->id;
                 h->mode = mode;
                 
-                module->optionInput.unsetMode(mode);
-                for (int c = 0; c < module->optionInput.channels; c++)
-                    module->optionInput.voltage[mode][c] = module->optionInput.defVoltage[mode];
+                module->auxInput.unsetMode(mode);
+                for (int c = 0; c < module->auxInput.channels; c++)
+                    module->auxInput.voltage[mode][c] = module->auxInput.defVoltage[mode];
                 module->rescaleVoltage(mode);
 
                 APP->history->push(h);
             }
             else {
                 // History
-                OptionInputUnsetAndRememberAction<Algomorph4>* h = new OptionInputUnsetAndRememberAction<Algomorph4>;
+                AuxInputUnsetAndRememberAction<Algomorph4>* h = new AuxInputUnsetAndRememberAction<Algomorph4>;
                 h->moduleId = module->id;
                 h->mode = mode;
-                h->channels = module->optionInput.channels;
+                h->channels = module->auxInput.channels;
 
-                module->optionInput.unsetMode(mode);
+                module->auxInput.unsetMode(mode);
                 for (int c = 0; c < h->channels; c++) {
-                    h->voltage[c] = module->optionInput.voltage[mode][c];
-                    h->scaledVoltage[c] = module->scaledOptionVoltage[mode][c];
+                    h->voltage[c] = module->auxInput.voltage[mode][c];
+                    h->scaledVoltage[c] = module->scaledAuxVoltage[mode][c];
                 }
 
                 APP->history->push(h);
             }
         }
         else {
-            if (module->optionInput.allowMultipleModes) {
-                if (module->optionInput.forgetVoltage || module->optionInput.mustForget[mode]) {
+            if (module->auxInput.allowMultipleModes) {
+                if (module->auxInput.forgetVoltage || module->auxInput.mustForget[mode]) {
                     // History
-                    OptionInputSetAndForgetAction<Algomorph4>* h = new OptionInputSetAndForgetAction<Algomorph4>;
+                    AuxInputSetAndForgetAction<Algomorph4>* h = new AuxInputSetAndForgetAction<Algomorph4>;
                     h->moduleId = module->id;
                     h->mode = mode;
-                    h->channels = module->optionInput.channels;
+                    h->channels = module->auxInput.channels;
 
-                    module->optionInput.setMode(mode);
+                    module->auxInput.setMode(mode);
 
                     APP->history->push(h);
                 }
                 else {
                     // History
-                    OptionInputSetAndRememberAction<Algomorph4>* h = new OptionInputSetAndRememberAction<Algomorph4>;
+                    AuxInputSetAndRememberAction<Algomorph4>* h = new AuxInputSetAndRememberAction<Algomorph4>;
                     h->moduleId = module->id;
                     h->mode = mode;
-                    h->channels = module->optionInput.channels;
+                    h->channels = module->auxInput.channels;
 
                     for (int c = 0; c < h->channels; c++) {
-                        h->voltage[c] = module->optionInput.voltage[mode][c];
-                        h->scaledVoltage[c] = module->scaledOptionVoltage[mode][c];
+                        h->voltage[c] = module->auxInput.voltage[mode][c];
+                        h->scaledVoltage[c] = module->scaledAuxVoltage[mode][c];
                     }
-                    module->optionInput.setMode(mode);
+                    module->auxInput.setMode(mode);
 
                     APP->history->push(h);
                 }
@@ -2544,59 +2574,59 @@ struct OptionModeItem : MenuItem {
             else {
                 bool forgetOldVoltage = false, forgetNewVoltage = false;
 
-                if (module->optionInput.forgetVoltage || module->optionInput.mustForget[module->optionInput.lastSetMode])
+                if (module->auxInput.forgetVoltage || module->auxInput.mustForget[module->auxInput.lastSetMode])
                     forgetNewVoltage = true;
-                if (module->optionInput.forgetVoltage || module->optionInput.mustForget[mode])
+                if (module->auxInput.forgetVoltage || module->auxInput.mustForget[mode])
                     forgetOldVoltage = true;
 
                 if (forgetNewVoltage || forgetOldVoltage) {
                     // History
-                    OptionInputSwitchAndForgetAction<Algomorph4>* h = new OptionInputSwitchAndForgetAction<Algomorph4>;
+                    AuxInputSwitchAndForgetAction<Algomorph4>* h = new AuxInputSwitchAndForgetAction<Algomorph4>;
                     h->moduleId = module->id;
-                    h->oldMode = module->optionInput.lastSetMode;
+                    h->oldMode = module->auxInput.lastSetMode;
                     h->newMode = mode;
-                    h->channels = module->optionInput.channels;
+                    h->channels = module->auxInput.channels;
                     h->forgetOldVoltage = forgetOldVoltage;
                     h->forgetNewVoltage = forgetNewVoltage;
 
-                    module->optionInput.unsetMode(h->oldMode);
+                    module->auxInput.unsetMode(h->oldMode);
                     if (forgetOldVoltage) {
                         for (int c = 0; c < h->channels; c++)
-                            module->optionInput.voltage[h->oldMode][c] = module->optionInput.defVoltage[h->oldMode];
+                            module->auxInput.voltage[h->oldMode][c] = module->auxInput.defVoltage[h->oldMode];
                         module->rescaleVoltage(h->oldMode);
                     }
                     else {
                         for (int c = 0; c < h->channels; c++) {
-                            h->oldVoltage[c] = module->optionInput.voltage[h->oldMode][c];
-                            h->oldScaledVoltage[c] = module->scaledOptionVoltage[h->oldMode][c];
+                            h->oldVoltage[c] = module->auxInput.voltage[h->oldMode][c];
+                            h->oldScaledVoltage[c] = module->scaledAuxVoltage[h->oldMode][c];
                         }
                     }
                     if (!forgetNewVoltage) {
                         for (int c = 0; c < h->channels; c++) {
-                            h->newVoltage[c] = module->optionInput.voltage[h->newMode][c];
-                            h->newScaledVoltage[c] = module->scaledOptionVoltage[h->newMode][c];
+                            h->newVoltage[c] = module->auxInput.voltage[h->newMode][c];
+                            h->newScaledVoltage[c] = module->scaledAuxVoltage[h->newMode][c];
                         }
                     }
-                    module->optionInput.setMode(mode);
+                    module->auxInput.setMode(mode);
 
                     APP->history->push(h);
                 }
                 else {
                     // History
-                    OptionInputSwitchAndRememberAction<Algomorph4>* h = new OptionInputSwitchAndRememberAction<Algomorph4>;
+                    AuxInputSwitchAndRememberAction<Algomorph4>* h = new AuxInputSwitchAndRememberAction<Algomorph4>;
                     h->moduleId = module->id;
-                    h->oldMode = module->optionInput.lastSetMode;
+                    h->oldMode = module->auxInput.lastSetMode;
                     h->newMode = mode;
-                    h->channels = module->optionInput.channels;
+                    h->channels = module->auxInput.channels;
 
-                    module->optionInput.unsetMode(module->optionInput.lastSetMode);
+                    module->auxInput.unsetMode(module->auxInput.lastSetMode);
                     for (int c = 0; c < h->channels; c++) {
-                        h->oldVoltage[c] = module->optionInput.voltage[h->oldMode][c];
-                        h->oldScaledVoltage[c] = module->scaledOptionVoltage[h->oldMode][c];
-                        h->newVoltage[c] = module->optionInput.voltage[h->newMode][c];
-                        h->newScaledVoltage[c] = module->scaledOptionVoltage[h->newMode][c];
+                        h->oldVoltage[c] = module->auxInput.voltage[h->oldMode][c];
+                        h->oldScaledVoltage[c] = module->scaledAuxVoltage[h->oldMode][c];
+                        h->newVoltage[c] = module->auxInput.voltage[h->newMode][c];
+                        h->newScaledVoltage[c] = module->scaledAuxVoltage[h->newMode][c];
                     }
-                    module->optionInput.setMode(mode);
+                    module->auxInput.setMode(mode);
 
                     APP->history->push(h);
                 }
@@ -2605,42 +2635,10 @@ struct OptionModeItem : MenuItem {
     }
 };
 
-//Order must match AuxKnobModes
-std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {  "Morph",
-                                                            "Morph CV Attenuverter",
-                                                            "Click Filter Strength",
-                                                            "Double Morph",
-                                                            "Triple Morph",
-                                                            "Morph CV Gain",
-                                                            "Sum Output Gain",
-                                                            "Mod Output Gain",
-                                                            "Op Input Gain",
-                                                            "Unipolar Morph Plus"};
-
-//Order must match OptionInputModes
-std::string OptionInputModeLabels[OptionInputModes::NUM_MODES] = {"Morph CV",
-                                                            "Morph CV Attenuverter",
-                                                            "Click Filter Strength",
-                                                            "Double Morph CV",
-                                                            "Triple Morph CV",
-                                                            "Sum Output Attenuverter",
-                                                            "Mod Output Attenuverter",
-                                                            "Clock",
-                                                            "Reverse Clock",
-                                                            "Reset",
-                                                            "Run",
-                                                            "Algorithm Offset",
-                                                            "Wildcard Modulator",
-                                                            "Carrier",
-                                                            "Shadow -> 1",
-                                                            "Shadow -> 2",
-                                                            "Shadow -> 3",
-                                                            "Shadow -> 4"};
-
 template < typename MODULE >
 void createWildcardInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = OptionInputModes::WILDCARD_MOD; i <= OptionInputModes::WILDCARD_SUM; i++)
-        menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, i));
+    for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::WILDCARD_SUM; i++)
+        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[i]), &AuxModeItem::mode, i));
 }
 
 template < typename MODULE >
@@ -2656,8 +2654,8 @@ struct WildcardInputMenuItem : MenuItem {
 
 template < typename MODULE >
 void createShadowInputMenu(MODULE* module, ui::Menu* menu) {
-    for (int i = OptionInputModes::SHADOW; i <= OptionInputModes::SHADOW + 3; i++)
-        menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[i], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[i]), &OptionModeItem::mode, i));
+    for (int i = AuxInputModes::SHADOW; i <= AuxInputModes::SHADOW + 3; i++)
+        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[i]), &AuxModeItem::mode, i));
 }
 
 template < typename MODULE >
@@ -2698,10 +2696,10 @@ struct RunSilencerItem : MenuItem {
 };
 
 template < typename MODULE >
-void createRunOptionMenu(MODULE* module, ui::Menu* menu) {
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::RUN], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::RUN]), &OptionModeItem::mode, OptionInputModes::RUN));
+void createRunAuxMenu(MODULE* module, ui::Menu* menu) {
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::RUN], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::RUN]), &AuxModeItem::mode, AuxInputModes::RUN));
     menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Run Options"));
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Run Auxs"));
 
     ResetOnRunItem *resetOnRunItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
     resetOnRunItem->module = module;
@@ -2713,49 +2711,49 @@ void createRunOptionMenu(MODULE* module, ui::Menu* menu) {
 }
 
 template < typename MODULE >
-struct RunOptionMenuItem : MenuItem {
+struct RunAuxMenuItem : MenuItem {
 	MODULE* module;
 	
 	Menu* createChildMenu() override {
 		Menu* menu = new Menu;
-		createRunOptionMenu(module, menu);
+		createRunAuxMenu(module, menu);
 		return menu;
 	}
 };
 
 template < typename MODULE >
-void createOptionInputMenu(MODULE* module, ui::Menu* menu) {
+void createAuxInputMenu(MODULE* module, ui::Menu* menu) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "5th Operator"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::WILDCARD_MOD], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::WILDCARD_MOD]), &OptionModeItem::mode, OptionInputModes::WILDCARD_MOD));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::WILDCARD_SUM], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::WILDCARD_SUM]), &OptionModeItem::mode, OptionInputModes::WILDCARD_SUM));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_MOD], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::WILDCARD_MOD]), &AuxModeItem::mode, AuxInputModes::WILDCARD_MOD));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_SUM], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::WILDCARD_SUM]), &AuxModeItem::mode, AuxInputModes::WILDCARD_SUM));
     menu->addChild(construct<ShadowInputMenuItem<Algomorph4>>(&MenuItem::text, "Shadow operator...", &MenuItem::rightText, RIGHT_ARROW, &ShadowInputMenuItem<Algomorph4>::module, module));
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Trigger"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::CLOCK], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::CLOCK]), &OptionModeItem::mode, OptionInputModes::CLOCK));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::REVERSE_CLOCK], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::REVERSE_CLOCK]), &OptionModeItem::mode, OptionInputModes::REVERSE_CLOCK));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::RESET], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::RESET]), &OptionModeItem::mode, OptionInputModes::RESET));
-    menu->addChild(construct<RunOptionMenuItem<Algomorph4>>(&MenuItem::text, "Run...", &MenuItem::rightText, RIGHT_ARROW, &RunOptionMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLOCK], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::CLOCK]), &AuxModeItem::mode, AuxInputModes::CLOCK));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::REVERSE_CLOCK], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::REVERSE_CLOCK]), &AuxModeItem::mode, AuxInputModes::REVERSE_CLOCK));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::RESET], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::RESET]), &AuxModeItem::mode, AuxInputModes::RESET));
+    menu->addChild(construct<RunAuxMenuItem<Algomorph4>>(&MenuItem::text, "Run...", &MenuItem::rightText, RIGHT_ARROW, &RunAuxMenuItem<Algomorph4>::module, module));
    
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "CV"));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::MORPH], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::MORPH]), &OptionModeItem::mode, OptionInputModes::MORPH));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::SUM_ATTEN], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::SUM_ATTEN]), &OptionModeItem::mode, OptionInputModes::SUM_ATTEN));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::MOD_ATTEN], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::MOD_ATTEN]), &OptionModeItem::mode, OptionInputModes::MOD_ATTEN));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::MORPH_ATTEN], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::MORPH_ATTEN]), &OptionModeItem::mode, OptionInputModes::MORPH_ATTEN));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::SCENE_OFFSET], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::SCENE_OFFSET]), &OptionModeItem::mode, OptionInputModes::SCENE_OFFSET));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::CLICK_FILTER], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::CLICK_FILTER]), &OptionModeItem::mode, OptionInputModes::CLICK_FILTER));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::DOUBLE_MORPH], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::DOUBLE_MORPH]), &OptionModeItem::mode, OptionInputModes::DOUBLE_MORPH));
-    menu->addChild(construct<OptionModeItem>(&MenuItem::text, OptionInputModeLabels[OptionInputModes::TRIPLE_MORPH], &OptionModeItem::module, module, &OptionModeItem::rightText, CHECKMARK(module->optionInput.mode[OptionInputModes::TRIPLE_MORPH]), &OptionModeItem::mode, OptionInputModes::TRIPLE_MORPH));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::MORPH]), &AuxModeItem::mode, AuxInputModes::MORPH));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SUM_ATTEN], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::SUM_ATTEN]), &AuxModeItem::mode, AuxInputModes::SUM_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MOD_ATTEN], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::MOD_ATTEN]), &AuxModeItem::mode, AuxInputModes::MOD_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::MORPH_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SCENE_OFFSET], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::SCENE_OFFSET]), &AuxModeItem::mode, AuxInputModes::SCENE_OFFSET));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLICK_FILTER], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::CLICK_FILTER]), &AuxModeItem::mode, AuxInputModes::CLICK_FILTER));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::DOUBLE_MORPH], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::DOUBLE_MORPH]), &AuxModeItem::mode, AuxInputModes::DOUBLE_MORPH));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::TRIPLE_MORPH], &AuxModeItem::module, module, &AuxModeItem::rightText, CHECKMARK(module->auxInput.mode[AuxInputModes::TRIPLE_MORPH]), &AuxModeItem::mode, AuxInputModes::TRIPLE_MORPH));
 }
 
 template < typename MODULE >
-struct OptionInputMenuItem : MenuItem {
+struct AuxInputMenuItem : MenuItem {
 	MODULE* module;
 	
 	Menu* createChildMenu() override {
 		Menu* menu = new Menu;
-		createOptionInputMenu(module, menu);
+		createAuxInputMenu(module, menu);
 		return menu;
 	}
 };
@@ -2763,48 +2761,48 @@ struct OptionInputMenuItem : MenuItem {
 struct AllowMultipleModesItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
-        if (module->optionInput.allowMultipleModes) {
+        if (module->auxInput.allowMultipleModes) {
             // History
             DisallowMultipleModesAction<Algomorph4>* h = new DisallowMultipleModesAction<Algomorph4>;
             h->moduleId = module->id;
-            h->channels = module->optionInput.channels;
+            h->channels = module->auxInput.channels;
 
-            if (module->optionInput.activeModes > 1) {
+            if (module->auxInput.activeModes > 1) {
                 h->multipleActive = true;
-                if (module->optionInput.forgetVoltage) {
-                    for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
-                        if (module->optionInput.mode[i] && i != module->optionInput.lastSetMode) {
+                if (module->auxInput.forgetVoltage) {
+                    for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
+                        if (module->auxInput.mode[i] && i != module->auxInput.lastSetMode) {
                             h->enabled[i] = true;
-                            module->optionInput.unsetMode(i);
+                            module->auxInput.unsetMode(i);
                             for (int c = 0; c < h->channels; c++)
-                                module->optionInput.voltage[i][c] = module->optionInput.defVoltage[i];
+                                module->auxInput.voltage[i][c] = module->auxInput.defVoltage[i];
                             module->rescaleVoltage(i);
                         }
                     }
                 }
                 else {
-                    for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
-                        if (module->optionInput.mode[i] && i != module->optionInput.lastSetMode) {
+                    for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
+                        if (module->auxInput.mode[i] && i != module->auxInput.lastSetMode) {
                             h->enabled[i] = true;
-                            if (module->optionInput.mustForget[i]) {
-                                module->optionInput.unsetMode(i);
+                            if (module->auxInput.mustForget[i]) {
+                                module->auxInput.unsetMode(i);
                                 for (int c = 0; c < h->channels; c++)
-                                    module->optionInput.voltage[i][c] = module->optionInput.defVoltage[i];
+                                    module->auxInput.voltage[i][c] = module->auxInput.defVoltage[i];
                                 module->rescaleVoltage(i);
                             }
                             else {
                                 h->remember[i] = true;
-                                module->optionInput.unsetMode(i);
+                                module->auxInput.unsetMode(i);
                                 for (int c = 0; c < h->channels; c++) {
-                                    h->voltage[i][c] = module->optionInput.voltage[i][c];
-                                    h->scaledVoltage[i][c] = module->scaledOptionVoltage[i][c];
+                                    h->voltage[i][c] = module->auxInput.voltage[i][c];
+                                    h->scaledVoltage[i][c] = module->scaledAuxVoltage[i][c];
                                 }
                             }
                         }
                     }
                 }
             }
-            module->optionInput.allowMultipleModes = false;
+            module->auxInput.allowMultipleModes = false;
 
             APP->history->push(h);
         }
@@ -2813,7 +2811,7 @@ struct AllowMultipleModesItem : MenuItem {
             AllowMultipleModesAction<Algomorph4>* h = new AllowMultipleModesAction<Algomorph4>;
             h->moduleId = module->id;
 
-            module->optionInput.allowMultipleModes = true;
+            module->auxInput.allowMultipleModes = true;
 
             APP->history->push(h);
         }
@@ -2821,50 +2819,49 @@ struct AllowMultipleModesItem : MenuItem {
     }
 };
 
-struct ForgetOptionVoltageItem : MenuItem {
+struct ForgetAuxVoltageItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
-        if (module->optionInput.forgetVoltage) {
+        if (module->auxInput.forgetVoltage) {
             // History
-            RememberOptionVoltageAction<Algomorph4>* h = new RememberOptionVoltageAction<Algomorph4>;
+            RememberAuxVoltageAction<Algomorph4>* h = new RememberAuxVoltageAction<Algomorph4>;
             h->moduleId = module->id;
 
-            module->optionInput.forgetVoltage = false;
+            module->auxInput.forgetVoltage = false;
 
             APP->history->push(h);
         }
         else {
             // History
-            ForgetOptionVoltageAction<Algomorph4>* h = new ForgetOptionVoltageAction<Algomorph4>;
+            ForgetAuxVoltageAction<Algomorph4>* h = new ForgetAuxVoltageAction<Algomorph4>;
             h->moduleId = module->id;
-            h->channels = module->optionInput.channels;
+            h->channels = module->auxInput.channels;
 
-            if (module->optionInput.activeModes > 1) {
+            if (module->auxInput.activeModes > 1) {
                 h->multipleActive = true;
-                for (int i = 0; i < OptionInputModes::NUM_MODES; i++) {
+                for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
                     for (int c = 0; c < h->channels; c++) {
-                        if (!module->optionInput.mode[i] && module->optionInput.voltage[i][c] != module->optionInput.defVoltage[i]) {
+                        if (!module->auxInput.mode[i] && module->auxInput.voltage[i][c] != module->auxInput.defVoltage[i]) {
                             h->remember[i] = true;
                             break;
                         }
                     }
                     if (h->remember[i]) {
                         for (int c = 0; c < h->channels; c++) {
-                            h->voltage[i][c] = module->optionInput.voltage[i][c];
-                            h->scaledVoltage[i][c] = module->scaledOptionVoltage[i][c];
-                            module->optionInput.voltage[i][c] = module->optionInput.defVoltage[i];
+                            h->voltage[i][c] = module->auxInput.voltage[i][c];
+                            h->scaledVoltage[i][c] = module->scaledAuxVoltage[i][c];
+                            module->auxInput.voltage[i][c] = module->auxInput.defVoltage[i];
                         }
                         module->rescaleVoltage(i);
                     }
                 }
             }
-            module->optionInput.forgetVoltage = true;
+            module->auxInput.forgetVoltage = true;
 
             APP->history->push(h);
         }
     }
 };
-
 
 struct ResetSceneItem : MenuItem {
     Algomorph4 *module;
@@ -3016,19 +3013,6 @@ struct ClickFilterEnabledItem : MenuItem {
         h->moduleId = module->id;
 
         module->clickFilterEnabled ^= true;
-
-        APP->history->push(h);
-    }
-};
-
-struct GlowingInkItem : MenuItem {
-    Algomorph4 *module;
-    void onAction(const event::Action &e) override {
-        // History
-        ToggleGlowingInkAction<Algomorph4>* h = new ToggleGlowingInkAction<Algomorph4>;
-        h->moduleId = module->id;
-
-        module->glowingInk ^= true;
 
         APP->history->push(h);
     }
@@ -3190,7 +3174,8 @@ struct Algomorph4Widget : ModuleWidget {
             addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
             ink = createSvgLight<DLXGlowingInk>(Vec(0,0), module, Algomorph4::GLOWING_INK);
-            ink->visible = false;
+            if (!module->glowingInk)
+                ink->hide();
             addChildBottom(ink);
 
             AlgoScreenWidget<Algomorph4>* screenWidget = new AlgoScreenWidget<Algomorph4>(module);
@@ -3201,32 +3186,43 @@ struct Algomorph4Widget : ModuleWidget {
             addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(11.333, 7.195)), mm2px(Vec(38.295, 31.590)), module, Algomorph4::DISPLAY_BACKLIGHT));
 
             addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(30.760, 45.048)), 8.862, module, Algomorph4::SCREEN_BUTTON_RING_LIGHT, .4));
-            addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(30.760, 45.048)), module, Algomorph4::SCREEN_BUTTON));
+            addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(30.760, 45.048)), module, Algomorph4::SCREEN_BUTTON));
             addChild(createSvgSwitchLightCentered<DLXScreenButtonLight>(mm2px(Vec(30.760, 45.048)), module, Algomorph4::SCREEN_BUTTON_LIGHT, Algomorph4::SCREEN_BUTTON));
 
             addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_LIGHTS + 0, .75));
             addChild(createRingIndicatorCentered(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_INDICATORS + 0, .75));
-            addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
+            addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
             addChild(createSvgSwitchLightCentered<DLX1Light>(SceneButtonCenters[0], module, Algomorph4::ONE_LIGHT, Algomorph4::SCENE_BUTTONS + 0));
 
             addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
             addChild(createRingIndicatorCentered(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_INDICATORS + 3, .75));
-            addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
+            addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
             addChild(createSvgSwitchLightCentered<DLX2Light>(SceneButtonCenters[1], module, Algomorph4::TWO_LIGHT, Algomorph4::SCENE_BUTTONS + 1));
 
             addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
             addChild(createRingIndicatorCentered(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_INDICATORS + 6, .75));
-            addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
+            addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
             addChild(createSvgSwitchLightCentered<DLX3Light>(SceneButtonCenters[2], module, Algomorph4::THREE_LIGHT, Algomorph4::SCENE_BUTTONS + 2));
 
-            addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 42.771)), module, Algomorph4::OPTION_INPUT));
+            addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 42.771)), module, Algomorph4::AUX_INPUT));
             addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 52.792)), module, Algomorph4::MORPH_INPUT));
             addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 62.812)), module, Algomorph4::SCENE_ADV_INPUT));
             addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 72.834)), module, Algomorph4::RESET_INPUT));
 
             DLXKnobLight* kl = createLight<DLXKnobLight>(mm2px(Vec(20.305, 96.721)), module, Algomorph4::KNOB_LIGHT);
-            addChild(createLightKnob(mm2px(Vec(20.305, 96.721)), module, Algomorph4::MORPH_KNOB, kl));
+            addParam(createLightKnob(mm2px(Vec(20.305, 96.721)), module, Algomorph4::MORPH_KNOB, kl));
             addChild(kl);
+
+            for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
+                DLXSmallKnobLight* auxKl = createLight<DLXSmallKnobLight>(mm2px(Vec(26.632, 103.047)), module, Algomorph4::AUX_KNOB_LIGHTS + i);
+                DLXSmallLightKnob* auxKlParam = createLightKnob<DLXSmallKnobLight, DLXSmallLightKnob>(mm2px(Vec(26.632, 103.047)), module, Algomorph4::AUX_KNOBS + i, auxKl);
+                if (i != module->knobMode) {
+                    auxKlParam->hide();
+                    auxKlParam->sibling->hide();
+                }
+                addChild(auxKl);
+                addParam(auxKlParam);
+            }
 
             addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(50.182, 73.040)), module, Algomorph4::SUM_OUTPUT));
 
@@ -3318,33 +3314,87 @@ struct Algomorph4Widget : ModuleWidget {
     void appendContextMenu(Menu* menu) override {
         Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
+
+        struct GlowingInkItem : MenuItem {
+            Algomorph4 *module;
+            Algomorph4Widget* moduleWidget;
+            void onAction(const event::Action &e) override {
+                // History
+                ToggleGlowingInkAction<Algomorph4>* h = new ToggleGlowingInkAction<Algomorph4>;
+                h->moduleId = module->id;
+
+                moduleWidget->toggleInkVisibility();
+
+                APP->history->push(h);
+            }
+        };
+        
+        struct KnobModeItem : MenuItem {
+            Algomorph4* module;
+            Algomorph4Widget* moduleWidget;
+            int mode;
+
+            void onAction(const event::Action &e) override {
+                // History
+                KnobModeAction<Algomorph4, Algomorph4Widget>* h = new KnobModeAction<Algomorph4, Algomorph4Widget>;
+                h->moduleId = module->id;
+                h->oldKnobMode = module->knobMode;
+                h->newKnobMode = mode;
+
+                moduleWidget->setKnobMode(mode);
+
+                APP->history->push(h);
+            }
+        };
+
+        struct KnobModeMenuItem : MenuItem {
+            Algomorph4* module;
+            Algomorph4Widget* moduleWidget;
+            
+            Menu* createChildMenu() override {
+                Menu* menu = new Menu;
+                menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
+                menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
+                for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
+                    menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+                return menu;
+            }
+        };
+
         menu->addChild(new MenuSeparator());
         ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Modus Operandi", module->modeB ? "B" : "A");
         toggleModeBItem->module = module;
         menu->addChild(toggleModeBItem);
 
-        menu->addChild(new MenuSeparator());
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Auxiliary Input"));
 
-		menu->addChild(construct<OptionInputMenuItem<Algomorph4>>(&MenuItem::text, "Input Function...", &MenuItem::rightText, RIGHT_ARROW, &OptionInputMenuItem<Algomorph4>::module, module));
+        menu->addChild(new MenuSeparator());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Knob"));
+
+		menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Functions...", &MenuItem::rightText, RIGHT_ARROW, &KnobModeMenuItem::module, module, &KnobModeMenuItem::moduleWidget, this));
+
+        menu->addChild(new MenuSeparator());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Input"));
+
+		menu->addChild(construct<AuxInputMenuItem<Algomorph4>>(&MenuItem::text, "Functions...", &MenuItem::rightText, RIGHT_ARROW, &AuxInputMenuItem<Algomorph4>::module, module));
         
-        AllowMultipleModesItem *allowMultipleModesItem = createMenuItem<AllowMultipleModesItem>("Allow multiple active functions", CHECKMARK(module->optionInput.allowMultipleModes));
+        AllowMultipleModesItem *allowMultipleModesItem = createMenuItem<AllowMultipleModesItem>("Allow multiple functions", CHECKMARK(module->auxInput.allowMultipleModes));
         allowMultipleModesItem->module = module;
         menu->addChild(allowMultipleModesItem);
         
-        ForgetOptionVoltageItem *forgetOptionVoltageItem = createMenuItem<ForgetOptionVoltageItem>("Remember voltage", CHECKMARK(!module->optionInput.forgetVoltage));
-        forgetOptionVoltageItem->module = module;
-        menu->addChild(forgetOptionVoltageItem);
+        ForgetAuxVoltageItem *forgetAuxVoltageItem = createMenuItem<ForgetAuxVoltageItem>("Remember voltage", CHECKMARK(!module->auxInput.forgetVoltage));
+        forgetAuxVoltageItem->module = module;
+        menu->addChild(forgetAuxVoltageItem);
+
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
         
 		menu->addChild(construct<ClickFilterMenuItem<Algomorph4>>(&MenuItem::text, "Click Filter...", &MenuItem::rightText, RIGHT_ARROW, &ClickFilterMenuItem<Algomorph4>::module, module));
 
-
         RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
         ringMorphItem->module = module;
         menu->addChild(ringMorphItem);
+
 
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
@@ -3359,6 +3409,7 @@ struct Algomorph4Widget : ModuleWidget {
         exitConfigItem->module = module;
         menu->addChild(exitConfigItem);
 
+
         menu->addChild(new MenuSeparator());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
         
@@ -3368,6 +3419,7 @@ struct Algomorph4Widget : ModuleWidget {
         
         GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
         glowingInkItem->module = module;
+        glowingInkItem->moduleWidget = this;
         menu->addChild(glowingInkItem);
 
         // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
@@ -3375,19 +3427,33 @@ struct Algomorph4Widget : ModuleWidget {
         // menu->addChild(debugItem);
     }
 
-    void step() override {
-		if (module) {
-			if (dynamic_cast<Algomorph4*>(module)->glowingInk) {
-                if (!ink->sw->svg)
-                    ink->sw->svg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/GlowingInk.svg"));
-            }
-            else {
-                if (ink->sw->svg)
-                    ink->sw->svg = NULL;
-            }
-		}
-		ModuleWidget::step();
+    void setKnobMode(int knobMode) {
+		if (!module)
+			return;
+
+        Algomorph4* m = dynamic_cast<Algomorph4*>(module);
+
+        DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + m->knobMode));
+        oldKnob->hide();
+        oldKnob->sibling->hide();
+        DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + knobMode));
+        newKnob->show();
+        newKnob->sibling->show();
+		m->knobMode = knobMode;
 	}
+
+    void toggleInkVisibility() {
+        if (!module)
+            return;
+
+        Algomorph4* m = dynamic_cast<Algomorph4*>(module);
+
+        if (ink->visible)
+            ink->hide();
+        else
+            ink->show();
+        m->glowingInk ^= true;
+    }
 };
 
 

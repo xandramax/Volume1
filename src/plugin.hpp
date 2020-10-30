@@ -38,7 +38,7 @@ struct AuxSourceModes {
 	static const int NUM_MODES = 5;
 };
 
-struct OptionInputModes : AuxSourceModes {
+struct AuxInputModes : AuxSourceModes {
 	static const int SUM_ATTEN = 		AuxSourceModes::NUM_MODES;
 	static const int MOD_ATTEN = 		AuxSourceModes::NUM_MODES + 1;
 	static const int CLOCK = 			AuxSourceModes::NUM_MODES + 2;
@@ -53,14 +53,44 @@ struct OptionInputModes : AuxSourceModes {
 	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 13;
 };
 
+//Order must match above
+static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph CV",
+																			"Morph CV Attenuverter",
+																			"Click Filter Strength",
+																			"Double Morph CV",
+																			"Triple Morph CV",
+																			"Sum Output Attenuverter",
+																			"Mod Output Attenuverter",
+																			"Clock",
+																			"Reverse Clock",
+																			"Reset",
+																			"Run",
+																			"Algorithm Offset",
+																			"Wildcard Modulator",
+																			"Carrier",
+																			"Shadow -> 1",
+																			"Shadow -> 2",
+																			"Shadow -> 3",
+																			"Shadow -> 4"};
+
 struct AuxKnobModes : AuxSourceModes {
-	static const int MORPH_GAIN = 	AuxSourceModes::NUM_MODES;
-	static const int SUM_GAIN = 	AuxSourceModes::NUM_MODES + 1;
-	static const int MOD_GAIN = 	AuxSourceModes::NUM_MODES + 2;
-	static const int OP_GAIN = 		AuxSourceModes::NUM_MODES + 3;
-	static const int UNI_MORPH = 	AuxSourceModes::NUM_MODES + 4;
-	static const int NUM_MODES = 	AuxSourceModes::NUM_MODES + 5;
+	static const int SUM_GAIN = 	AuxSourceModes::NUM_MODES;
+	static const int MOD_GAIN = 	AuxSourceModes::NUM_MODES + 1;
+	static const int OP_GAIN = 		AuxSourceModes::NUM_MODES + 2;
+	static const int UNI_MORPH = 	AuxSourceModes::NUM_MODES + 3;
+	static const int NUM_MODES = 	AuxSourceModes::NUM_MODES + 4;
 };
+
+//Order must match above
+static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph",
+																			"Morph CV Attenuverter",
+																			"Click Filter Strength",
+																			"Double Morph",
+																			"Triple Morph",
+																			"Sum Output Gain",
+																			"Mod Output Gain",
+																			"Op Input Gain",
+																			"Unipolar Morph Plus"};
 
 /// Undo/Redo History
 
@@ -237,6 +267,31 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 	}
 };
 
+template < typename MODULE, typename MODULEWIDGET >
+struct KnobModeAction : history::ModuleAction {
+    int oldKnobMode, newKnobMode;
+
+	KnobModeAction() {
+		name = "Delexander Algomorph knob mode";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		dynamic_cast<MODULEWIDGET*>(mw)->setKnobMode(oldKnobMode);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		dynamic_cast<MODULEWIDGET*>(mw)->setKnobMode(newKnobMode);
+	}
+};
+
 template < typename MODULE >
 struct AlgorithmForcedCarrierChangeAction : history::ModuleAction {
     int scene, op;
@@ -290,11 +345,11 @@ struct AlgorithmSceneChangeAction : history::ModuleAction {
 };
 
 template < typename MODULE >
-struct OptionInputSetAndRememberAction : history::ModuleAction {
+struct AuxInputSetAndRememberAction : history::ModuleAction {
     int mode, channels;
 	float voltage[16], scaledVoltage[16];
 
-	OptionInputSetAndRememberAction() {
+	AuxInputSetAndRememberAction() {
 		name = "Delexander Algomorph AUX In mode set & remember";
 	}
 
@@ -303,10 +358,10 @@ struct OptionInputSetAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(mode);
+		m->auxInput.unsetMode(mode);
 		for (int c = 0; c < channels; c++) {
-			m->optionInput.voltage[mode][c] = voltage[c];
-			m->scaledOptionVoltage[mode][c] = scaledVoltage[c];
+			m->auxInput.voltage[mode][c] = voltage[c];
+			m->scaledAuxVoltage[mode][c] = scaledVoltage[c];
 		}
 	}
 
@@ -315,15 +370,15 @@ struct OptionInputSetAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.setMode(mode);
+		m->auxInput.setMode(mode);
 	}
 };
 
 template < typename MODULE >
-struct OptionInputSetAndForgetAction : history::ModuleAction {
+struct AuxInputSetAndForgetAction : history::ModuleAction {
     int mode, channels;
 
-	OptionInputSetAndForgetAction() {
+	AuxInputSetAndForgetAction() {
 		name = "Delexander Algomorph AUX In mode set & forget";
 	}
 
@@ -332,9 +387,9 @@ struct OptionInputSetAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(mode);
+		m->auxInput.unsetMode(mode);
 		for (int c = 0; c < channels; c++)
-			m->optionInput.voltage[mode][c] = m->optionInput.defVoltage[mode];
+			m->auxInput.voltage[mode][c] = m->auxInput.defVoltage[mode];
 		m->rescaleVoltage(mode);
 	}
 
@@ -343,16 +398,16 @@ struct OptionInputSetAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.setMode(mode);
+		m->auxInput.setMode(mode);
 	}
 };
 
 template < typename MODULE >
-struct OptionInputSwitchAndRememberAction : history::ModuleAction {
+struct AuxInputSwitchAndRememberAction : history::ModuleAction {
     int oldMode, newMode, channels;
 	float oldVoltage[16], newVoltage[16], oldScaledVoltage[16], newScaledVoltage[16];
 
-	OptionInputSwitchAndRememberAction() {
+	AuxInputSwitchAndRememberAction() {
 		name = "Delexander Algomorph AUX In mode switch & remember";
 	}
 
@@ -361,12 +416,12 @@ struct OptionInputSwitchAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(newMode);
+		m->auxInput.unsetMode(newMode);
 		for (int c = 0; c < 16; c++) {
-			m->optionInput.voltage[newMode][c] = newVoltage[c];
-			m->scaledOptionVoltage[newMode][c] = newScaledVoltage[c];
+			m->auxInput.voltage[newMode][c] = newVoltage[c];
+			m->scaledAuxVoltage[newMode][c] = newScaledVoltage[c];
 		}
-		m->optionInput.setMode(oldMode);
+		m->auxInput.setMode(oldMode);
 	}
 
 	void redo() override {
@@ -374,22 +429,22 @@ struct OptionInputSwitchAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(oldMode);
+		m->auxInput.unsetMode(oldMode);
 		for (int c = 0; c < 16; c++) {
-			m->optionInput.voltage[oldMode][c] = oldVoltage[c];
-			m->scaledOptionVoltage[oldMode][c] = oldScaledVoltage[c];
+			m->auxInput.voltage[oldMode][c] = oldVoltage[c];
+			m->scaledAuxVoltage[oldMode][c] = oldScaledVoltage[c];
 		}
-		m->optionInput.setMode(newMode);
+		m->auxInput.setMode(newMode);
 	}
 };
 
 template < typename MODULE >
-struct OptionInputSwitchAndForgetAction : history::ModuleAction {
+struct AuxInputSwitchAndForgetAction : history::ModuleAction {
     bool forgetOldVoltage, forgetNewVoltage;
 	int oldMode, newMode, channels;
 	float oldVoltage[16], oldScaledVoltage[16], newVoltage[16], newScaledVoltage[16];
 
-	OptionInputSwitchAndForgetAction() {
+	AuxInputSwitchAndForgetAction() {
 		name = "Delexander Algomorph AUX In mode switch & forget";
 	}
 
@@ -398,19 +453,19 @@ struct OptionInputSwitchAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(newMode);
+		m->auxInput.unsetMode(newMode);
 		if (forgetNewVoltage) {
 			for (int c = 0; c < channels; c++)
-				m->optionInput.voltage[newMode][c] = m->optionInput.defVoltage[newMode];
+				m->auxInput.voltage[newMode][c] = m->auxInput.defVoltage[newMode];
 			m->rescaleVoltage(newMode);
 		}
 		else {
 			for (int c = 0; c < channels; c++) {
-				m->optionInput.voltage[newMode][c] = newVoltage[c];
-				m->scaledOptionVoltage[newMode][c] = newScaledVoltage[c];
+				m->auxInput.voltage[newMode][c] = newVoltage[c];
+				m->scaledAuxVoltage[newMode][c] = newScaledVoltage[c];
 			}
 		}
-		m->optionInput.setMode(oldMode);
+		m->auxInput.setMode(oldMode);
 	}
 
 	void redo() override {
@@ -418,28 +473,28 @@ struct OptionInputSwitchAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(oldMode);
+		m->auxInput.unsetMode(oldMode);
 		if (forgetOldVoltage) {
 			for (int c = 0; c < channels; c++)
-				m->optionInput.voltage[oldMode][c] = m->optionInput.defVoltage[oldMode];
+				m->auxInput.voltage[oldMode][c] = m->auxInput.defVoltage[oldMode];
 			m->rescaleVoltage(oldMode);
 		}
 		else {
 			for (int c = 0; c < channels; c++) {
-				m->optionInput.voltage[oldMode][c] = oldVoltage[c];
-				m->scaledOptionVoltage[oldMode][c] = oldScaledVoltage[c];
+				m->auxInput.voltage[oldMode][c] = oldVoltage[c];
+				m->scaledAuxVoltage[oldMode][c] = oldScaledVoltage[c];
 			}
 		}
-		m->optionInput.setMode(newMode);
+		m->auxInput.setMode(newMode);
 	}
 };
 
 template < typename MODULE >
-struct OptionInputUnsetAndRememberAction : history::ModuleAction {
+struct AuxInputUnsetAndRememberAction : history::ModuleAction {
     int mode, channels;
 	float voltage[16], scaledVoltage[16];
 
-	OptionInputUnsetAndRememberAction() {
+	AuxInputUnsetAndRememberAction() {
 		name = "Delexander Algomorph AUX In mode unset & remember";
 	}
 
@@ -448,7 +503,7 @@ struct OptionInputUnsetAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.setMode(mode);
+		m->auxInput.setMode(mode);
 	}
 
 	void redo() override {
@@ -456,19 +511,19 @@ struct OptionInputUnsetAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(mode);
+		m->auxInput.unsetMode(mode);
 		for (int c = 0; c < channels; c++) {
-			m->optionInput.voltage[mode][c] = voltage[c];
-			m->scaledOptionVoltage[mode][c] = scaledVoltage[c];
+			m->auxInput.voltage[mode][c] = voltage[c];
+			m->scaledAuxVoltage[mode][c] = scaledVoltage[c];
 		}
 	}
 };
 
 template < typename MODULE >
-struct OptionInputUnsetAndForgetAction : history::ModuleAction {
+struct AuxInputUnsetAndForgetAction : history::ModuleAction {
     int mode, channels;
 
-	OptionInputUnsetAndForgetAction() {
+	AuxInputUnsetAndForgetAction() {
 		name = "Delexander Algomorph AUX In mode unset & forget";
 	}
 
@@ -477,7 +532,7 @@ struct OptionInputUnsetAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.setMode(mode);
+		m->auxInput.setMode(mode);
 	}
 
 	void redo() override {
@@ -485,16 +540,16 @@ struct OptionInputUnsetAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.unsetMode(mode);
+		m->auxInput.unsetMode(mode);
 		for (int c = 0; c < channels; c++)
-			m->optionInput.voltage[mode][c] = m->optionInput.defVoltage[mode];
+			m->auxInput.voltage[mode][c] = m->auxInput.defVoltage[mode];
 		m->rescaleVoltage(mode);
 	}
 };
 
 template < typename MODULE >
-struct RememberOptionVoltageAction : history::ModuleAction {
-	RememberOptionVoltageAction() {
+struct RememberAuxVoltageAction : history::ModuleAction {
+	RememberAuxVoltageAction() {
 		name = "Delexander Algomorph remember option voltage";
 	}
 
@@ -503,7 +558,7 @@ struct RememberOptionVoltageAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.forgetVoltage = true;
+		m->auxInput.forgetVoltage = true;
 	}
 
 	void redo() override {
@@ -511,7 +566,7 @@ struct RememberOptionVoltageAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.forgetVoltage = false;
+		m->auxInput.forgetVoltage = false;
 	}
 };
 
@@ -526,7 +581,7 @@ struct AllowMultipleModesAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.allowMultipleModes = false;
+		m->auxInput.allowMultipleModes = false;
 	}
 
 	void redo() override {
@@ -534,7 +589,7 @@ struct AllowMultipleModesAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->optionInput.allowMultipleModes = true;
+		m->auxInput.allowMultipleModes = true;
 	}
 };
 
@@ -1418,15 +1473,9 @@ struct DLX3Light : SvgSwitchLight {
 	}
 };
 
-struct DLXKnobLight : SvgLight {
+struct SvgKnobLight : SvgLight {
 	float angle = 0;
 	float transform[6];
-
-	DLXKnobLight() {
-		// box.size = mm2px(Vec(10.322, 10.322));
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large_light.svg")));
-
-	}
 
 	void draw(const DrawArgs& args) override {
 		math::Vec center = Vec(sw->box.size.x / 2, sw->box.size.y / 2);
@@ -1444,13 +1493,21 @@ struct DLXKnobLight : SvgLight {
 	}
 };
 
-template <class TKnobLight = DLXKnobLight>
-struct DLXLightKnob : RoundKnob {
-	TKnobLight* sibling;
-
-	DLXLightKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large.svg")));
+struct DLXKnobLight : SvgKnobLight {
+	DLXKnobLight() {
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large_light.svg")));
 	}
+};
+
+struct DLXSmallKnobLight : SvgKnobLight {
+	DLXSmallKnobLight() {
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_light.svg")));
+	}
+};
+
+template <class TKnobLight = DLXKnobLight>
+struct LightKnob : RoundKnob {
+	TKnobLight* sibling;
 
 	void setSibling(TKnobLight* kl) {
 		sibling = kl;
@@ -1480,7 +1537,19 @@ struct DLXLightKnob : RoundKnob {
 	}
 };
 
-template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob<TKnobLight>>
+struct DLXLightKnob : LightKnob<DLXKnobLight> {
+	DLXLightKnob() {
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large.svg")));
+	}
+};
+
+struct DLXSmallLightKnob : LightKnob<DLXSmallKnobLight> {
+	DLXSmallLightKnob() {
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB.svg")));
+	}
+};
+
+template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob>
 TDLXLightKnob* createLightKnob(Vec pos, engine::Module* module, int paramId, TKnobLight* kl) {
 	TDLXLightKnob* o = new TDLXLightKnob();
 	o->box.pos = pos;
@@ -1488,6 +1557,13 @@ TDLXLightKnob* createLightKnob(Vec pos, engine::Module* module, int paramId, TKn
 		o->paramQuantity = module->paramQuantities[paramId];
 	}
 	o->setSibling(kl);
+	return o;
+}
+
+template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob>
+TDLXLightKnob* createLightKnobCentered(Vec pos, engine::Module* module, int paramId, TKnobLight* kl) {
+	TDLXLightKnob* o = createLightKnob<TKnobLight, TDLXLightKnob>(pos, module, paramId, kl);
+	o->box.pos = o->box.pos.minus(o->box.size.div(2));
 	return o;
 }
 
