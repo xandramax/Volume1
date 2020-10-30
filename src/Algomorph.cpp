@@ -210,15 +210,15 @@ struct Algomorph4 : Module {
 
     Algomorph4() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-        configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", "millimorphs", 0, 1000);
+        configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
-        configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
         configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
         configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
-        configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], "millimorphs", 0, 1000);
-        configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], "millimorphs", 0, 1000);
-        configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], "millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
         for (int i = 0; i < 4; i++) {
             configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
@@ -853,8 +853,6 @@ struct Algomorph4 : Module {
                             algoName[configScene].flip(12 + configOp);
                             displayAlgoName[configScene].set(12 + configOp, algoName[configScene][12 + configOp]);
                             for (int j = 0; j < 4; j++) {
-                                if (debug)
-                                    int x = 0;
                                 if (horizontalDestinations[configScene][j]) {
                                     bool fullDisable = true;
                                     for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
