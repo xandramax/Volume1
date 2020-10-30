@@ -13,7 +13,7 @@
    version="1.1"
    id="svg9240"
    inkscape:version="1.0rc1 (09960d6f05, 2020-04-09)"
-   sodipodi:docname="DLXKnobB.svg">
+   sodipodi:docname="DLXKnobB_light.svg">
   <defs
      id="defs9234" />
   <sodipodi:namedview
@@ -25,7 +25,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="31.678384"
      inkscape:cx="10.695288"
-     inkscape:cy="9.3436794"
+     inkscape:cy="11.869061"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -52,12 +52,6 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <circle
-       id="circle21962"
-       style="clip-rule:evenodd;display:inline;fill:#1a1a1a;fill-opacity:1;fill-rule:evenodd;stroke-width:0.264583;stroke-linejoin:round;stroke-miterlimit:2"
-       cy="3.857559"
-       cx="3.857559"
-       r="3.6796267" />
     <path
        sodipodi:nodetypes="sssssss"
        inkscape:connector-curvature="0"
