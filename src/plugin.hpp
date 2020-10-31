@@ -74,11 +74,12 @@ static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph
 																			"Shadow -> 4"};
 
 struct AuxKnobModes : AuxSourceModes {
-	static const int SUM_GAIN = 	AuxSourceModes::NUM_MODES;
-	static const int MOD_GAIN = 	AuxSourceModes::NUM_MODES + 1;
-	static const int OP_GAIN = 		AuxSourceModes::NUM_MODES + 2;
-	static const int UNI_MORPH = 	AuxSourceModes::NUM_MODES + 3;
-	static const int NUM_MODES = 	AuxSourceModes::NUM_MODES + 4;
+	static const int SUM_GAIN = 		AuxSourceModes::NUM_MODES;
+	static const int MOD_GAIN = 		AuxSourceModes::NUM_MODES + 1;
+	static const int OP_GAIN = 			AuxSourceModes::NUM_MODES + 2;
+	static const int UNI_MORPH = 		AuxSourceModes::NUM_MODES + 3;
+	static const int ENDLESS_MORPH = 	AuxSourceModes::NUM_MODES + 4;
+	static const int NUM_MODES = 		AuxSourceModes::NUM_MODES + 5;
 };
 
 //Order must match above
@@ -90,7 +91,8 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Sum Output Gain",
 																			"Mod Output Gain",
 																			"Op Input Gain",
-																			"Unipolar Morph Plus"};
+																			"Unipolar Morph Plus",
+																			"Endless Morph"};
 
 /// Undo/Redo History
 

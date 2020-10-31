@@ -219,6 +219,7 @@ struct Algomorph4 : Module {
         configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
         for (int i = 0; i < 4; i++) {
             configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
@@ -620,17 +621,23 @@ struct Algomorph4 : Module {
                             + params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH].getValue()
                             + params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH].getValue()
                             + params[AUX_KNOBS + AuxKnobModes::UNI_MORPH].getValue()
+                            + fmod(params[AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH].getValue(), 3.f)
                             + clamp(auxInput.voltage[AuxInputModes::MORPH][0] / 5.f, -1.f, 1.f)
                             * morphAttenuversion
                             + clamp(auxInput.voltage[AuxInputModes::DOUBLE_MORPH][0] / FIVE_D_TWO, -2.f, 2.f)
                             * morphAttenuversion
                             + clamp(auxInput.voltage[AuxInputModes::TRIPLE_MORPH][0] / FIVE_D_THREE, -3.f, 3.f)
                             * morphAttenuversion;
+        while (newMorph0 > 3.f)
+            newMorph0 = -3.f + (newMorph0 - 3.f);
+        while (newMorph0 < -3.f)
+            newMorph0 = 3.f + (newMorph0 + 3.f);
         newMorph0 = clamp(newMorph0, -3.f, 3.f);
         if (morph[0] != newMorph0) {
             morph[0] = newMorph0;
             graphDirty = true;
         }
+        // morph[0] was just done, so start this loop with [1]
         for (int c = 1; c < channels; c++) {
             morph[c] =  clamp(inputs[MORPH_INPUT].getPolyVoltage(c) / 5.f, -1.f, 1.f)
                         * morphAttenuversion
@@ -639,13 +646,20 @@ struct Algomorph4 : Module {
                         + params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH].getValue()
                         + params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH].getValue()
                         + params[AUX_KNOBS + AuxKnobModes::UNI_MORPH].getValue()
+                        + fmod(params[AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH].getValue(), 3.f)
                         + clamp(auxInput.voltage[AuxInputModes::MORPH][c] / 5.f, -1.f, 1.f)
                         * morphAttenuversion
                         + clamp(auxInput.voltage[AuxInputModes::DOUBLE_MORPH][c] / FIVE_D_TWO, -2.f, 2.f)
                         * morphAttenuversion
                         + clamp(auxInput.voltage[AuxInputModes::TRIPLE_MORPH][c] / FIVE_D_THREE, -3.f, 3.f)
                         * morphAttenuversion;
+            while (morph[c] > 3.f)
+                morph[c] = -3.f + (morph[c] - 3.f);
+            while (morph[c] < -3.f)
+                morph[c] = 3.f + (morph[c] + 3.f);
         }
+
+        // Update relative morph magnitude and scenes
         float lightRelativeMorphMagnitude[16] = {0.f};
         if (!ringMorph) {
             for (int c = 0; c < channels; c++) {
