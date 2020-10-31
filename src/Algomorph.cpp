@@ -219,7 +219,7 @@ struct Algomorph4 : Module {
         configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
         configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
-        configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " millimorphs", 0, 1000);
+        configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " limits", 0, 0);
         configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
         for (int i = 0; i < 4; i++) {
             configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
