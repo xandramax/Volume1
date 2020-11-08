@@ -54,11 +54,11 @@ struct AuxInputModes : AuxSourceModes {
 };
 
 //Order must match above
-static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph CV",
+static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph",
 																			"Morph CV Attenuverter",
 																			"Click Filter Strength",
-																			"Double Morph CV",
-																			"Triple Morph CV",
+																			"Double Morph",
+																			"Triple Morph",
 																			"Sum Output Attenuverter",
 																			"Mod Output Attenuverter",
 																			"Clock",
@@ -68,10 +68,10 @@ static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph
 																			"Algorithm Offset",
 																			"Wildcard Modulator",
 																			"Carrier",
-																			"Shadow -> 1",
-																			"Shadow -> 2",
-																			"Shadow -> 3",
-																			"Shadow -> 4"};
+																			"Operator 1",
+																			"Operator 2",
+																			"Operator 3",
+																			"Operator 4"};
 
 struct AuxKnobModes : AuxSourceModes {
 	static const int SUM_GAIN = 		AuxSourceModes::NUM_MODES;
@@ -99,7 +99,6 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 template < typename MODULE >
 struct AlgorithmDiagonalChangeAction : history::ModuleAction {
     int scene, op, mod;
-	std::bitset<16> displayAlgoName;
 
 	AlgorithmDiagonalChangeAction() {
 		name = "Delexander Algomorph diagonal connection";
@@ -110,33 +109,9 @@ struct AlgorithmDiagonalChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->opDestinations[scene][op][mod] ^= true;
-        m->algoName[scene].flip(op * 3 + mod);
-		if (m->modeB || !m->horizontalDestinations[scene][op])
-        	m->displayAlgoName[scene].flip(op * 3 + mod);
-		if (!m->modeB) {
-			// If the mod output in question corresponds to a disabled operator
-			if (!m->horizontalDestinations[scene][op] && m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
-				// If a connection has been made, enable that operator visually
-				if (m->opDestinations[scene][op][mod]) {
-					m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
-				}
-				// If a connection has been broken, 
-				else {
-					if (m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
-						bool disabled = true;
-						for (int j = 0; j < 4; j++) {
-							if (j != op && j != m->threeToFour[op][mod] && m->opDestinations[scene][j][m->fourToThree[j][op]])
-								disabled = false;
-						}
-						if (disabled)
-							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], true);
-						else
-							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
-					}
-				}
-			}
-		}
+
+		m->toggleDiagonalDestination(scene, op, mod);
+
 		m->graphDirty = true;
 	}
 
@@ -145,33 +120,9 @@ struct AlgorithmDiagonalChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->opDestinations[scene][op][mod] ^= true;
-        m->algoName[scene].flip(op * 3 + mod);
-		if (m->modeB || !m->horizontalDestinations[scene][op])
-        	m->displayAlgoName[scene].flip(op * 3 + mod);
-		if (!m->modeB) {
-			// If the mod output in question corresponds to a disabled operator
-			if (!m->horizontalDestinations[scene][op] && m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
-				// If a connection has been made, enable that operator visually
-				if (m->opDestinations[scene][op][mod]) {
-					m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
-				}
-				// If a connection has been broken, 
-				else {
-					if (m->horizontalDestinations[scene][m->threeToFour[op][mod]]) {
-						bool disabled = true;
-						for (int j = 0; j < 4; j++) {
-							if (j != op && j != m->threeToFour[op][mod] && m->opDestinations[scene][j][m->fourToThree[j][op]])
-								disabled = false;
-						}
-						if (disabled)
-							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], true);
-						else
-							m->displayAlgoName[scene].set(12 + m->threeToFour[op][mod], false);
-					}	
-				}
-			}
-		}
+
+		m->toggleDiagonalDestination(scene, op, mod);
+
 		m->graphDirty = true;
 	}
 };
@@ -189,40 +140,9 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->horizontalDestinations[scene][op] ^= true;
-		if (!m->modeB) {
-			m->algoName[scene].flip(12 + op);
-			m->displayAlgoName[scene].set(12 + op, m->algoName[scene][12 + op]);
-			for (int j = 0; j < 4; j++) {
-				if (m->horizontalDestinations[scene][j]) {
-					bool fullDisable = true;
-					for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
-						m->displayAlgoName[scene].set(j * 3 + i, false);
-					for (int i = 0; i < 4; i++) {     // Check if any other operators are modulating this operator
-						if (i != j && !m->horizontalDestinations[scene][i] && m->opDestinations[scene][i][m->fourToThree[i][j]])
-							fullDisable = false;
-					}
-					// If anything is modulating the operator, set it enabled in the display. Otherwise, disable it in the display.
-					if (fullDisable)
-						m->displayAlgoName[scene].set(12 + j, true);
-					else
-						m->displayAlgoName[scene].set(12 + j, false);
-				}
-				else {
-					if (j == op) {
-						// Reenable destinations in the display and handle the consequences
-						for (int i = 0; i < 3; i++) {
-							if (m->opDestinations[scene][op][i]) {
-								m->displayAlgoName[scene].set(op * 3 + i, true);
-								// the consequences
-								if (m->horizontalDestinations[scene][m->threeToFour[op][i]])
-									m->displayAlgoName[scene].set(12 + m->threeToFour[op][i], false);
-							}
-						}  
-					}
-				}
-			}
-		}
+		
+		m->toggleHorizontalDestination(scene, op);
+
 		m->graphDirty = true;
 	}
 
@@ -231,40 +151,9 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->horizontalDestinations[scene][op] ^= true;
-		if (!m->modeB) {
-			m->algoName[scene].flip(12 + op);
-			m->displayAlgoName[scene].set(12 + op, m->algoName[scene][12 + op]);
-			for (int j = 0; j < 4; j++) {
-				if (m->horizontalDestinations[scene][j]) {
-					bool fullDisable = true;
-					for (int i = 0; i < 3; i++)     // Set all of the disabled operators' destinations fo false
-						m->displayAlgoName[scene].set(j * 3 + i, false);
-					for (int i = 0; i < 4; i++) {     // Check if any other operators are modulating this operator
-						if (i != j && !m->horizontalDestinations[scene][i] && m->opDestinations[scene][i][m->fourToThree[i][j]])
-							fullDisable = false;
-					}
-					// If anything is modulating the operator, set it enabled in the display. Otherwise, disable it in the display.
-					if (fullDisable)
-						m->displayAlgoName[scene].set(12 + j, true);
-					else
-						m->displayAlgoName[scene].set(12 + j, false);
-				}
-				else {
-					if (j == op) {
-						// Reenable destinations in the display and handle the consequences
-						for (int i = 0; i < 3; i++) {
-							if (m->opDestinations[scene][op][i]) {
-								m->displayAlgoName[scene].set(op * 3 + i, true);
-								// the consequences
-								if (m->horizontalDestinations[scene][m->threeToFour[op][i]])
-									m->displayAlgoName[scene].set(12 + m->threeToFour[op][i], false);
-							}
-						}  
-					}
-				}
-			}
-		}
+		
+		m->toggleHorizontalDestination(scene, op);
+
 		m->graphDirty = true;
 	}
 };
@@ -307,7 +196,8 @@ struct AlgorithmForcedCarrierChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->forcedCarrier[scene][op] ^= true;
+
+		m->toggleForcedCarrier(scene, op);
 	}
 
 	void redo() override {
@@ -315,7 +205,8 @@ struct AlgorithmForcedCarrierChangeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->forcedCarrier[scene][op] ^= true;
+
+		m->toggleForcedCarrier(scene, op);
 	}
 };
 
@@ -347,12 +238,11 @@ struct AlgorithmSceneChangeAction : history::ModuleAction {
 };
 
 template < typename MODULE >
-struct AuxInputSetAndRememberAction : history::ModuleAction {
-    int mode, channels;
-	float voltage[16], scaledVoltage[16];
+struct AuxInputSetAction : history::ModuleAction {
+    int auxIndex, mode, channels;
 
-	AuxInputSetAndRememberAction() {
-		name = "Delexander Algomorph AUX In mode set & remember";
+	AuxInputSetAction() {
+		name = "Delexander Algomorph AUX In mode set";
 	}
 
 	void undo() override {
@@ -360,39 +250,10 @@ struct AuxInputSetAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.unsetMode(mode);
-		for (int c = 0; c < channels; c++) {
-			m->auxInput.voltage[mode][c] = voltage[c];
-			m->scaledAuxVoltage[mode][c] = scaledVoltage[c];
-		}
-	}
-
-	void redo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.setMode(mode);
-	}
-};
-
-template < typename MODULE >
-struct AuxInputSetAndForgetAction : history::ModuleAction {
-    int mode, channels;
-
-	AuxInputSetAndForgetAction() {
-		name = "Delexander Algomorph AUX In mode set & forget";
-	}
-
-	void undo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(mode);
+		m->auxInput[auxIndex]->unsetMode(mode);
 		for (int c = 0; c < channels; c++)
-			m->auxInput.voltage[mode][c] = m->auxInput.defVoltage[mode];
-		m->rescaleVoltage(mode);
+			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
+		m->rescaleVoltage(mode, channels);
 	}
 
 	void redo() override {
@@ -400,17 +261,17 @@ struct AuxInputSetAndForgetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.setMode(mode);
+		m->auxInput[auxIndex]->setMode(mode);
+		m->rescaleVoltage(mode, channels);
 	}
 };
 
 template < typename MODULE >
-struct AuxInputSwitchAndRememberAction : history::ModuleAction {
-    int oldMode, newMode, channels;
-	float oldVoltage[16], newVoltage[16], oldScaledVoltage[16], newScaledVoltage[16];
+struct AuxInputSwitchAction : history::ModuleAction {
+	int auxIndex, oldMode, newMode, channels;
 
-	AuxInputSwitchAndRememberAction() {
-		name = "Delexander Algomorph AUX In mode switch & remember";
+	AuxInputSwitchAction() {
+		name = "Delexander Algomorph AUX In mode switch";
 	}
 
 	void undo() override {
@@ -418,149 +279,12 @@ struct AuxInputSwitchAndRememberAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.unsetMode(newMode);
-		for (int c = 0; c < 16; c++) {
-			m->auxInput.voltage[newMode][c] = newVoltage[c];
-			m->scaledAuxVoltage[newMode][c] = newScaledVoltage[c];
-		}
-		m->auxInput.setMode(oldMode);
-	}
-
-	void redo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(oldMode);
-		for (int c = 0; c < 16; c++) {
-			m->auxInput.voltage[oldMode][c] = oldVoltage[c];
-			m->scaledAuxVoltage[oldMode][c] = oldScaledVoltage[c];
-		}
-		m->auxInput.setMode(newMode);
-	}
-};
-
-template < typename MODULE >
-struct AuxInputSwitchAndForgetAction : history::ModuleAction {
-    bool forgetOldVoltage, forgetNewVoltage;
-	int oldMode, newMode, channels;
-	float oldVoltage[16], oldScaledVoltage[16], newVoltage[16], newScaledVoltage[16];
-
-	AuxInputSwitchAndForgetAction() {
-		name = "Delexander Algomorph AUX In mode switch & forget";
-	}
-
-	void undo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(newMode);
-		if (forgetNewVoltage) {
-			for (int c = 0; c < channels; c++)
-				m->auxInput.voltage[newMode][c] = m->auxInput.defVoltage[newMode];
-			m->rescaleVoltage(newMode);
-		}
-		else {
-			for (int c = 0; c < channels; c++) {
-				m->auxInput.voltage[newMode][c] = newVoltage[c];
-				m->scaledAuxVoltage[newMode][c] = newScaledVoltage[c];
-			}
-		}
-		m->auxInput.setMode(oldMode);
-	}
-
-	void redo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(oldMode);
-		if (forgetOldVoltage) {
-			for (int c = 0; c < channels; c++)
-				m->auxInput.voltage[oldMode][c] = m->auxInput.defVoltage[oldMode];
-			m->rescaleVoltage(oldMode);
-		}
-		else {
-			for (int c = 0; c < channels; c++) {
-				m->auxInput.voltage[oldMode][c] = oldVoltage[c];
-				m->scaledAuxVoltage[oldMode][c] = oldScaledVoltage[c];
-			}
-		}
-		m->auxInput.setMode(newMode);
-	}
-};
-
-template < typename MODULE >
-struct AuxInputUnsetAndRememberAction : history::ModuleAction {
-    int mode, channels;
-	float voltage[16], scaledVoltage[16];
-
-	AuxInputUnsetAndRememberAction() {
-		name = "Delexander Algomorph AUX In mode unset & remember";
-	}
-
-	void undo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.setMode(mode);
-	}
-
-	void redo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(mode);
-		for (int c = 0; c < channels; c++) {
-			m->auxInput.voltage[mode][c] = voltage[c];
-			m->scaledAuxVoltage[mode][c] = scaledVoltage[c];
-		}
-	}
-};
-
-template < typename MODULE >
-struct AuxInputUnsetAndForgetAction : history::ModuleAction {
-    int mode, channels;
-
-	AuxInputUnsetAndForgetAction() {
-		name = "Delexander Algomorph AUX In mode unset & forget";
-	}
-
-	void undo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.setMode(mode);
-	}
-
-	void redo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.unsetMode(mode);
+		m->auxInput[auxIndex]->unsetMode(newMode);
 		for (int c = 0; c < channels; c++)
-			m->auxInput.voltage[mode][c] = m->auxInput.defVoltage[mode];
-		m->rescaleVoltage(mode);
-	}
-};
-
-template < typename MODULE >
-struct RememberAuxVoltageAction : history::ModuleAction {
-	RememberAuxVoltageAction() {
-		name = "Delexander Algomorph remember option voltage";
-	}
-
-	void undo() override {
-		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
-		assert(mw);
-		MODULE* m = dynamic_cast<MODULE*>(mw->module);
-		assert(m);
-		m->auxInput.forgetVoltage = true;
+			m->auxInput[auxIndex]->voltage[newMode][c] = m->auxInput[auxIndex]->defVoltage[newMode];
+		m->rescaleVoltage(newMode, channels);
+		m->auxInput[auxIndex]->setMode(oldMode);
+		m->rescaleVoltage(oldMode, channels);
 	}
 
 	void redo() override {
@@ -568,12 +292,47 @@ struct RememberAuxVoltageAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.forgetVoltage = false;
+		m->auxInput[auxIndex]->unsetMode(oldMode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[oldMode][c] = m->auxInput[auxIndex]->defVoltage[oldMode];
+		m->rescaleVoltage(oldMode, channels);
+		m->auxInput[auxIndex]->setMode(newMode);
+		m->rescaleVoltage(newMode, channels);
+	}
+};
+
+template < typename MODULE >
+struct AuxInputUnsetAction : history::ModuleAction {
+    int auxIndex, mode, channels;
+
+	AuxInputUnsetAction() {
+		name = "Delexander Algomorph AUX In mode unset";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->setMode(mode);
+		m->rescaleVoltage(mode, channels);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->unsetMode(mode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
+		m->rescaleVoltage(mode, channels);
 	}
 };
 
 template < typename MODULE >
 struct AllowMultipleModesAction : history::ModuleAction {
+	int auxIndex;
 	AllowMultipleModesAction() {
 		name = "Delexander Algomorph allow multiple modes";
 	}
@@ -583,7 +342,7 @@ struct AllowMultipleModesAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.allowMultipleModes = false;
+		m->auxInput[auxIndex]->allowMultipleModes = false;
 	}
 
 	void redo() override {
@@ -591,7 +350,7 @@ struct AllowMultipleModesAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput.allowMultipleModes = true;
+		m->auxInput[auxIndex]->allowMultipleModes = true;
 	}
 };
 
@@ -622,9 +381,6 @@ struct ResetSceneAction : history::ModuleAction {
 
 template < typename MODULE >
 struct ToggleModeBAction : history::ModuleAction {
-	std::bitset<16> algoName[3];
-	std::bitset<16> displayAlgoName[3];
-
 	ToggleModeBAction() {
 		name = "Delexander Algomorph toggle mode B";
 	}
@@ -634,11 +390,9 @@ struct ToggleModeBAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->modeB ^= true;
-		for (int i = 0; i < 3; i++) {
-			m->algoName[i] = algoName[i];
-			m->displayAlgoName[i] = displayAlgoName[i];
-		}
+		
+		m->toggleModeB();
+
 		m->graphDirty = true;
 	}
 
@@ -647,26 +401,9 @@ struct ToggleModeBAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->modeB ^= true;
-		if (m->modeB) {
-			for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 4; j++)
-                    m->algoName[i].set(12 + j, false);
-				m->displayAlgoName[i] = m->algoName[i];
-            }
-		}
-		else {
-			for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 4; j++) {
-					if (m->horizontalDestinations[i][j]) {
-						m->algoName[i].set(12 + j, true);
-						m->displayAlgoName[i] = m->algoName[i];
-						for (int k = 0; k < 3; k++)
-							m->displayAlgoName[i].set(j * 3 + k, false);
-					}
-				}
-			}
-		}
+		
+		m->toggleModeB();
+
 		m->graphDirty = true;
 	}
 };

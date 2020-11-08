@@ -1632,9 +1632,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8.0000002"
-     inkscape:cx="121.03028"
-     inkscape:cy="472.94956"
+     inkscape:zoom="2.0000001"
+     inkscape:cx="200.20105"
+     inkscape:cy="407.42644"
      inkscape:document-units="mm"
      inkscape:current-layer="layer4"
      showgrid="false"
@@ -3473,42 +3473,6 @@
          style="fill:#cfcfcf;fill-opacity:0.66;stroke-width:0.264583"
          d="m 38.134278,4.4665194 h 0.176389 c 0.02822,0 0.04939,-0.021167 0.04939,-0.049389 v -1.153584 c 0,-0.3704169 0.218723,-0.5820838 0.52564,-0.5820838 0.257528,0 0.437444,0.1552224 0.437444,0.4621392 v 1.2735286 c 0,0.028222 0.02117,0.049389 0.04939,0.049389 h 0.176389 c 0.02822,0 0.04939,-0.021167 0.04939,-0.049389 V 3.0906851 c 0,-0.3986391 -0.268111,-0.6667504 -0.670278,-0.6667504 -0.239889,0 -0.4445,0.098778 -0.567973,0.2928057 V 1.8383232 c 0,-0.028222 -0.02117,-0.049389 -0.04939,-0.049389 H 38.13428 c -0.02822,0 -0.04939,0.021167 -0.04939,0.049389 v 2.5788072 c 0,0.028222 0.02117,0.049389 0.04939,0.049389 z" />
     </g>
-    <g
-       id="g6404"
-       transform="translate(-0.09413646,-1.05855)">
-      <g
-         aria-label="d"
-         id="text6379"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:2.46944px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre Bold';letter-spacing:0px;word-spacing:0px;fill:#8b70a2;fill-opacity:1;stroke-width:0.264583">
-        <path
-           d="m 29.263996,126.88138 c 0.148166,0 0.279047,-0.0316 0.367946,-0.16742 v 0.11854 c 0,0.0296 0.02222,0.0519 0.05186,0.0519 h 0.160513 c 0.02963,0 0.05186,-0.0222 0.05186,-0.0519 v -1.82296 c 0,-0.0296 -0.02222,-0.0519 -0.05186,-0.0519 h -0.192616 c -0.02963,0 -0.05186,0.0222 -0.05186,0.0519 v 0.50624 c -0.08643,-0.0741 -0.209903,-0.1136 -0.333375,-0.1136 -0.303741,0 -0.548215,0.26176 -0.548215,0.56797 v 0.34326 c 0,0.30868 0.254352,0.56797 0.545747,0.56797 z m 0.04198,-0.28399 c -0.160513,0 -0.291394,-0.13088 -0.291394,-0.29139 v -0.32844 c 0,-0.16051 0.130881,-0.29139 0.291394,-0.29139 0.162983,0 0.293864,0.13088 0.293864,0.29139 v 0.32844 c 0,0.16051 -0.130881,0.29139 -0.293864,0.29139 z"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre Bold';fill:#8b70a2;fill-opacity:0.66;stroke-width:0.264583"
-           id="path6389"
-           inkscape:connector-curvature="0"
-           sodipodi:nodetypes="scsssssssscsssssssssss" />
-      </g>
-      <g
-         aria-label="l"
-         id="text6383"
-         style="font-size:3.88056px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">
-        <path
-           d="M 30.626278,127.40085 H 31.2006 c 0.03104,0 0.05433,-0.0233 0.05433,-0.0543 v -0.17851 c 0,-0.031 -0.02328,-0.0543 -0.05433,-0.0543 h -0.411339 v -2.51849 c 0,-0.0776 -0.06209,-0.1397 -0.1397,-0.1397 h -0.523876 c -0.03104,0 -0.05433,0.0233 -0.05433,0.0543 v 0.17851 c 0,0.031 0.02328,0.0543 0.05433,0.0543 h 0.360892 v 2.51849 c 0,0.0776 0.06209,0.1397 0.139701,0.1397 z"
-           style="fill:#cfcfcf;fill-opacity:0.66;stroke-width:0.264583"
-           id="path6392"
-           inkscape:connector-curvature="0" />
-      </g>
-      <g
-         aria-label="x"
-         id="text6387"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:2.76504px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre Bold';letter-spacing:0px;word-spacing:0px;fill:#8b70a2;fill-opacity:1;stroke-width:0.276505">
-        <path
-           d="m 31.310982,126.88138 h 0.193902 c 0.02336,0 0.04439,-0.0166 0.05841,-0.0387 l 0.280342,-0.48318 0.278005,0.48318 c 0.01402,0.0221 0.03505,0.0387 0.05841,0.0387 h 0.193902 c 0.0327,0 0.05607,-0.0276 0.05607,-0.0608 0,-0.0111 -0.0047,-0.0249 -0.01168,-0.0387 l -0.411167,-0.70992 0.409328,-0.67537 c 0.007,-0.0138 0.01169,-0.0277 0.01169,-0.0387 0,-0.0332 -0.02336,-0.0608 -0.05607,-0.0608 h -0.18923 c -0.02336,0 -0.04439,0.0166 -0.05841,0.0387 l -0.28084,0.44864 -0.283175,-0.44864 c -0.01402,-0.0221 -0.03505,-0.0387 -0.05841,-0.0387 h -0.18923 c -0.0327,0 -0.05607,0.0276 -0.05607,0.0608 0,0.0111 0.0047,0.0249 0.01169,0.0387 l 0.409329,0.67537 -0.411168,0.70992 c -0.007,0.0138 -0.01168,0.0276 -0.01168,0.0387 0,0.0332 0.02336,0.0608 0.05607,0.0608 z"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre Bold';fill:#8b70a2;fill-opacity:0.66;stroke-width:0.254158"
-           id="path6395"
-           inkscape:connector-curvature="0"
-           sodipodi:nodetypes="sscccssscccssscccssscccss" />
-      </g>
-    </g>
     <path
        inkscape:connector-curvature="0"
        id="path5452"
@@ -3639,5 +3603,61 @@
        id="path5532"
        d="m 49.282429,102.71684 h 8.678849"
        style="fill:none;fill-opacity:1;stroke:#554265;stroke-width:0.263;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.66" />
+    <g
+       aria-label="delexander"
+       id="text1550"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';letter-spacing:0px;word-spacing:0px;display:inline;fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+       transform="translate(2.12e-4,-2.1e-4)">
+      <path
+         d="m 23.668632,125.61996 c 0.169333,0 0.321733,-0.0706 0.428978,-0.20038 v 0.12418 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.129822 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -2.06305 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.141111 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 0.62936 c -0.110067,-0.1016 -0.259645,-0.16087 -0.414867,-0.16087 -0.330199,0 -0.592666,0.26529 -0.592666,0.58985 v 0.49106 c 0,0.32456 0.265289,0.58985 0.589844,0.58985 z m 0.02258,-0.20885 c -0.217311,0 -0.392289,-0.17498 -0.392289,-0.39229 v -0.46849 c 0,-0.21731 0.174978,-0.39228 0.392289,-0.39228 0.220133,0 0.395111,0.17497 0.395111,0.39228 v 0.46849 c 0,0.21731 -0.174978,0.39229 -0.395111,0.39229 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1562"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 25.372415,125.58327 h 0.409222 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.12983 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.409222 c -0.217311,0 -0.392288,-0.17497 -0.392288,-0.39229 v -0.12417 h 0.90311 c 0.05644,0 0.1016,-0.0452 0.1016,-0.1016 v -0.19191 c 0,-0.34149 -0.273755,-0.61525 -0.612422,-0.61525 -0.338666,0 -0.612422,0.27376 -0.612422,0.61525 v 0.40357 c 0,0.34149 0.273756,0.61525 0.612422,0.61525 z m -0.392288,-0.92851 v -0.10443 c 0,-0.21731 0.174977,-0.39228 0.392288,-0.39228 0.217311,0 0.392289,0.17497 0.392289,0.39228 v 0.10443 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1564"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 26.576886,125.58327 h 0.417688 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.12983 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.299155 v -1.83162 c 0,-0.0564 -0.04516,-0.1016 -0.1016,-0.1016 h -0.381 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 0.12983 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.262467 v 1.83162 c 0,0.0564 0.04516,0.1016 0.1016,0.1016 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1566"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 27.913516,125.58327 h 0.409222 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.12983 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.409222 c -0.217311,0 -0.392289,-0.17497 -0.392289,-0.39229 v -0.12417 h 0.90311 c 0.05645,0 0.1016,-0.0452 0.1016,-0.1016 v -0.19191 c 0,-0.34149 -0.273755,-0.61525 -0.612421,-0.61525 -0.338667,0 -0.612422,0.27376 -0.612422,0.61525 v 0.40357 c 0,0.34149 0.273755,0.61525 0.612422,0.61525 z m -0.392289,-0.92851 v -0.10443 c 0,-0.21731 0.174978,-0.39228 0.392289,-0.39228 0.217311,0 0.392288,0.17497 0.392288,0.39228 v 0.10443 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1568"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 28.82474,125.58327 h 0.135467 c 0.01693,0 0.03387,-0.008 0.04233,-0.0226 l 0.403577,-0.62089 0.403578,0.62089 c 0.0085,0.0141 0.0254,0.0226 0.04233,0.0226 h 0.135467 c 0.04233,0 0.06491,-0.0423 0.04233,-0.079 l -0.496711,-0.762 0.440267,-0.67734 c 0.02258,-0.0367 0,-0.079 -0.04233,-0.079 h -0.135466 c -0.01693,0 -0.03387,0.008 -0.04233,0.0226 l -0.347133,0.53622 -0.347133,-0.53622 c -0.0085,-0.0141 -0.0254,-0.0226 -0.04233,-0.0226 h -0.135467 c -0.04233,0 -0.06491,0.0423 -0.04233,0.079 l 0.440266,0.67734 -0.49671,0.762 c -0.02258,0.0367 0,0.079 0.04233,0.079 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1570"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 30.784331,125.61996 c 0.217311,0 0.4064,-0.1016 0.522111,-0.27094 v 0.19474 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.118533 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -1.08374 c 0,-0.30762 -0.234244,-0.51082 -0.578555,-0.51082 -0.254,0 -0.448733,0.11571 -0.553155,0.29069 -0.0056,0.0113 -0.0085,0.0198 -0.0085,0.0282 0,0.0198 0.0085,0.0339 0.0254,0.048 l 0.0762,0.0508 c 0.01129,0.008 0.0254,0.0141 0.03669,0.0141 0.02258,0 0.04233,-0.0141 0.05644,-0.0367 0.06773,-0.11289 0.191911,-0.18626 0.361245,-0.18626 0.206022,0 0.36971,0.11853 0.36971,0.30197 v 0.0226 c 0,0.11007 -0.04516,0.16369 -0.155222,0.18062 -0.121355,0.0169 -0.231422,0.0311 -0.366888,0.0508 -0.299156,0.0423 -0.476955,0.21167 -0.476955,0.46003 0,0.26811 0.206022,0.44591 0.493888,0.44591 z m 0.02258,-0.19756 c -0.180622,0 -0.3048,-0.1016 -0.3048,-0.25682 0,-0.14676 0.09596,-0.23707 0.282222,-0.26529 0.231422,-0.0339 0.341489,-0.0508 0.513644,-0.0706 v 0.11572 c 0,0.20602 -0.197555,0.47695 -0.491066,0.47695 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1572"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 32.024829,125.58044 h 0.141111 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.92286 c 0,-0.29634 0.174978,-0.46567 0.420511,-0.46567 0.206022,0 0.349956,0.12418 0.349956,0.36971 v 1.01882 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.141111 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -1.06115 c 0,-0.31891 -0.214489,-0.5334 -0.536222,-0.5334 -0.191911,0 -0.3556,0.079 -0.454378,0.23424 v -0.15522 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.141111 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 1.51553 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1574"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 34.196836,125.61996 c 0.169333,0 0.321733,-0.0706 0.428978,-0.20038 v 0.12418 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.129822 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -2.06305 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.141111 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 0.62936 c -0.110067,-0.1016 -0.259645,-0.16087 -0.414867,-0.16087 -0.330199,0 -0.592666,0.26529 -0.592666,0.58985 v 0.49106 c 0,0.32456 0.265289,0.58985 0.589844,0.58985 z m 0.02258,-0.20885 c -0.217311,0 -0.392289,-0.17498 -0.392289,-0.39229 v -0.46849 c 0,-0.21731 0.174978,-0.39228 0.392289,-0.39228 0.220133,0 0.395111,0.17497 0.395111,0.39228 v 0.46849 c 0,0.21731 -0.174978,0.39229 -0.395111,0.39229 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1576"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 35.900619,125.58327 h 0.409222 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.12983 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.409222 c -0.217311,0 -0.392289,-0.17497 -0.392289,-0.39229 v -0.12417 h 0.90311 c 0.05645,0 0.1016,-0.0452 0.1016,-0.1016 v -0.19191 c 0,-0.34149 -0.273755,-0.61525 -0.612421,-0.61525 -0.338667,0 -0.612422,0.27376 -0.612422,0.61525 v 0.40357 c 0,0.34149 0.273755,0.61525 0.612422,0.61525 z m -0.392289,-0.92851 v -0.10443 c 0,-0.21731 0.174978,-0.39228 0.392289,-0.39228 0.217311,0 0.392288,0.17497 0.392288,0.39228 v 0.10443 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1578"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 36.839801,125.58327 h 0.781755 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.12983 c 0,-0.0226 -0.01693,-0.0395 -0.03951,-0.0395 h -0.327378 v -0.89746 l 0.166511,-0.13265 c 0.172156,-0.13829 0.231422,-0.15804 0.318911,-0.15804 h 0.06209 c 0.02258,0 0.03951,-0.0169 0.03951,-0.0395 v -0.13829 c 0,-0.0226 -0.01411,-0.0395 -0.03951,-0.0395 h -0.08467 c -0.09031,0 -0.158044,0.0254 -0.299155,0.13264 l -0.163689,0.127 v -0.14111 c 0,-0.0564 -0.04516,-0.1016 -0.1016,-0.1016 h -0.352777 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 0.12136 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 h 0.234244 v 1.18815 h -0.234244 c -0.02258,0 -0.03951,0.0169 -0.03951,0.0395 v 0.12983 c 0,0.0226 0.01693,0.0395 0.03951,0.0395 z"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:0.66000003;stroke-width:0.264583"
+         id="path1581"
+         inkscape:connector-curvature="0" />
+    </g>
   </g>
 </svg>
