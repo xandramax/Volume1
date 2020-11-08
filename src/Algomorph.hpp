@@ -280,9 +280,10 @@ struct Algomorph4Widget : ModuleWidget {
                                         {mm2px(39.003), mm2px(73.015)},
                                         {mm2px(39.003), mm2px(84.037)} };
     DLXGlowingInk* ink;
+    int knobMode = 0;
 
     Algomorph4Widget(Algomorph4* module);
     void appendContextMenu(Menu* menu) override;
     void setKnobMode(int knobMode);
-    void toggleInkVisibility();
+    void step() override;
 };

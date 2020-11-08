@@ -4,6 +4,8 @@
 #include <bitset>
 
 Algomorph4::Algomorph4() {
+    glowingInk = pluginSettings.glowingInkDefault;
+    vuLights = pluginSettings.vuLightsDefault;
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
@@ -90,10 +92,10 @@ void Algomorph4::onReset() {
         auxInput[i]->resetVoltages();
         auxInput[i]->allowMultipleModes = false;
     }
-    auxInput[2]->setMode(AuxInputModes::RESET);
-    auxInput[1]->setMode(AuxInputModes::CLOCK);
-    auxInput[3]->setMode(AuxInputModes::MORPH);
-    auxInput[0]->setMode(AuxInputModes::MORPH);
+    auxInput[2]->setMode(pluginSettings.auxInputDefaults[2]);
+    auxInput[1]->setMode(pluginSettings.auxInputDefaults[1]);
+    auxInput[3]->setMode(pluginSettings.auxInputDefaults[3]);
+    auxInput[0]->setMode(pluginSettings.auxInputDefaults[0]);
     rescaleVoltages(16);
 
     configMode = false;
@@ -1880,6 +1882,7 @@ void Algomorph4::dataFromJson(json_t* rootJ) {
     ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
     resetOnRun = json_boolean_value(json_object_get(rootJ, "Reset on Run"));
     clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled")); 
+    glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
     vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
 
     //Set allowMultipleModes before loading modes
@@ -3103,34 +3106,39 @@ Algomorph4Widget::Algomorph4Widget(Algomorph4* module) {
 void Algomorph4Widget::appendContextMenu(Menu* menu) {
     Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
-
     struct GlowingInkItem : MenuItem {
         Algomorph4 *module;
-        Algomorph4Widget* moduleWidget;
         void onAction(const event::Action &e) override {
             // History
             ToggleGlowingInkAction<Algomorph4>* h = new ToggleGlowingInkAction<Algomorph4>;
             h->moduleId = module->id;
 
-            moduleWidget->toggleInkVisibility();
+            module->glowingInk ^= true;
 
             APP->history->push(h);
+        }
+    };
+
+    struct SaveVisualSettingsItem : MenuItem {
+        Algomorph4 *module;
+        void onAction(const event::Action& e) override {
+            pluginSettings.glowingInkDefault = module->glowingInk;
+            pluginSettings.vuLightsDefault = module->vuLights;
         }
     };
     
     struct KnobModeItem : MenuItem {
         Algomorph4* module;
-        Algomorph4Widget* moduleWidget;
         int mode;
 
         void onAction(const event::Action &e) override {
             // History
-            KnobModeAction<Algomorph4, Algomorph4Widget>* h = new KnobModeAction<Algomorph4, Algomorph4Widget>;
+            KnobModeAction<Algomorph4>* h = new KnobModeAction<Algomorph4>;
             h->moduleId = module->id;
             h->oldKnobMode = module->knobMode;
             h->newKnobMode = mode;
 
-            moduleWidget->setKnobMode(mode);
+            module->knobMode = mode;
 
             APP->history->push(h);
         }
@@ -3142,10 +3150,10 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
         
         Menu* createChildMenu() override {
             Menu* menu = new Menu;
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
+            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
+            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
             for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
-                menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::moduleWidget, moduleWidget, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+                menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
             return menu;
         }
     };
@@ -3164,15 +3172,15 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "λ…", &MenuItem::rightText, (module->auxInput[3]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[3]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 3));
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "φ…", &MenuItem::rightText, (module->auxInput[0]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[0]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 0));
 
-    menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[2]->allowMultipleModes ? "δ" : "") + std::string(module->auxInput[1]->allowMultipleModes ? "ζ" : "") + std::string(module->auxInput[3]->allowMultipleModes ? "λ" : "") + std::string(module->auxInput[0]->allowMultipleModes ? "φ" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
 
-        // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
-        // debugItem->module = module;
-        // menu->addChild(debugItem);
+    // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+    // debugItem->module = module;
+    // menu->addChild(debugItem);
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
     
-    menu->addChild(construct<ClickFilterMenuItem<Algomorph4>>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, RIGHT_ARROW, &ClickFilterMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<ClickFilterMenuItem<Algomorph4>>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem<Algomorph4>::module, module));
 
     RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
     ringMorphItem->module = module;
@@ -3183,14 +3191,9 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     menu->addChild(runSilencerItem);
 
     menu->addChild(new MenuSeparator());
-    ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
-    toggleModeBItem->module = module;
-    menu->addChild(toggleModeBItem);
-
-    menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
     
-    menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
     
     CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Reverse clock sequence", CHECKMARK(!module->ccwSceneSelection));
     ccwScenesItem->module = module;
@@ -3204,6 +3207,10 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     exitConfigItem->module = module;
     menu->addChild(exitConfigItem);
 
+    ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
+    toggleModeBItem->module = module;
+    menu->addChild(toggleModeBItem);
+
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
@@ -3214,9 +3221,13 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     
     GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
     glowingInkItem->module = module;
-    glowingInkItem->moduleWidget = this;
     menu->addChild(glowingInkItem);
 
+    menu->addChild(new MenuSeparator());
+    
+    SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    saveVisualSettingsItem->module = module;
+    menu->addChild(saveVisualSettingsItem);
 }
 
 void Algomorph4Widget::setKnobMode(int knobMode) {
@@ -3231,21 +3242,17 @@ void Algomorph4Widget::setKnobMode(int knobMode) {
     DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + knobMode));
     newKnob->show();
     newKnob->sibling->show();
-    m->knobMode = knobMode;
+    this->knobMode = knobMode;
 }
 
-void Algomorph4Widget::toggleInkVisibility() {
-    if (!this->module)
-        return;
-
-    Algomorph4* m = dynamic_cast<Algomorph4*>(module);
-
-    if (ink->visible)
-        ink->hide();
-    else
-        ink->show();
-    m->glowingInk ^= true;
+void Algomorph4Widget::step() {
+    if (module) {
+        Algomorph4* m = dynamic_cast<Algomorph4*>(module);
+        ink->visible = m->glowingInk == 1;
+        if (m->knobMode != this->knobMode)
+            setKnobMode(m->knobMode);
+    }
+    ModuleWidget::step();
 }
-
 
 Model* modelAlgomorph4 = createModel<Algomorph4, Algomorph4Widget>("Algomorph4");
