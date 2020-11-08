@@ -51,8 +51,6 @@ struct AuxInput {
 
     void setMode(int newMode) {
         activeModes++;
-        if (module->debug)
-            int x = 0;
 
         if (activeModes > 1 && !allowMultipleModes)
             unsetMode(lastSetMode);
@@ -65,8 +63,6 @@ struct AuxInput {
     void unsetMode(int oldMode) {
         if (mode[oldMode]) {
             activeModes--;
-            if (module->debug)
-                int x = 0;
             
             mode[oldMode] = false;
 
