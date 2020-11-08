@@ -981,6 +981,18 @@ TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* mod
 	return o;
 }
 
+struct RingIndicatorRotor {
+	float angle = 0.f;
+
+	void step(float deltaTime) {
+		if (angle >= 2.f * M_PI)
+			angle = 0.f;
+		else
+			angle += 4.f * deltaTime;
+	}
+};
+
+template < typename MODULE >
 struct DLXRingIndicator : DLXMultiLight {
 	float angle = 0.f;
 	float transform[6];
@@ -993,10 +1005,9 @@ struct DLXRingIndicator : DLXMultiLight {
 	}
 
 	void draw(const DrawArgs& args) override {
-		if (angle >= 2.f * M_PI)
-			angle = 0.f;
-		else
-			angle += 0.1f;
+		if (!module)
+			return;
+		angle = dynamic_cast<MODULE*>(module)->rotor.angle;
 		math::Vec center = Vec(radius, radius);
 		nvgTransformIdentity(transform);
 		float t[6];
@@ -1017,6 +1028,23 @@ struct DLXRingIndicator : DLXMultiLight {
 		Widget::draw(args);
 	}
 };
+
+template < typename MODULE >
+DLXRingIndicator<MODULE>* createRingIndicator(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
+    DLXRingIndicator<MODULE>* o = new DLXRingIndicator<MODULE>(r, s);
+    o->box.pos = pos;
+    o->module = module;
+    o->firstLightId = firstLightId;
+    return o;
+}
+
+template < typename MODULE >
+DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
+    DLXRingIndicator<MODULE>* o = createRingIndicator<MODULE>(pos, r, module, firstLightId, s);
+    o->box.pos.x -= r;
+    o->box.pos.y -= r;
+    return o;
+}
 
 struct SvgLight : ModuleLightWidget {
 	widget::SvgWidget* sw;
