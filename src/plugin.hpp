@@ -1,9 +1,17 @@
 #pragma once
 #include <rack.hpp>
+#include "pluginsettings.hpp"
 #include <bitset>
+
 using namespace rack;
+
 extern Plugin* pluginInstance;
+
+extern FMDelexanderSettings pluginSettings;
+
 extern Model* modelAlgomorph4;
+
+///
 
 struct bitsetCompare {
     bool operator() (const std::bitset<16> &b1, const std::bitset<16> &b2) const {
@@ -158,7 +166,7 @@ struct AlgorithmHorizontalChangeAction : history::ModuleAction {
 	}
 };
 
-template < typename MODULE, typename MODULEWIDGET >
+template < typename MODULE >
 struct KnobModeAction : history::ModuleAction {
     int oldKnobMode, newKnobMode;
 
@@ -171,7 +179,7 @@ struct KnobModeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		dynamic_cast<MODULEWIDGET*>(mw)->setKnobMode(oldKnobMode);
+		m->knobMode = oldKnobMode;
 	}
 
 	void redo() override {
@@ -179,7 +187,7 @@ struct KnobModeAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		dynamic_cast<MODULEWIDGET*>(mw)->setKnobMode(newKnobMode);
+		m->knobMode = newKnobMode;
 	}
 };
 
