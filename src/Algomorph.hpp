@@ -190,6 +190,7 @@ struct Algomorph4 : Module {
     float sceneBrightnesses[3][12][3] = {{{}}};
     float blinkTimer = BLINK_INTERVAL;
     bool blinkStatus = true;
+    RingIndicatorRotor rotor;
 
     bool configMode = true;
     int configOp = -1;                                          // Set to 0-3 when configuring mod destinations for operators 1-4

@@ -942,6 +942,7 @@ void Algomorph4::process(const ProcessArgs& args) {
 
     //Set lights
     if (lightDivider.process()) {
+        rotor.step(args.sampleTime * lightDivider.getDivision());
         if (configMode) {   //Display state without morph, highlight configScene
             //Set purple component to off
             lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
@@ -2939,20 +2940,56 @@ struct ClickFilterMenuItem : MenuItem {
 	}
 };
 
-DLXRingIndicator* createRingIndicator(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-    DLXRingIndicator* o = new DLXRingIndicator(r, s);
-    o->box.pos = pos;
-    o->module = module;
-    o->firstLightId = firstLightId;
-    return o;
-}
+struct GlowingInkItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action &e) override {
+        // History
+        ToggleGlowingInkAction<Algomorph4>* h = new ToggleGlowingInkAction<Algomorph4>;
+        h->moduleId = module->id;
 
-DLXRingIndicator* createRingIndicatorCentered(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-    DLXRingIndicator* o = createRingIndicator(pos, r, module, firstLightId, s);
-    o->box.pos.x -= r;
-    o->box.pos.y -= r;
-    return o;
-}
+        module->glowingInk ^= true;
+
+        APP->history->push(h);
+    }
+};
+
+struct SaveVisualSettingsItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action& e) override {
+        pluginSettings.glowingInkDefault = module->glowingInk;
+        pluginSettings.vuLightsDefault = module->vuLights;
+    }
+};
+
+struct KnobModeItem : MenuItem {
+    Algomorph4* module;
+    int mode;
+
+    void onAction(const event::Action &e) override {
+        // History
+        KnobModeAction<Algomorph4>* h = new KnobModeAction<Algomorph4>;
+        h->moduleId = module->id;
+        h->oldKnobMode = module->knobMode;
+        h->newKnobMode = mode;
+
+        module->knobMode = mode;
+
+        APP->history->push(h);
+    }
+};
+
+struct KnobModeMenuItem : MenuItem {
+    Algomorph4* module;
+    
+    Menu* createChildMenu() override {
+        Menu* menu = new Menu;
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
+        for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
+            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+        return menu;
+    }
+};
 
 Algomorph4Widget::Algomorph4Widget(Algomorph4* module) {
     setModule(module);
@@ -2982,17 +3019,17 @@ Algomorph4Widget::Algomorph4Widget(Algomorph4* module) {
         addChild(createSvgSwitchLightCentered<DLXScreenButtonLight>(mm2px(Vec(30.760, 46.408)), module, Algomorph4::SCREEN_BUTTON_LIGHT, Algomorph4::SCREEN_BUTTON));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_LIGHTS + 0, .75));
-        addChild(createRingIndicatorCentered(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_INDICATORS + 0, .75));
+        addChild(createRingIndicatorCentered<Algomorph4>(SceneButtonCenters[0], 8.862, module, Algomorph4::SCENE_INDICATORS + 0, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
         addChild(createSvgSwitchLightCentered<DLX1Light>(SceneButtonCenters[0], module, Algomorph4::ONE_LIGHT, Algomorph4::SCENE_BUTTONS + 0));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
-        addChild(createRingIndicatorCentered(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_INDICATORS + 3, .75));
+        addChild(createRingIndicatorCentered<Algomorph4>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_INDICATORS + 3, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
         addChild(createSvgSwitchLightCentered<DLX2Light>(SceneButtonCenters[1], module, Algomorph4::TWO_LIGHT, Algomorph4::SCENE_BUTTONS + 1));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
-        addChild(createRingIndicatorCentered(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_INDICATORS + 6, .75));
+        addChild(createRingIndicatorCentered<Algomorph4>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_INDICATORS + 6, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
         addChild(createSvgSwitchLightCentered<DLX3Light>(SceneButtonCenters[2], module, Algomorph4::THREE_LIGHT, Algomorph4::SCENE_BUTTONS + 2));
 
@@ -3079,10 +3116,10 @@ Algomorph4Widget::Algomorph4Widget(Algomorph4* module) {
         addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 6));
         addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.862, module, Algomorph4::OPERATOR_LIGHTS + 9));
     
-        addChild(createRingIndicatorCentered(OpButtonCenters[0], 8.862, module, Algomorph4::CARRIER_INDICATORS + 0, 0.8f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[1], 8.862, module, Algomorph4::CARRIER_INDICATORS + 3, 0.8f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[2], 8.862, module, Algomorph4::CARRIER_INDICATORS + 6, 0.8f));
-        addChild(createRingIndicatorCentered(OpButtonCenters[3], 8.862, module, Algomorph4::CARRIER_INDICATORS + 9, 0.8f));
+        addChild(createRingIndicatorCentered<Algomorph4>(OpButtonCenters[0], 8.862, module, Algomorph4::CARRIER_INDICATORS + 0, 0.8f));
+        addChild(createRingIndicatorCentered<Algomorph4>(OpButtonCenters[1], 8.862, module, Algomorph4::CARRIER_INDICATORS + 3, 0.8f));
+        addChild(createRingIndicatorCentered<Algomorph4>(OpButtonCenters[2], 8.862, module, Algomorph4::CARRIER_INDICATORS + 6, 0.8f));
+        addChild(createRingIndicatorCentered<Algomorph4>(OpButtonCenters[3], 8.862, module, Algomorph4::CARRIER_INDICATORS + 9, 0.8f));
 
         addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 0));
         addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.862, module, Algomorph4::MODULATOR_LIGHTS + 3));
@@ -3106,63 +3143,11 @@ Algomorph4Widget::Algomorph4Widget(Algomorph4* module) {
 void Algomorph4Widget::appendContextMenu(Menu* menu) {
     Algomorph4* module = dynamic_cast<Algomorph4*>(this->module);
 
-    struct GlowingInkItem : MenuItem {
-        Algomorph4 *module;
-        void onAction(const event::Action &e) override {
-            // History
-            ToggleGlowingInkAction<Algomorph4>* h = new ToggleGlowingInkAction<Algomorph4>;
-            h->moduleId = module->id;
-
-            module->glowingInk ^= true;
-
-            APP->history->push(h);
-        }
-    };
-
-    struct SaveVisualSettingsItem : MenuItem {
-        Algomorph4 *module;
-        void onAction(const event::Action& e) override {
-            pluginSettings.glowingInkDefault = module->glowingInk;
-            pluginSettings.vuLightsDefault = module->vuLights;
-        }
-    };
-    
-    struct KnobModeItem : MenuItem {
-        Algomorph4* module;
-        int mode;
-
-        void onAction(const event::Action &e) override {
-            // History
-            KnobModeAction<Algomorph4>* h = new KnobModeAction<Algomorph4>;
-            h->moduleId = module->id;
-            h->oldKnobMode = module->knobMode;
-            h->newKnobMode = mode;
-
-            module->knobMode = mode;
-
-            APP->history->push(h);
-        }
-    };
-
-    struct KnobModeMenuItem : MenuItem {
-        Algomorph4* module;
-        Algomorph4Widget* moduleWidget;
-        
-        Menu* createChildMenu() override {
-            Menu* menu = new Menu;
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
-            for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
-                menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
-            return menu;
-        }
-    };
-
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Knob"));
 
-    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module, &KnobModeMenuItem::moduleWidget, this));
+    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Inputs"));
