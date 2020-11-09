@@ -25,16 +25,6 @@ static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 
 
-/// Constants
-
-static constexpr float BLINK_INTERVAL = 0.42857142857f;
-static constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
-static constexpr float FIVE_D_TWO = 5.f / 2.f;
-static constexpr float FIVE_D_THREE = 5.f / 3.f;
-static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
-static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
-static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
-
 /// Auxiliary input and knob
 
 struct AuxSourceModes {
@@ -99,8 +89,28 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Sum Output Gain",
 																			"Mod Output Gain",
 																			"Op Input Gain",
-																			"Unipolar Morph Plus",
+																			"Unipolar Triple Morph",
 																			"Endless Morph"};
+
+/// Constants
+
+static constexpr float BLINK_INTERVAL = 0.42857142857f;
+static constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
+static constexpr float FIVE_D_TWO = 5.f / 2.f;
+static constexpr float FIVE_D_THREE = 5.f / 3.f;
+static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
+static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
+static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
+static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
+																	0.f,
+																	1.f,
+																	1.f,
+																	1.f,
+																	0.f,
+																	0.f,
+																	0.f,
+																	0.f,
+																	1.f	};
 
 /// Undo/Redo History
 
