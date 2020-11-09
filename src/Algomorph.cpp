@@ -1871,61 +1871,137 @@ void Algomorph4::dataFromJson(json_t* rootJ) {
     // knobMode = json_integer_value(json_object_get(rootJ, "Aux Knob Mode"));
     // mw->setKnobMode(knobMode);
 
-    configMode = json_integer_value(json_object_get(rootJ, "Config Enabled"));
-    configOp = json_integer_value(json_object_get(rootJ, "Config Mode"));
-    configScene = json_integer_value(json_object_get(rootJ, "Config Scene"));
-    baseScene = json_integer_value(json_object_get(rootJ, "Current Scene"));
-    modeB = json_integer_value(json_object_get(rootJ, "Horizontal Allowed"));
-    resetScene = json_integer_value(json_object_get(rootJ, "Reset Scene"));
-    ringMorph = json_boolean_value(json_object_get(rootJ, "Ring Morph"));
-    randomRingMorph = json_boolean_value(json_object_get(rootJ, "Randomize Ring Morph"));
-    exitConfigOnConnect = json_boolean_value(json_object_get(rootJ, "Auto Exit"));
-    ccwSceneSelection = json_boolean_value(json_object_get(rootJ, "CCW Scene Selection"));
-    resetOnRun = json_boolean_value(json_object_get(rootJ, "Reset on Run"));
-    clickFilterEnabled = json_boolean_value(json_object_get(rootJ, "Click Filter Enabled")); 
-    glowingInk = json_boolean_value(json_object_get(rootJ, "Glowing Ink"));
-    vuLights = json_boolean_value(json_object_get(rootJ, "VU Lights"));
+    auto configMode = json_object_get(rootJ, "Config Enabled");
+    if (configMode)
+        this->configMode = json_integer_value(configMode);
+    
+    auto configOp = json_object_get(rootJ, "Config Mode");
+    if (configOp)
+        this->configOp = json_integer_value(configOp);
+    
+    auto configScene = json_object_get(rootJ, "Config Scene");
+    if (configScene)
+        this->configScene = json_integer_value(configScene);
+    
+    auto baseScene = json_object_get(rootJ, "Current Scene");
+    if (baseScene)
+        this->baseScene = json_integer_value(baseScene);
+    
+    auto modeB = json_object_get(rootJ, "Horizontal Allowed");
+    if (modeB)
+        this->modeB = json_integer_value(modeB);
+    
+    auto resetScene = json_object_get(rootJ, "Reset Scene");
+    if (resetScene)
+        this->resetScene = json_integer_value(resetScene);
+    
+    auto ringMorph = json_object_get(rootJ, "Ring Morph");
+    if (ringMorph)
+        this->ringMorph = json_boolean_value(ringMorph);
+
+    auto randomRingMorph = json_object_get(rootJ, "Randomize Ring Morph");
+    if (randomRingMorph)
+        this->randomRingMorph = json_boolean_value(randomRingMorph);
+
+    auto exitConfigOnConnect = json_object_get(rootJ, "Auto Exit");
+    if (exitConfigOnConnect)
+        this->exitConfigOnConnect = json_boolean_value(exitConfigOnConnect);
+
+    auto ccwSceneSelection = json_object_get(rootJ, "CCW Scene Selection");
+    if (ccwSceneSelection)
+        this->ccwSceneSelection = json_boolean_value(ccwSceneSelection);
+
+    auto resetOnRun = json_object_get(rootJ, "Reset on Run");
+    if (resetOnRun)
+        this->resetOnRun = json_boolean_value(resetOnRun);
+
+    auto clickFilterEnabled = json_object_get(rootJ, "Click Filter Enabled");
+    if (clickFilterEnabled)
+        this->clickFilterEnabled = json_boolean_value(clickFilterEnabled);
+
+    auto glowingInk = json_object_get(rootJ, "Glowing Ink");
+    if (glowingInk)
+        this->glowingInk = json_boolean_value(glowingInk);
+
+    auto vuLights = json_object_get(rootJ, "VU Lights");
+    if (vuLights)
+        this->vuLights = json_boolean_value(vuLights);
+
 
     //Set allowMultipleModes before loading modes
     json_t* allowMultipleModesJ = json_object_get(rootJ, "Allow Multiple Modes");
-    json_t* allowanceJ; size_t allowIndex;
-    json_array_foreach(allowMultipleModesJ, allowIndex, allowanceJ) {
-        auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, "Allowance"));
+    if (allowMultipleModesJ) {
+        json_t* allowanceJ; size_t allowIndex;
+        json_array_foreach(allowMultipleModesJ, allowIndex, allowanceJ) {
+            auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, "Allowance"));
+        }
     }
 
     json_t* opInputModesJ = json_object_get(rootJ, "Aux Input Modes");
-    json_t* inputModeJ; size_t inputModeIndex;
-    int i = 0; int j = 0;
-    json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
-        if (json_boolean_value(json_object_get(inputModeJ, "Mode")))
-            auxInput[i]->setMode(j);
-        j++;
-        if (j >= AuxInputModes::NUM_MODES) {
-            j = 0;
-            i++;
-        } 
+    if (opInputModesJ) {
+        json_t* inputModeJ; size_t inputModeIndex;
+        int i = 0; int j = 0;
+        json_array_foreach(opInputModesJ, inputModeIndex, inputModeJ) {
+            if (json_boolean_value(json_object_get(inputModeJ, "Mode")))
+                auxInput[i]->setMode(j);
+            j++;
+            if (j >= AuxInputModes::NUM_MODES) {
+                j = 0;
+                i++;
+            } 
+        }
     }
 
     json_t* auxConnectionsJ = json_object_get(rootJ, "Aux Input Connections");
-    json_t* auxConnectedJ; size_t auxConnectionIndexJ;
-    json_array_foreach(auxConnectionsJ, auxConnectionIndexJ, auxConnectedJ) {
-        auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, "Aux Connection"));
-    }
-    json_t* lastSetModesJ = json_object_get(rootJ, "Last Set Aux Input Modes");
-    json_t* lastModeJ; size_t lastModeIndex;
-    json_array_foreach(lastSetModesJ, lastModeIndex, lastModeJ) {
-        auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, "Last Set Mode"));
+    if (auxConnectionsJ) {
+        json_t* auxConnectedJ; size_t auxConnectionIndexJ;
+        json_array_foreach(auxConnectionsJ, auxConnectionIndexJ, auxConnectedJ) {
+            auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, "Aux Connection"));
+        }
+        json_t* lastSetModesJ = json_object_get(rootJ, "Last Set Aux Input Modes");
+        json_t* lastModeJ; size_t lastModeIndex;
+        json_array_foreach(lastSetModesJ, lastModeIndex, lastModeJ) {
+            auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, "Last Set Mode"));
+        }
     }
 
     json_t* opDestinationsJ = json_object_get(rootJ, "Operator Destinations");
-    json_t* destinationJ; size_t destinationIndex;
-    i = 0, j = 0;
-    int k = 0;
-    json_array_foreach(opDestinationsJ, destinationIndex, destinationJ) {
-        opDestinations[i][j][k] = json_boolean_value(json_object_get(destinationJ, "Destination"));
-        k++;
-        if (k > 2) {
-            k = 0;
+    if (opDestinationsJ) {
+        json_t* destinationJ; size_t destinationIndex;
+        int i = 0, j = 0;
+        int k = 0;
+        json_array_foreach(opDestinationsJ, destinationIndex, destinationJ) {
+            opDestinations[i][j][k] = json_boolean_value(json_object_get(destinationJ, "Destination"));
+            k++;
+            if (k > 2) {
+                k = 0;
+                j++;
+                if (j > 3) {
+                    j = 0;
+                    i++;
+                }
+            }
+        }
+    }
+
+    json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
+    if (algoNamesJ) {
+        json_t* nameJ; size_t nameIndex;
+        json_array_foreach(algoNamesJ, nameIndex, nameJ) {
+            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
+        }
+    }
+
+    for (int scene = 0; scene < 3; scene++)
+        updateDisplayAlgo(scene);
+
+    json_t* forcedCarriersJ = json_object_get(rootJ, "Forced Carriers");
+    if (forcedCarriersJ) {
+        json_t* forcedCarrierJ;
+        size_t forcedCarrierIndex;
+        int i = 0, j = 0;
+        json_array_foreach(forcedCarriersJ, forcedCarrierIndex, forcedCarrierJ) {
+            forcedCarrier[i][j] = json_boolean_value(json_object_get(forcedCarrierJ, "Forced Carrier"));
             j++;
             if (j > 3) {
                 j = 0;
@@ -1934,65 +2010,49 @@ void Algomorph4::dataFromJson(json_t* rootJ) {
         }
     }
 
-    json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
-    json_t* nameJ; size_t nameIndex;
-    json_array_foreach(algoNamesJ, nameIndex, nameJ) {
-        algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
-    }
-
-    for (int scene = 0; scene < 3; scene++)
-        updateDisplayAlgo(scene);
-
-    json_t* forcedCarriersJ = json_object_get(rootJ, "Forced Carriers");
-    json_t* forcedCarrierJ;
-    size_t forcedCarrierIndex;
-    i = j = 0;
-    json_array_foreach(forcedCarriersJ, forcedCarrierIndex, forcedCarrierJ) {
-        forcedCarrier[i][j] = json_boolean_value(json_object_get(forcedCarrierJ, "Forced Carrier"));
-        j++;
-        if (j > 3) {
-            j = 0;
-            i++;
-        }
-    }
-
     json_t* horizontalConnectionsJ = json_object_get(rootJ, "Horizontal Connections");
-    json_t* connectionJ;
-    size_t horizontalConnectionIndex;
-    i = j = 0;
-    json_array_foreach(horizontalConnectionsJ, horizontalConnectionIndex, connectionJ) {
-        horizontalDestinations[i][j] = !json_boolean_value(json_object_get(connectionJ, "Horizontal Connection"));
-        j++;
-        if (j > 3) {
-            j = 0;
-            i++;
+    if (horizontalConnectionsJ) {
+        json_t* connectionJ;
+        size_t horizontalConnectionIndex;
+        int i = 0, j = 0;
+        json_array_foreach(horizontalConnectionsJ, horizontalConnectionIndex, connectionJ) {
+            horizontalDestinations[i][j] = !json_boolean_value(json_object_get(connectionJ, "Horizontal Connection"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
         }
     }
 
     json_t* opEnabledJ = json_object_get(rootJ, "Operators Enabled");
-    json_t* enabledJ;
-    size_t opEnabledIndex;
-    i = j = 0;
-    json_array_foreach(opEnabledJ, opEnabledIndex, enabledJ) {
-        opDisabled[i][j] = !json_boolean_value(json_object_get(enabledJ, "Enabled Op"));
-        j++;
-        if (j > 3) {
-            j = 0;
-            i++;
+    if (opEnabledJ) {
+        json_t* enabledJ;
+        size_t opEnabledIndex;
+        int i = 0, j = 0;
+        json_array_foreach(opEnabledJ, opEnabledIndex, enabledJ) {
+            opDisabled[i][j] = !json_boolean_value(json_object_get(enabledJ, "Enabled Op"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
         }
     }
 
     //Legacy opDisabled
     json_t* opDisabledJ = json_object_get(rootJ, "Operators Disabled");
-    json_t* disabledOpJ;
-    size_t disabledOpIndex;
-    i = j = 0;
-    json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
-        horizontalDestinations[i][j] = json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
-        j++;
-        if (j > 3) {
-            j = 0;
-            i++;
+    if (opDisabledJ) {
+        json_t* disabledOpJ;
+        size_t disabledOpIndex;
+        int i = 0, j = 0;
+        json_array_foreach(opDisabledJ, disabledOpIndex, disabledOpJ) {
+            horizontalDestinations[i][j] = json_boolean_value(json_object_get(disabledOpJ, "Disabled Op"));
+            j++;
+            if (j > 3) {
+                j = 0;
+                i++;
+            }
         }
     }
 
