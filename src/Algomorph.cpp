@@ -678,8 +678,10 @@ void Algomorph4::process(const ProcessArgs& args) {
 
                     APP->history->push(h);
 
-                    if (exitConfigOnConnect)
+                    if (exitConfigOnConnect) {
                         configMode = false;
+                        configOp = -1;
+                    }
                     
                     graphDirty = true;
                 }
@@ -697,8 +699,10 @@ void Algomorph4::process(const ProcessArgs& args) {
                             
                             APP->history->push(h);
 
-                            if (exitConfigOnConnect)
+                            if (exitConfigOnConnect) {
                                 configMode = false;
+                                configOp = -1;
+                            }
 
                             graphDirty = true;
                             break;
@@ -3038,15 +3042,61 @@ struct KnobModeItem : MenuItem {
     }
 };
 
+template < typename MODULE >
+struct ResetKnobsAction : history::ModuleAction {
+	float knobValue[AuxKnobModes::NUM_MODES] = {0.f};
+
+	ResetKnobsAction() {
+		name = "Delexander Algomorph reset knobs";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int i = 0; i < AuxKnobModes::NUM_MODES; i++)
+			m->params[Algomorph4::AUX_KNOBS + i].setValue(knobValue[i]);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int i = 0; i < AuxKnobModes::NUM_MODES; i++)
+			m->params[Algomorph4::AUX_KNOBS + i].setValue(DEF_KNOB_VALUES[i]);
+	}
+};
+
+struct ResetKnobsItem : MenuItem {
+    Algomorph4* module;
+
+    void onAction(const event::Action &e) override {
+        // History
+        ResetKnobsAction<Algomorph4>* h = new ResetKnobsAction<Algomorph4>;
+        h->moduleId = module->id;
+
+        for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
+            h->knobValue[i] = module->params[Algomorph4::AUX_KNOBS + i].getValue();
+            module->params[Algomorph4::AUX_KNOBS + i].setValue(DEF_KNOB_VALUES[i]);
+        }
+
+        APP->history->push(h);
+    }
+};
+
 struct KnobModeMenuItem : MenuItem {
     Algomorph4* module;
     
     Menu* createChildMenu() override {
         Menu* menu = new Menu;
-        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 1), &KnobModeItem::mode, 1));
-        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == 0), &KnobModeItem::mode, 0));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == 1)) + " " + std::to_string(module->params[Algomorph4::AUX_KNOBS + 1].getValue()), &KnobModeItem::mode, 1));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == 0)) + " " + std::to_string(module->params[Algomorph4::AUX_KNOBS + 0].getValue()), &KnobModeItem::mode, 0));
         for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, std::to_string(module->params[Algomorph4::AUX_KNOBS + i].getValue()) + " " + CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+        menu->addChild(new MenuSeparator());
+        menu->addChild(construct<ResetKnobsItem>(&MenuItem::text, "Reset all knobs", &ResetKnobsItem::module, module));
         return menu;
     }
 };
