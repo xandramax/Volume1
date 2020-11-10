@@ -145,7 +145,6 @@ struct Algomorph4 : Module {
     float scaledAuxVoltage[AuxInputModes::NUM_MODES][16] = {{0.f}};    // store processed (ready-to-use) values from auxInput[]->voltage[][], so they can be remembered if necessary
     bool auxModeFlags[AuxInputModes::NUM_MODES] = {false};                // a mode's flag is set to true when any aux input has that mode active
     int knobMode = AuxKnobModes::MORPH_ATTEN;
-    int sumMode = SumOutModes::CARRIER_SUM;
 
     float morph[16] = {0.f};                                    // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
