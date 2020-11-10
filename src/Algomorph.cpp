@@ -3334,7 +3334,7 @@ void Algomorph4Widget::setKnobMode(int mode) {
 
     Algomorph4* m = dynamic_cast<Algomorph4*>(module);
 
-    DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + m->knobMode));
+    DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + activeKnob));
     oldKnob->hide();
     oldKnob->sibling->hide();
     DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + mode));
