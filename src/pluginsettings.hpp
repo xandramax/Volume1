@@ -3,11 +3,11 @@
 struct FMDelexanderSettings {
 	bool glowingInkDefault = false;
 	bool vuLightsDefault = true;
-	int auxInputDefaults[4] = {	0,
-								7,
-								9,
-								0};
+	bool allowMultipleModes[4] = {false};
+	// AuxInputModes::NUM_MODES = 18
+	bool auxInputDefaults[4][18] = {{false}};
 
+	FMDelexanderSettings();
 	void saveToJson();
 	void readFromJson();
 };

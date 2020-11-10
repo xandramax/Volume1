@@ -90,12 +90,15 @@ void Algomorph4::onReset() {
     for (int i = 0; i < 4; i++) {
         auxInput[i]->clearModes();
         auxInput[i]->resetVoltages();
-        auxInput[i]->allowMultipleModes = false;
+        auxInput[i]->allowMultipleModes = pluginSettings.allowMultipleModes[i];
     }
-    auxInput[2]->setMode(pluginSettings.auxInputDefaults[2]);
-    auxInput[1]->setMode(pluginSettings.auxInputDefaults[1]);
-    auxInput[3]->setMode(pluginSettings.auxInputDefaults[3]);
-    auxInput[0]->setMode(pluginSettings.auxInputDefaults[0]);
+
+    for (int auxIndex = 0; auxIndex < 4; auxIndex++) {
+        for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
+            if (pluginSettings.auxInputDefaults[auxIndex][mode])
+                auxInput[auxIndex]->setMode(mode);
+        }
+    }
     rescaleVoltages(16);
 
     configMode = false;
@@ -113,6 +116,8 @@ void Algomorph4::onReset() {
     resetOnRun = false;
     resetScene = 1;
     modeB = false;
+    glowingInk = pluginSettings.glowingInkDefault;
+    vuLights = pluginSettings.vuLightsDefault;
 
     blinkStatus = true;
     blinkTimer = BLINK_INTERVAL;
@@ -2791,6 +2796,18 @@ struct AllowMultipleModesMenuItem : MenuItem {
     }
 };
 
+struct SaveAuxInputSettingsItem : MenuItem {
+    Algomorph4 *module;
+    void onAction(const event::Action& e) override {
+        for (int auxIndex = 0; auxIndex < 4; auxIndex++){
+            pluginSettings.allowMultipleModes[auxIndex] = module->auxInput[auxIndex]->allowMultipleModes;
+            for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++)
+                pluginSettings.auxInputDefaults[auxIndex][mode] = module->auxInput[auxIndex]->mode[mode];
+        }
+        pluginSettings.saveToJson();
+    }
+};
+
 struct ResetSceneItem : MenuItem {
     Algomorph4 *module;
     int scene;
@@ -2912,6 +2929,7 @@ struct VULightsItem : MenuItem {
 //         module->debug ^= true;
 //     }
 // };
+
 template < typename MODULE >
 struct ClickFilterSlider : ui::Slider {
     float oldValue = DEF_CLICK_FILTER_SLEW;
@@ -3100,6 +3118,7 @@ struct SaveVisualSettingsItem : MenuItem {
     void onAction(const event::Action& e) override {
         pluginSettings.glowingInkDefault = module->glowingInk;
         pluginSettings.vuLightsDefault = module->vuLights;
+        pluginSettings.saveToJson();
     }
 };
 
@@ -3344,7 +3363,7 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "λ…", &MenuItem::rightText, (module->auxInput[3]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[3]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 3));
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "φ…", &MenuItem::rightText, (module->auxInput[0]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[0]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 0));
 
-    menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[2]->allowMultipleModes ? "δ" : "") + std::string(module->auxInput[1]->allowMultipleModes ? "ζ" : "") + std::string(module->auxInput[3]->allowMultipleModes ? "λ" : "") + std::string(module->auxInput[0]->allowMultipleModes ? "φ" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[2]->allowMultipleModes ? "δ" : "") + std::string(module->auxInput[1]->allowMultipleModes ? " ζ" : "") + std::string(module->auxInput[3]->allowMultipleModes ? " λ" : "") + std::string(module->auxInput[0]->allowMultipleModes ? " φ" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
 
     // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
     // debugItem->module = module;
@@ -3362,6 +3381,10 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     menu->addChild(toggleModeBItem);
 
     menu->addChild(new MenuSeparator());
+    
+    SaveAuxInputSettingsItem *saveAuxInputSettingsItem = createMenuItem<SaveAuxInputSettingsItem>("Save AUX input modes as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    saveAuxInputSettingsItem->module = module;
+    menu->addChild(saveAuxInputSettingsItem);
     
     SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
     saveVisualSettingsItem->module = module;

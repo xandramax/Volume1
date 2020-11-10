@@ -4,16 +4,37 @@
 
 FMDelexanderSettings pluginSettings;
 
+FMDelexanderSettings::FMDelexanderSettings() {
+    // Initialize to Defaults
+    auxInputDefaults[2][0] = true;
+    auxInputDefaults[1][5] = true;
+    auxInputDefaults[3][9] = true;
+    auxInputDefaults[0][0] = true;
+}
+
 void FMDelexanderSettings::saveToJson() {
     json_t* settingsJ = json_object();
+
     json_object_set_new(settingsJ, "glowingInkDefault", json_boolean(glowingInkDefault));
+    
     json_object_set_new(settingsJ, "vuLightsDefault", json_boolean(vuLightsDefault));
+
+    json_t* allowMultipleModesJ = json_array();
+    for (int i = 0; i < 4; i++) {
+        json_t* allowanceJ = json_object();
+        json_object_set_new(allowanceJ, "Multimode Allowance", json_boolean(allowMultipleModes[i]));
+        json_array_append_new(allowMultipleModesJ, allowanceJ);
+    }
+    json_object_set_new(settingsJ, "Allow Multiple Modes", allowMultipleModesJ);
 
     json_t* auxInputDefaultsJ = json_array();
     for (int i = 0; i < 4; i++) {
-        json_t* auxDefaultJ = json_object();
-        json_object_set_new(auxDefaultJ, "Aux Default", json_integer(auxInputDefaults[i]));
-        json_array_append_new(auxInputDefaultsJ, auxDefaultJ);
+        // AuxInputModes::NUM_MODES = 18
+        for (int mode = 0; mode < 18; mode++) {
+            json_t* auxDefaultJ = json_object();
+            json_object_set_new(auxDefaultJ, "Aux Default", json_boolean(auxInputDefaults[i][mode]));
+            json_array_append_new(auxInputDefaultsJ, auxDefaultJ);
+        }
     }
     json_object_set_new(settingsJ, "Default Aux Input Modes", auxInputDefaultsJ);
 
@@ -49,10 +70,20 @@ void FMDelexanderSettings::readFromJson() {
     json_t* vuLightsDefaultJ = json_object_get(settingsJ, "vuLightsDefault");
     if (vuLightsDefaultJ) vuLightsDefault = json_integer_value(vuLightsDefaultJ);
 
+    json_t* allowMultipleModesJ = json_object_get(settingsJ, "Allow Multiple Modes");
+    json_t* allowanceJ; size_t allowanceIndex;
+    json_array_foreach(allowMultipleModesJ, allowanceIndex, allowanceJ)
+        allowMultipleModes[allowanceIndex] = json_boolean_value(json_object_get(allowanceJ, "Multimode Allowance"));
+
     json_t* auxInputDefaultsJ = json_object_get(settingsJ, "Default Aux Input Modes");
     json_t* auxDefaultJ; size_t auxDefaultsIndex;
+    int auxIndex = 0; int mode = 0;
     json_array_foreach(auxInputDefaultsJ, auxDefaultsIndex, auxDefaultJ) {
-        auxInputDefaults[auxDefaultsIndex] = json_integer_value(json_object_get(auxDefaultJ, "Aux Default"));
+        auxInputDefaults[auxIndex][mode] = json_boolean_value(json_object_get(auxDefaultJ, "Aux Default"));
+        mode++;
+        // AuxInputModes::NUM_MODES = 18
+        if (mode > 18)
+            auxIndex++;
     }
 
     fclose(file);
