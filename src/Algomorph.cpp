@@ -3268,9 +3268,13 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
     menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[2]->allowMultipleModes ? "δ" : "") + std::string(module->auxInput[1]->allowMultipleModes ? "ζ" : "") + std::string(module->auxInput[3]->allowMultipleModes ? "λ" : "") + std::string(module->auxInput[0]->allowMultipleModes ? "φ" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
 
+    menu->addChild(new MenuSeparator());
+    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "AUX Knob…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
+
     // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
     // debugItem->module = module;
     // menu->addChild(debugItem);
+
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
     
@@ -3286,8 +3290,6 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
-
-    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "AUX Knob Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
     
     menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
     
