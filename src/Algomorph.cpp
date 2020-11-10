@@ -3008,6 +3008,58 @@ struct ClickFilterMenuItem : MenuItem {
 	}
 };
 
+template < typename MODULE >
+void createAudioSettingsMenu(MODULE* module, ui::Menu* menu) {
+    menu->addChild(construct<ClickFilterMenuItem<Algomorph4>>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem<Algomorph4>::module, module));
+
+    RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+    ringMorphItem->module = module;
+    menu->addChild(ringMorphItem);
+
+    RunSilencerItem *runSilencerItem = createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
+    runSilencerItem->module = module;
+    menu->addChild(runSilencerItem);
+}
+
+template < typename MODULE >
+struct AudioSettingsMenuItem : MenuItem {
+    MODULE* module;
+
+    Menu* createChildMenu() override {
+        Menu* menu = new Menu;
+        createAudioSettingsMenu(module, menu);
+        return menu;
+    }
+};
+
+template < typename MODULE >
+void createInteractionSettingsMenu(MODULE* module, ui::Menu* menu) {
+    menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
+    
+    CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Reverse clock sequence", CHECKMARK(!module->ccwSceneSelection));
+    ccwScenesItem->module = module;
+    menu->addChild(ccwScenesItem);
+            
+    ResetOnRunItem *resetOnRunItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+    resetOnRunItem->module = module;
+    menu->addChild(resetOnRunItem);
+
+    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
+    exitConfigItem->module = module;
+    menu->addChild(exitConfigItem);
+}
+
+template < typename MODULE >
+struct InteractionSettingsMenuItem : MenuItem {
+    MODULE* module;
+
+    Menu* createChildMenu() override {
+        Menu* menu = new Menu;
+        createInteractionSettingsMenu(module, menu);
+        return menu;
+    }
+};
+
 struct GlowingInkItem : MenuItem {
     Algomorph4 *module;
     void onAction(const event::Action &e) override {
@@ -3018,6 +3070,28 @@ struct GlowingInkItem : MenuItem {
         module->glowingInk ^= true;
 
         APP->history->push(h);
+    }
+};
+
+template < typename MODULE >
+void createVisualSettingsMenu(MODULE* module, ui::Menu* menu) {  
+    VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+    vuLightsItem->module = module;
+    menu->addChild(vuLightsItem);
+    
+    GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
+    glowingInkItem->module = module;
+    menu->addChild(glowingInkItem);
+}
+
+template < typename MODULE >
+struct VisualSettingsMenuItem : MenuItem {
+    MODULE* module;
+
+    Menu* createChildMenu() override {
+        Menu* menu = new Menu;
+        createVisualSettingsMenu(module, menu);
+        return menu;
     }
 };
 
@@ -3259,6 +3333,10 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
 
     menu->addChild(new MenuSeparator());
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Knob"));
+    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
+
+    menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Inputs"));
 
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "δ…", &MenuItem::rightText, (module->auxInput[2]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[2]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 2));
@@ -3268,58 +3346,20 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
     menu->addChild(construct<AllowMultipleModesMenuItem<Algomorph4>>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[2]->allowMultipleModes ? "δ" : "") + std::string(module->auxInput[1]->allowMultipleModes ? "ζ" : "") + std::string(module->auxInput[3]->allowMultipleModes ? "λ" : "") + std::string(module->auxInput[0]->allowMultipleModes ? "φ" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem<Algomorph4>::module, module));
 
-    menu->addChild(new MenuSeparator());
-    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "AUX Knob…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
-
     // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
     // debugItem->module = module;
     // menu->addChild(debugItem);
 
     menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio"));
-    
-    menu->addChild(construct<ClickFilterMenuItem<Algomorph4>>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem<Algomorph4>::module, module));
-
-    RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
-    ringMorphItem->module = module;
-    menu->addChild(ringMorphItem);
-
-    RunSilencerItem *runSilencerItem = createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
-    runSilencerItem->module = module;
-    menu->addChild(runSilencerItem);
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Settings"));
+    menu->addChild(construct<AudioSettingsMenuItem<Algomorph4>>(&MenuItem::text, "Audio…", &MenuItem::rightText, RIGHT_ARROW, &AudioSettingsMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<InteractionSettingsMenuItem<Algomorph4>>(&MenuItem::text, "Interaction…", &MenuItem::rightText, RIGHT_ARROW, &InteractionSettingsMenuItem<Algomorph4>::module, module));
+    menu->addChild(construct<VisualSettingsMenuItem<Algomorph4>>(&MenuItem::text, "Visual…", &MenuItem::rightText, RIGHT_ARROW, &VisualSettingsMenuItem<Algomorph4>::module, module));
 
     menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
-    
-    menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
-    
-    CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Reverse clock sequence", CHECKMARK(!module->ccwSceneSelection));
-    ccwScenesItem->module = module;
-    menu->addChild(ccwScenesItem);
-            
-    ResetOnRunItem *resetOnRunItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
-    resetOnRunItem->module = module;
-    menu->addChild(resetOnRunItem);
-
-    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
-    exitConfigItem->module = module;
-    menu->addChild(exitConfigItem);
-
     ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
     menu->addChild(toggleModeBItem);
-
-
-    menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual"));
-    
-    VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
-    vuLightsItem->module = module;
-    menu->addChild(vuLightsItem);
-    
-    GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
-    glowingInkItem->module = module;
-    menu->addChild(glowingInkItem);
 
     menu->addChild(new MenuSeparator());
     
@@ -3331,8 +3371,6 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 void Algomorph4Widget::setKnobMode(int mode) {
     if (!module)
         return;
-
-    Algomorph4* m = dynamic_cast<Algomorph4*>(module);
 
     DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + activeKnob));
     oldKnob->hide();
