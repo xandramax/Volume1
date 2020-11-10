@@ -144,7 +144,8 @@ struct Algomorph4 : Module {
     AuxInput<Algomorph4>* auxInput[4];
     float scaledAuxVoltage[AuxInputModes::NUM_MODES][16] = {{0.f}};    // store processed (ready-to-use) values from auxInput[]->voltage[][], so they can be remembered if necessary
     bool auxModeFlags[AuxInputModes::NUM_MODES] = {false};                // a mode's flag is set to true when any aux input has that mode active
-    int knobMode = 1;
+    int knobMode = AuxKnobModes::MORPH_ATTEN;
+    int sumMode = SumOutModes::CARRIER_SUM;
 
     float morph[16] = {0.f};                                    // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };
@@ -281,10 +282,10 @@ struct Algomorph4Widget : ModuleWidget {
                                         {mm2px(39.003), mm2px(73.015)},
                                         {mm2px(39.003), mm2px(84.037)} };
     DLXGlowingInk* ink;
-    int knobMode = 0;
+    int activeKnob = 0;
 
     Algomorph4Widget(Algomorph4* module);
     void appendContextMenu(Menu* menu) override;
-    void setKnobMode(int knobMode);
+    void setKnobMode(int mode);
     void step() override;
 };
