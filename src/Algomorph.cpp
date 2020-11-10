@@ -1899,6 +1899,10 @@ void Algomorph4::dataFromJson(json_t* rootJ) {
     if (resetScene)
         this->resetScene = json_integer_value(resetScene);
     
+    auto knobMode = json_object_get(rootJ, "Aux Knob Mode");
+    if (knobMode)
+        this->knobMode = json_integer_value(knobMode);
+    
     auto ringMorph = json_object_get(rootJ, "Ring Morph");
     if (ringMorph)
         this->ringMorph = json_boolean_value(ringMorph);
@@ -2069,7 +2073,7 @@ void Algomorph4::dataFromJson(json_t* rootJ) {
         }
     }
     if (fix) {
-        knobMode = 1;
+        this->knobMode = 1;
         params[AUX_KNOBS + AuxKnobModes::MORPH_ATTEN].setValue(1.f);
 
         auxInput[2]->setMode(AuxInputModes::RESET);
@@ -3255,11 +3259,6 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
 
     menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Knob"));
-
-    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
-
-    menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Inputs"));
 
     menu->addChild(construct<AuxInputModeMenuItem<Algomorph4>>(&MenuItem::text, "δ…", &MenuItem::rightText, (module->auxInput[2]->activeModes > 1 ? "Multiple" : AuxInputModeLabels[module->auxInput[2]->lastSetMode]) + " " + RIGHT_ARROW, &AuxInputModeMenuItem<Algomorph4>::module, module, &AuxInputModeMenuItem<Algomorph4>::auxIndex, 2));
@@ -3287,6 +3286,8 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction"));
+
+    menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "AUX Knob Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
     
     menu->addChild(construct<ResetSceneMenuItem<Algomorph4>>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem<Algomorph4>::module, module));
     
@@ -3325,7 +3326,7 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
     menu->addChild(saveVisualSettingsItem);
 }
 
-void Algomorph4Widget::setKnobMode(int knobMode) {
+void Algomorph4Widget::setKnobMode(int mode) {
     if (!module)
         return;
 
@@ -3334,17 +3335,17 @@ void Algomorph4Widget::setKnobMode(int knobMode) {
     DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + m->knobMode));
     oldKnob->hide();
     oldKnob->sibling->hide();
-    DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + knobMode));
+    DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(Algomorph4::AUX_KNOBS + mode));
     newKnob->show();
     newKnob->sibling->show();
-    this->knobMode = knobMode;
+    activeKnob = mode;
 }
 
 void Algomorph4Widget::step() {
     if (module) {
         Algomorph4* m = dynamic_cast<Algomorph4*>(module);
         ink->visible = m->glowingInk == 1;
-        if (m->knobMode != this->knobMode)
+        if (activeKnob != m->knobMode)
             setKnobMode(m->knobMode);
     }
     ModuleWidget::step();
