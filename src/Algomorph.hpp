@@ -264,6 +264,7 @@ struct Algomorph4 : Module {
     inline float getPortBrightness(Port port);
     void updateSceneBrightnesses();
     void swapAlgorithms(int a, int b);
+    bool auxInputsAreDefault();
     json_t* dataToJson() override;
     void dataFromJson(json_t* rootJ) override;
 };
