@@ -1766,6 +1766,18 @@ void Algomorph4::swapAlgorithms(int a, int b) {
     }
 }
 
+bool Algomorph4::auxInputsAreDefault() {
+    for (int auxIndex = 0; auxIndex < 4; auxIndex++) {
+        if (auxInput[auxIndex]->allowMultipleModes != pluginSettings.allowMultipleModes[auxIndex])
+            return false;
+        for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
+            if (auxInput[auxIndex]->mode[mode] != pluginSettings.auxInputDefaults[auxIndex][mode])
+                return false;
+        }
+    }
+    return true;
+}
+
 json_t* Algomorph4::dataToJson() {
     json_t* rootJ = json_object();
     json_object_set_new(rootJ, "Config Enabled", json_boolean(configMode));
@@ -2758,8 +2770,8 @@ void createAuxInputModeMenu(MODULE* module, ui::Menu* menu, int auxIndex) {
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::MORPH]), &AuxModeItem::mode, AuxInputModes::MORPH));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::DOUBLE_MORPH], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::DOUBLE_MORPH]), &AuxModeItem::mode, AuxInputModes::DOUBLE_MORPH));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::TRIPLE_MORPH], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::TRIPLE_MORPH]), &AuxModeItem::mode, AuxInputModes::TRIPLE_MORPH));
-    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SUM_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::SUM_ATTEN]), &AuxModeItem::mode, AuxInputModes::SUM_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MOD_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::MOD_ATTEN]), &AuxModeItem::mode, AuxInputModes::MOD_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SUM_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::SUM_ATTEN]), &AuxModeItem::mode, AuxInputModes::SUM_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::MORPH_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SCENE_OFFSET], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::SCENE_OFFSET]), &AuxModeItem::mode, AuxInputModes::SCENE_OFFSET));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLICK_FILTER], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->mode[AuxInputModes::CLICK_FILTER]), &AuxModeItem::mode, AuxInputModes::CLICK_FILTER));
@@ -3188,10 +3200,16 @@ struct KnobModeMenuItem : MenuItem {
     
     Menu* createChildMenu() override {
         Menu* menu = new Menu;
-        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[1], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == 1)) + " " + std::to_string(module->params[Algomorph4::AUX_KNOBS + 1].getValue()), &KnobModeItem::mode, 1));
-        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[0], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == 0)) + " " + std::to_string(module->params[Algomorph4::AUX_KNOBS + 0].getValue()), &KnobModeItem::mode, 0));
-        for (int i = 2; i < AuxKnobModes::NUM_MODES; i++)
-            menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[i], &KnobModeItem::module, module, &KnobModeItem::rightText, std::to_string(module->params[Algomorph4::AUX_KNOBS + i].getValue()) + " " + CHECKMARK(module->knobMode == i), &KnobModeItem::mode, i));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MORPH_ATTEN)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MORPH_ATTEN]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MORPH_ATTEN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MORPH_ATTEN));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MOD_GAIN)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MOD_GAIN));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::SUM_GAIN)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::SUM_GAIN));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::OP_GAIN)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::OP_GAIN));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::CLICK_FILTER)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::CLICK_FILTER]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::CLICK_FILTER]->getUnit(), &KnobModeItem::mode, AuxKnobModes::CLICK_FILTER));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MORPH)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MORPH]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MORPH));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::DOUBLE_MORPH)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::DOUBLE_MORPH));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::TRIPLE_MORPH)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::TRIPLE_MORPH));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::UNI_MORPH)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::UNI_MORPH]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::UNI_MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::UNI_MORPH));
+        menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::ENDLESS_MORPH)) + " " + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH]->getDisplayValueString() + module->paramQuantities[Algomorph4::AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::ENDLESS_MORPH));
         menu->addChild(new MenuSeparator());
         menu->addChild(construct<ResetKnobsItem>(&MenuItem::text, "Reset all knobs", &ResetKnobsItem::module, module));
         return menu;
@@ -3382,7 +3400,7 @@ void Algomorph4Widget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     
-    SaveAuxInputSettingsItem *saveAuxInputSettingsItem = createMenuItem<SaveAuxInputSettingsItem>("Save AUX input modes as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    SaveAuxInputSettingsItem *saveAuxInputSettingsItem = createMenuItem<SaveAuxInputSettingsItem>("Save AUX input modes as default", CHECKMARK(module->auxInputsAreDefault()));
     saveAuxInputSettingsItem->module = module;
     menu->addChild(saveAuxInputSettingsItem);
     
