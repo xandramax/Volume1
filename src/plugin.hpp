@@ -104,13 +104,13 @@ static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
 																	0.f,
 																	1.f,
+																	0.f,
+																	0.f,
 																	1.f,
 																	1.f,
+																	1.f,
 																	0.f,
-																	0.f,
-																	0.f,
-																	0.f,
-																	1.f	};
+																	0.f	};
 
 /// Undo/Redo History
 
