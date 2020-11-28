@@ -1238,22 +1238,22 @@ struct Algomorph4Widget : ModuleWidget {
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, Algomorph4::SCENE_LIGHTS + 3, .75));
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, Algomorph4::SCENE_LIGHTS + 6, .75));
 
-        addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
-        addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
-        addChild(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
+        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, Algomorph4::SCENE_BUTTONS + 0));
+        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, Algomorph4::SCENE_BUTTONS + 1));
+        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, Algomorph4::SCENE_BUTTONS + 2));
 
         addInput(createInputCentered<DLXPortPoly>(mm2px(Vec(39.950, 53.224)), module, Algomorph4::SCENE_ADV_INPUT));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(7.732, 64.118)), module, Algomorph4::MORPH_INPUT));
 
         DLXKnobLight* kl = createLight<DLXKnobLight>(mm2px(Vec(19.708, 62.457)), module, Algomorph4::KNOB_LIGHT);
-        addChild(createLightKnob(mm2px(Vec(19.968, 62.757)), module, Algomorph4::MORPH_KNOB, kl));
+        addParam(createLightKnob(mm2px(Vec(19.968, 62.757)), module, Algomorph4::MORPH_KNOB, kl));
         addChildBottom(kl);
 
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(36.582, 64.118)), module, Algomorph4::SUM_OUTPUT));
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.268, 79.625)), 8.862, module, Algomorph4::EDIT_LIGHT, .4));
-        addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.268, 79.625)), module, Algomorph4::EDIT_BUTTON));
+        addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.268, 79.625)), module, Algomorph4::EDIT_BUTTON));
         addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(25.258, 79.483)), module, Algomorph4::EDIT_LIGHT, Algomorph4::EDIT_BUTTON));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.780, 81.439)), module, Algomorph4::OPERATOR_INPUTS + 0));
