@@ -1,14 +1,15 @@
 #pragma once
+#include "AuxSources.hpp"
 
 struct FMDelexanderSettings {
 	bool glowingInkDefault = false;
 	bool vuLightsDefault = true;
-	bool allowMultipleModes[5] = {false};		// AlgomorphLarge::NUM_AUX_INPUTS = 5
-	bool auxInputDefaults[5][19] = {{false}};	// AuxInputModes::NUM_MODES = 19
-	// TODO: Use AuxInputModes::NUM_MODES
-	// TODO: Use AlgomorphLarge::NUM_AUX_INPUTS
+	//NUM_AUX_INPUTS = 5
+	bool allowMultipleModes[5] = {false};
+	bool auxInputDefaults[5][AuxInputModes::NUM_MODES] = {{false}};
 
 	FMDelexanderSettings();
+	void initDefaults();
 	void saveToJson();
 	void readFromJson();
 };

@@ -1,6 +1,7 @@
 #include "plugin.hpp"
 #include "AlgomorphLarge.hpp"
 #include "AlgomorphDisplayWidget.hpp"
+#include "AuxSources.hpp"
 #include <bitset>
 
 AlgomorphLarge::AlgomorphLarge() {
@@ -29,6 +30,14 @@ AlgomorphLarge::AlgomorphLarge() {
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
         auxInput[auxIndex] = new AuxInput<AlgomorphLarge>(auxIndex, this);
 
+    for (int i = 0; i < 4; i++) {
+        auxInput[i]->shadowClickFilter[i].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+        for (int c = 0; c < 16; c++) {
+            auxInput[i]->wildcardModClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+            auxInput[i]->wildcardSumClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
+        }
+    }
+
     AlgomorphLarge::onReset();
 }
 
@@ -39,7 +48,7 @@ void AlgomorphLarge::onReset() {
         auxModeFlags[mode] = false;
 
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
-        auxInput[auxIndex]->clearModes();
+        auxInput[auxIndex]->clearAuxModes();
         auxInput[auxIndex]->resetVoltages();
         auxInput[auxIndex]->allowMultipleModes = pluginSettings.allowMultipleModes[auxIndex];
     }
@@ -60,7 +69,7 @@ void AlgomorphLarge::onReset() {
 }
 
 void AlgomorphLarge::unsetAuxMode(int auxIndex, int mode) {
-    auxInput[auxIndex]->unsetMode(mode);
+    auxInput[auxIndex]->unsetAuxMode(mode);
 
     auxModeFlags[mode] = false;
     for (int i = 0; i < NUM_AUX_INPUTS; i++) {
@@ -1394,62 +1403,62 @@ json_t* AlgomorphLarge::dataToJson() {
     json_t* lastSetModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* lastModeJ = json_object();
-        json_object_set_new(lastModeJ, "Last Set Mode", json_integer(auxInput[auxIndex]->lastSetMode));
+        json_object_set_new(lastModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Last Set Mode").c_str(), json_integer(auxInput[auxIndex]->lastSetMode));
         json_array_append_new(lastSetModesJ, lastModeJ);
     }
-    json_object_set_new(rootJ, "Last Set Aux Input Modes", lastSetModesJ);
+    json_object_set_new(rootJ, "Aux Inputs: Last Set Mode", lastSetModesJ);
 
     json_t* allowMultipleModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* allowanceJ = json_object();
-        json_object_set_new(allowanceJ, "Allowance", json_boolean(auxInput[auxIndex]->allowMultipleModes));
+        json_object_set_new(allowanceJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Multimode Allowed").c_str(), json_boolean(auxInput[auxIndex]->allowMultipleModes));
         json_array_append_new(allowMultipleModesJ, allowanceJ);
     }
-    json_object_set_new(rootJ, "Allow Multiple Modes", allowMultipleModesJ);
+    json_object_set_new(rootJ, "Aux Inputs: Allow Multiple Modes", allowMultipleModesJ);
 
     json_t* auxConnectionsJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* auxConnectedJ = json_object();
-        json_object_set_new(auxConnectedJ, "Aux Connection", json_boolean(auxInput[auxIndex]->connected));
+        json_object_set_new(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Connection Status").c_str(), json_boolean(auxInput[auxIndex]->connected));
         json_array_append_new(auxConnectionsJ, auxConnectedJ);
     }
-    json_object_set_new(rootJ, "Aux Input Connections", auxConnectionsJ);
-
-    json_object_set_new(rootJ, "Aux Knob Mode", json_integer(knobMode));
+    json_object_set_new(rootJ, "Aux Inputs: Connection Status", auxConnectionsJ);
     
     json_t* auxInputModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
-        for (int j = 0; j < AuxInputModes::NUM_MODES; j++) {
+        for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
             json_t* inputModeJ = json_object();
-            json_object_set_new(inputModeJ, "Mode", json_boolean(auxInput[auxIndex]->modeIsActive[j]));
+            json_object_set_new(inputModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Mode: " + AuxInputModeLabels[mode]).c_str(), json_boolean(auxInput[auxIndex]->modeIsActive[mode]));
             json_array_append_new(auxInputModesJ, inputModeJ);
         }
     }
-    json_object_set_new(rootJ, "Aux Input Modes", auxInputModesJ);
+    json_object_set_new(rootJ, "Aux Inputs: Modes", auxInputModesJ);
+
+    json_object_set_new(rootJ, "Aux Knob Mode", json_integer(knobMode));
 
     json_t* algoNamesJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* nameJ = json_object();
-        json_object_set_new(nameJ, "Name", json_integer(algoName[scene].to_ullong()));
+        json_object_set_new(nameJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Algorithm ID").c_str(), json_integer(algoName[scene].to_ullong()));
         json_array_append_new(algoNamesJ, nameJ);
     }
-    json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
+    json_object_set_new(rootJ, "Scenes: Algorithm Names", algoNamesJ);
     
     json_t* horizontalMarksJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneMarksJ = json_object();
-        json_object_set_new(sceneMarksJ, "Horizontal Marks", json_integer(horizontalMarks[scene].to_ullong()));
+        json_object_set_new(sceneMarksJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Horizontal Marks").c_str(), json_integer(horizontalMarks[scene].to_ullong()));
         json_array_append_new(horizontalMarksJ, sceneMarksJ);
     }
-    json_object_set_new(rootJ, "Scene Horizontal Marks", horizontalMarksJ);
+    json_object_set_new(rootJ, "Scenes: Horizontal Marks", horizontalMarksJ);
 
     json_t* forcedCarriersJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneForcedCarriers = json_object();
-        json_object_set_new(sceneForcedCarriers, "Forced Carriers", json_integer(forcedCarriers[scene].to_ullong()));
+        json_object_set_new(sceneForcedCarriers, (std::string("Scene ") + std::to_string(scene) + ": " + "Forced Carriers").c_str(), json_integer(forcedCarriers[scene].to_ullong()));
         json_array_append_new(forcedCarriersJ, sceneForcedCarriers);
     }
-    json_object_set_new(rootJ, "Scene Forced Carriers", forcedCarriersJ);
+    json_object_set_new(rootJ, "Scenes: Forced Carriers", forcedCarriersJ);
 
     return rootJ;
 }
@@ -1517,20 +1526,20 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
 
 
     //Set allowMultipleModes before loading modes
-    json_t* allowMultipleModesJ = json_object_get(rootJ, "Allow Multiple Modes");
+    json_t* allowMultipleModesJ = json_object_get(rootJ, "Aux Inputs: Allow Multiple Modes");
     if (allowMultipleModesJ) {
         json_t* allowanceJ; size_t allowIndex;
         json_array_foreach(allowMultipleModesJ, allowIndex, allowanceJ) {
-            auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, "Allowance"));
+            auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowIndex) + ": " + "Multimode Allowed").c_str()));
         }
     }
 
-    json_t* auxInputModesJ = json_object_get(rootJ, "Aux Input Modes");
+    json_t* auxInputModesJ = json_object_get(rootJ, "Aux Inputs: Modes");
     if (auxInputModesJ) {
         json_t* inputModeJ; size_t inputModeIndex;
         int auxIndex = 0; int mode = 0;
         json_array_foreach(auxInputModesJ, inputModeIndex, inputModeJ) {
-            if (json_boolean_value(json_object_get(inputModeJ, "Mode")))
+            if (json_boolean_value(json_object_get(inputModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Mode: " + AuxInputModeLabels[mode]).c_str())))
                 auxInput[auxIndex]->setMode(mode);
             mode++;
             if (mode >= AuxInputModes::NUM_MODES) {
@@ -1540,43 +1549,43 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
         }
     }
 
-    json_t* auxConnectionsJ = json_object_get(rootJ, "Aux Input Connections");
+    json_t* auxConnectionsJ = json_object_get(rootJ, "Aux Inputs: Connection Status");
     if (auxConnectionsJ) {
         json_t* auxConnectedJ; size_t auxConnectionIndexJ;
         json_array_foreach(auxConnectionsJ, auxConnectionIndexJ, auxConnectedJ) {
-            auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, "Aux Connection"));
+            auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxConnectionIndexJ) + ": " + "Connection Status").c_str()));
         }
     }
 
-    json_t* lastSetModesJ = json_object_get(rootJ, "Last Set Aux Input Modes");
+    json_t* lastSetModesJ = json_object_get(rootJ, "Aux Inputs: Last Set Mode");
     if (lastSetModesJ) {
         json_t* lastModeJ; size_t lastModeIndex;
         json_array_foreach(lastSetModesJ, lastModeIndex, lastModeJ) {
-            auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, "Last Set Mode"));
+            auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, (std::string("Aux Input ") + std::to_string(lastModeIndex) + ": " + "Last Set Mode").c_str()));
         }
     }
 
-    json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
+    json_t* algoNamesJ = json_object_get(rootJ, "Scenes: Algorithm Names");
     if (algoNamesJ) {
         json_t* nameJ; size_t nameIndex;
         json_array_foreach(algoNamesJ, nameIndex, nameJ) {
-            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
+            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, (std::string("Scene ") + std::to_string(nameIndex) + ": " + "Algorithm ID").c_str()));
         }
     }
     
-    json_t* horizontalMarksJ = json_object_get(rootJ, "Scene Horizontal Marks");
+    json_t* horizontalMarksJ = json_object_get(rootJ, "Scenes: Horizontal Marks");
     if (horizontalMarksJ) {
         json_t* sceneMarksJ; size_t sceneIndex;
         json_array_foreach(horizontalMarksJ, sceneIndex, sceneMarksJ) {
-            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, "Horizontal Marks"));
+            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Horizontal Marks").c_str()));
         }
     }
     
-    json_t* forcedCarriersJ = json_object_get(rootJ, "Scene Forced Carriers");
+    json_t* forcedCarriersJ = json_object_get(rootJ, "Scenes: Forced Carriers");
     if (forcedCarriersJ) {
         json_t* sceneForcedCarriersJ; size_t sceneIndex;
         json_array_foreach(forcedCarriersJ, sceneIndex, sceneForcedCarriersJ) {
-            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriersJ, "Forced Carriers"));
+            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriersJ, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Forced Carriers").c_str()));
         }
     }
 
@@ -1606,6 +1615,67 @@ float AlgomorphLarge::getOutputBrightness(int portID) {
                                 outputs[portID].plugLights[2].getBrightness()          }   );
     else
         return 1.f;
+}
+
+///// Aux Input
+
+template < typename MODULE >
+AuxInput<MODULE>::AuxInput(int id, MODULE* module) {
+    this->id = id;
+    this->module = module;
+    defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
+    defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
+    defVoltage[AuxInputModes::MORPH_ATTEN] = 5.f;
+    resetVoltages();
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::resetVoltages() {
+    for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
+        for (int j = 0; j < 16; j++) {
+            voltage[i][j] = defVoltage[i];
+        }
+    }
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::setMode(int newMode) {
+    activeModes++;
+
+    if (activeModes > 1 && !allowMultipleModes) {
+        module->unsetAuxMode(id, lastSetMode);
+    }
+
+    modeIsActive[newMode] = true;
+    lastSetMode = newMode;
+    module->auxModeFlags[newMode] = true;
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::unsetAuxMode(int oldMode) {
+    if (modeIsActive[oldMode]) {
+        activeModes--;
+        
+        modeIsActive[oldMode] = false;
+    }
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::clearAuxModes() {
+    for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++)
+        module->unsetAuxMode(id, mode);
+
+    activeModes = 0;
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::updateVoltage() {
+    for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
+        if (modeIsActive[mode]) {
+            for (int c = 0; c < channels; c++)
+                voltage[mode][c] = module->inputs[MODULE::AUX_INPUTS + id].getPolyVoltage(c);
+        }
+    }
 }
 
 ///// Panel Widget

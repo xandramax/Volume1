@@ -979,28 +979,28 @@ json_t* AlgomorphSmall::dataToJson() {
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
 
     json_t* algoNamesJ = json_array();
-    for (int i = 0; i < 3; i++) {
+    for (int scene = 0; scene < 3; scene++) {
         json_t* nameJ = json_object();
-        json_object_set_new(nameJ, "Name", json_integer(algoName[i].to_ullong()));
+        json_object_set_new(nameJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Algorithm ID").c_str(), json_integer(algoName[scene].to_ullong()));
         json_array_append_new(algoNamesJ, nameJ);
     }
-    json_object_set_new(rootJ, "Algorithm Names", algoNamesJ);
+    json_object_set_new(rootJ, "Scenes: Algorithm Names", algoNamesJ);
 
     json_t* horizontalMarksJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneMarksJ = json_object();
-        json_object_set_new(sceneMarksJ, "Horizontal Marks", json_integer(horizontalMarks[scene].to_ullong()));
+        json_object_set_new(sceneMarksJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Horizontal Marks").c_str(), json_integer(horizontalMarks[scene].to_ullong()));
         json_array_append_new(horizontalMarksJ, sceneMarksJ);
     }
-    json_object_set_new(rootJ, "Scene Horizontal Marks", horizontalMarksJ);
+    json_object_set_new(rootJ, "Scenes: Horizontal Marks", horizontalMarksJ);
     
     json_t* forcedCarriersJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneForcedCarriersJ = json_object();
-        json_object_set_new(sceneForcedCarriersJ, "Forced Carriers", json_integer(forcedCarriers[scene].to_ullong()));
+        json_object_set_new(sceneForcedCarriersJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Forced Carriers").c_str(), json_integer(forcedCarriers[scene].to_ullong()));
         json_array_append_new(forcedCarriersJ, sceneForcedCarriersJ);
     }
-    json_object_set_new(rootJ, "Scene Forced Carriers", forcedCarriersJ);
+    json_object_set_new(rootJ, "Scenes: Forced Carriers", forcedCarriersJ);
 
     return rootJ;
 }
@@ -1050,27 +1050,27 @@ void AlgomorphSmall::dataFromJson(json_t* rootJ) {
     if (vuLights)
         this->vuLights = json_boolean_value(vuLights);
 
-    json_t* algoNamesJ = json_object_get(rootJ, "Algorithm Names");
+    json_t* algoNamesJ = json_object_get(rootJ, "Scenes: Algorithm Names");
     if (algoNamesJ) {
         json_t* nameJ; size_t nameIndex;
         json_array_foreach(algoNamesJ, nameIndex, nameJ) {
-            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, "Name"));
+            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, (std::string("Scene ") + std::to_string(nameIndex) + ": " + "Algorithm ID").c_str()));
         }
     }
         
-    json_t* horizontalMarksJ = json_object_get(rootJ, "Scene Horizontal Marks");
+    json_t* horizontalMarksJ = json_object_get(rootJ, "Scenes: Horizontal Marks");
     if (horizontalMarksJ) {
         json_t* sceneMarksJ; size_t sceneIndex;
         json_array_foreach(horizontalMarksJ, sceneIndex, sceneMarksJ) {
-            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, "Horizontal Marks"));
+            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Horizontal Marks").c_str()));
         }
     }
             
-    json_t* forcedCarriersJ = json_object_get(rootJ, "Scene Forced Carriers");
+    json_t* forcedCarriersJ = json_object_get(rootJ, "Scenes: Forced Carriers");
     if (forcedCarriersJ) {
         json_t* sceneForcedCarriers; size_t sceneIndex;
         json_array_foreach(forcedCarriersJ, sceneIndex, sceneForcedCarriers) {
-            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriers, "Forced Carriers"));
+            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriers, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Forced Carriers").c_str()));
         }
     }
 
