@@ -1,91 +1,6 @@
 #include "plugin.hpp"
 #include "Algomorph.hpp"
-
-template < typename MODULE >
-struct AuxInput {
-    MODULE* module;
-    int id = -1;
-    bool connected = false;
-    int channels = 0;
-    
-    float voltage[AuxInputModes::NUM_MODES][16];
-    float defVoltage[AuxInputModes::NUM_MODES] = { 0.f };
-
-    bool modeIsActive[AuxInputModes::NUM_MODES] = {false};
-    bool allowMultipleModes = false;
-    int activeModes = 0;
-    int lastSetMode = 0;
-
-    dsp::SchmittTrigger runCVTrigger;
-    dsp::SchmittTrigger sceneAdvCVTrigger;
-    dsp::SchmittTrigger reverseSceneAdvCVTrigger;
-
-    dsp::SlewLimiter shadowClickFilter[4];                  // [op]
-    
-    dsp::SlewLimiter wildcardModClickFilter[16];
-    float wildcardModClickGain = 0.f;
-    dsp::SlewLimiter wildcardSumClickFilter[16];
-    float wildcardSumClickGain = 0.f;
-
-    AuxInput(int id, MODULE* module) {
-        this->id = id;
-        this->module = module;
-        defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
-        defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
-        defVoltage[AuxInputModes::MORPH_ATTEN] = 5.f;
-        resetVoltages();
-        for (int i = 0; i < 4; i++)
-            shadowClickFilter[i].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
-        for (int c = 0; c < 16; c++) {
-            wildcardModClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
-            wildcardSumClickFilter[c].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
-        }
-    }
-
-    void resetVoltages() {
-        for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
-            for (int j = 0; j < 16; j++) {
-                voltage[i][j] = defVoltage[i];
-            }
-        }
-    }
-
-    void setMode(int newMode) {
-        activeModes++;
-
-        if (activeModes > 1 && !allowMultipleModes) {
-            module->unsetAuxMode(id, lastSetMode);
-        }
-
-        modeIsActive[newMode] = true;
-        lastSetMode = newMode;
-        module->auxModeFlags[newMode] = true;
-    }
-
-    void unsetMode(int oldMode) {
-        if (modeIsActive[oldMode]) {
-            activeModes--;
-            
-            modeIsActive[oldMode] = false;
-        }
-    }
-
-    void clearModes() {
-        for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++)
-            module->unsetAuxMode(id, mode);
-
-        activeModes = 0;
-    }
-
-    void updateVoltage() {
-        for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
-            if (modeIsActive[mode]) {
-                for (int c = 0; c < channels; c++)
-                    voltage[mode][c] = module->inputs[MODULE::AUX_INPUTS + id].getPolyVoltage(c);
-            }
-        }
-    }
-};
+#include "AuxSources.hpp"
 
 struct AlgomorphLarge : Algomorph {
     static constexpr int NUM_AUX_INPUTS = 5;
@@ -192,7 +107,7 @@ struct AlgomorphLarge : Algomorph {
 
 struct AlgomorphLargeGlowingInk : SvgLight {
 	AlgomorphLargeGlowingInk() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLargeGlowingInk.svg")));
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_GlowingInk.svg")));
 	}
 };
 

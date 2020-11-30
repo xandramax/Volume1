@@ -70,7 +70,7 @@ struct AlgomorphSmall : Algomorph {
 
 struct AlgomorphSmallGlowingInk : SvgLight {
 	AlgomorphSmallGlowingInk() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmallGlowingInk.svg")));
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall_GlowingInk.svg")));
 	}
 };
 
