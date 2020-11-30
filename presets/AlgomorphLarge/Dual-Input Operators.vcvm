@@ -1,21 +1,21 @@
 {
   "id": 3998,
-  "plugin": "FM-Delexandra",
+  "plugin": "FM-Delexandra2",
   "version": "1.0.0",
-  "model": "Algomorph4",
+  "model": "AlgomorphLarge",
   "data": {
     "Last Set Aux Input Modes": [
       {
-        "Last Set Mode": 0
+        "Last Set Mode": 17
       },
       {
-        "Last Set Mode": 7
+        "Last Set Mode": 15
       },
       {
-        "Last Set Mode": 9
+        "Last Set Mode": 14
       },
       {
-        "Last Set Mode": 10
+        "Last Set Mode": 16
       }
     ],
     "Allow Multiple Modes": [
@@ -34,90 +34,6 @@
     ],
     "Aux Input Modes": [
       {
-        "Mode": true
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": true
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
         "Mode": false
       },
       {
@@ -217,6 +133,48 @@
         "Mode": false
       },
       {
+        "Mode": true
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
         "Mode": false
       },
       {
@@ -245,6 +203,48 @@
       },
       {
         "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": true
       },
       {
         "Mode": false

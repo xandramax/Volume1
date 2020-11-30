@@ -7,35 +7,35 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="7.6964912mm"
-   height="7.6964912mm"
-   viewBox="0 0 7.6964913 7.6964913"
-   version="1.1"
-   id="svg9240"
+   sodipodi:docname="DLXKnobB_light.svg"
    inkscape:version="1.0rc1 (09960d6f05, 2020-04-09)"
-   sodipodi:docname="DLXKnobB_light.svg">
+   id="svg9240"
+   version="1.1"
+   viewBox="0 0 7.6964913 7.6964913"
+   height="7.6964912mm"
+   width="7.6964912mm">
   <defs
      id="defs9234" />
   <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="31.678384"
-     inkscape:cx="10.695288"
-     inkscape:cy="11.869061"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     inkscape:document-rotation="0"
-     showgrid="false"
-     units="mm"
-     inkscape:window-width="1858"
-     inkscape:window-height="1058"
-     inkscape:window-x="54"
+     inkscape:window-maximized="1"
      inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
+     inkscape:window-x="54"
+     inkscape:window-height="1058"
+     inkscape:window-width="1858"
+     units="mm"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="11.869061"
+     inkscape:cx="10.695288"
+     inkscape:zoom="31.678384"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
   <metadata
      id="metadata9237">
     <rdf:RDF>
@@ -49,20 +49,20 @@
     </rdf:RDF>
   </metadata>
   <g
-     inkscape:label="Layer 1"
+     id="layer1"
      inkscape:groupmode="layer"
-     id="layer1">
+     inkscape:label="Layer 1">
     <path
-       sodipodi:nodetypes="sssssss"
-       inkscape:connector-curvature="0"
+       d="m 4.0788116,0.55239498 c 0.019579,-0.122367 -0.1005755,-0.224499 -0.224499,-0.224499 -0.1239234,0 -0.2450682,0.102294 -0.2244989,0.224499 C 3.8356436,1.775267 3.3513376,2.944927 3.3513376,2.944927 c 0,0.123923 0.3790516,-0.114516 0.502975,-0.114516 0.1239235,0 0.4908672,0.226332 0.4908672,0.102408 0,0 -0.4600906,-1.169659 -0.2663682,-2.38042402 z"
+       style="clip-rule:evenodd;display:inline;fill:#c3c3c3;fill-opacity:0.57999998;fill-rule:evenodd;stroke-width:0.264583;stroke-linejoin:round;stroke-miterlimit:2"
        id="path21964"
-       style="clip-rule:evenodd;display:inline;fill:#c3c3c3;fill-opacity:1;fill-rule:evenodd;stroke-width:0.264583;stroke-linejoin:round;stroke-miterlimit:2"
-       d="m 4.0788116,0.55239498 c 0.019579,-0.122367 -0.1005755,-0.224499 -0.224499,-0.224499 -0.1239234,0 -0.2450682,0.102294 -0.2244989,0.224499 C 3.8356436,1.775267 3.3513376,2.944927 3.3513376,2.944927 c 0,0.123923 0.3790516,-0.114516 0.502975,-0.114516 0.1239235,0 0.4908672,0.226332 0.4908672,0.102408 0,0 -0.4600906,-1.169659 -0.2663682,-2.38042402 z" />
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="sssssss" />
     <circle
-       style="fill:none;stroke:#8b70a2;stroke-width:0.264583;stroke-opacity:1"
-       id="path6758"
-       cx="3.8482587"
+       r="3.7159672"
        cy="3.8482592"
-       r="3.7159672" />
+       cx="3.8482587"
+       id="path6758"
+       style="fill:none;stroke:#8b70a2;stroke-width:0.264583;stroke-opacity:0.57999998" />
   </g>
 </svg>

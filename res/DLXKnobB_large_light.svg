@@ -44,28 +44,16 @@
      id="namedview6418"
      showgrid="false"
      inkscape:document-units="mm"
-     inkscape:zoom="12.274149"
-     inkscape:cx="22.23437"
-     inkscape:cy="37.063999"
+     inkscape:zoom="6.1370745"
+     inkscape:cx="28.121917"
+     inkscape:cy="47.836675"
      inkscape:window-x="54"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg6416" />
-  <ellipse
-     ry="9.9437513"
-     rx="9.9441195"
-     id="circle6404"
-     stroke-miterlimit="2"
-     stroke-linejoin="round"
-     fill-rule="evenodd"
-     fill="#1a1a1a"
-     clip-rule="evenodd"
-     cy="10.198602"
-     cx="10.202446"
-     style="stroke-width:0.264581;fill:none" />
   <path
      id="path1451"
-     style="stroke-width:0.999991;fill:#c3c3c3;fill-opacity:1"
+     style="stroke-width:0.999991;fill:#c3c3c3;fill-opacity:0.57999998"
      d="M 38.535156 2.4960938 C 37.269417 2.4960938 36.032082 3.5408346 36.242188 4.7890625 C 37.33763 11.297187 36.529022 17.384287 35.498047 21.902344 A 16.814649 16.814649 0 0 1 38.455078 21.640625 A 16.814649 16.814649 0 0 1 41.587891 21.935547 C 40.550028 17.659091 39.700222 11.837908 40.828125 4.7890625 C 41.0281 3.5392004 39.800897 2.4960938 38.535156 2.4960938 z "
      transform="scale(0.26458333)" />
   <ellipse
@@ -76,5 +64,5 @@
      fill="none"
      cy="10.174273"
      cx="10.178117"
-     style="stroke-width:0.264581;stroke:#8b70a2;stroke-opacity:1" />
+     style="stroke-width:0.264581;stroke:#8b70a2;stroke-opacity:0.57999998" />
 </svg>

@@ -1,21 +1,21 @@
 {
-  "id": 3998,
-  "plugin": "FM-Delexandra",
+  "id": 3878,
+  "plugin": "FM-Delexandra2",
   "version": "1.0.0",
-  "model": "Algomorph4",
+  "model": "AlgomorphLarge",
   "data": {
     "Last Set Aux Input Modes": [
-      {
-        "Last Set Mode": 6
-      },
       {
         "Last Set Mode": 0
       },
       {
-        "Last Set Mode": 12
+        "Last Set Mode": 7
       },
       {
-        "Last Set Mode": 5
+        "Last Set Mode": 9
+      },
+      {
+        "Last Set Mode": 0
       }
     ],
     "Allow Multiple Modes": [
@@ -32,79 +32,21 @@
         "Allowance": false
       }
     ],
+    "Algorithm Names": [
+      {
+        "Name": 0
+      },
+      {
+        "Name": 0
+      },
+      {
+        "Name": 0
+      }
+    ],
     "Aux Knob Mode": 1,
     "Aux Input Modes": [
       {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
         "Mode": true
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": true
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
-      },
-      {
-        "Mode": false
       },
       {
         "Mode": false
@@ -212,7 +154,76 @@
         "Mode": false
       },
       {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
         "Mode": true
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": true
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
+      },
+      {
+        "Mode": false
       },
       {
         "Mode": false
