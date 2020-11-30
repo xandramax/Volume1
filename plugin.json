@@ -1,10 +1,10 @@
 {
-  "slug": "FM-Delexander",
-  "name": "FM-Delexander",
+  "slug": "FM-Delexander2",
+  "name": "FM Delexander",
   "version": "1.0.0",
-  "license": "GPL-3.0-only",
+  "license": "GPL-3.0-or-later",
   "brand": "Delexander",
-  "author": "Anthony Lexander Matos",
+  "author": "Anthony Lexander Matos & Ina Carter",
   "authorEmail": "delexander.modules@gmail.com",
   "authorUrl": "",
   "pluginUrl": "",
@@ -14,11 +14,23 @@
   "changelogUrl": "",
   "modules": [
     {
-			"slug": "Algomorph4",
-			"name": "Algomorph 4",
-			"description": "CV/Audio Router employing the FM algorithm concept, capable of morphing between 3 algorithms",
+			"slug": "Algomorph",
+			"name": "Algomorph",
+			"description": "4-Channel Multi-state Router with Morphing and Graph Visualization",
 			"tags": [
-				"Controller",
+        "Mixer",
+        "Multiple",
+        "Polyphonic",
+        "Quad",
+        "Utility",
+        "Visual"
+			]
+		},
+    {
+			"slug": "AlgomorphSmall",
+			"name": "Algomorph Pocket",
+			"description": "Miniature 4-Channel Multi-state Router with Morphing and Graph Visualization",
+			"tags": [
         "Mixer",
         "Multiple",
         "Polyphonic",

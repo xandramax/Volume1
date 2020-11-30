@@ -1,4 +1,4 @@
-#include "rack.hpp"
+#include <rack.hpp>
 #include "pluginsettings.hpp"
 
 
@@ -6,10 +6,12 @@ FMDelexanderSettings pluginSettings;
 
 FMDelexanderSettings::FMDelexanderSettings() {
     // Initialize to Defaults
-    auxInputDefaults[2][0] = true;
-    auxInputDefaults[1][5] = true;
-    auxInputDefaults[3][9] = true;
-    auxInputDefaults[0][0] = true;
+    // TODO: use AuxInputModes::MODE_NAME rather than literal integers
+    auxInputDefaults[0][9] = true;
+    auxInputDefaults[1][7] = true;
+    auxInputDefaults[2][12] = true;
+    auxInputDefaults[3][0] = true;
+    auxInputDefaults[4][0] = true;
 }
 
 void FMDelexanderSettings::saveToJson() {
@@ -29,8 +31,9 @@ void FMDelexanderSettings::saveToJson() {
 
     json_t* auxInputDefaultsJ = json_array();
     for (int i = 0; i < 4; i++) {
-        // AuxInputModes::NUM_MODES = 18
-        for (int mode = 0; mode < 18; mode++) {
+        // AuxInputModes::NUM_MODES = 19
+        // TODO: Use AuxInputModes::NUM_MODES
+        for (int mode = 0; mode < 19; mode++) {
             json_t* auxDefaultJ = json_object();
             json_object_set_new(auxDefaultJ, "Aux Default", json_boolean(auxInputDefaults[i][mode]));
             json_array_append_new(auxInputDefaultsJ, auxDefaultJ);
@@ -65,10 +68,12 @@ void FMDelexanderSettings::readFromJson() {
     }
 
     json_t* glowingInkDefaultJ = json_object_get(settingsJ, "glowingInkDefault");
-    if (glowingInkDefaultJ) glowingInkDefault = json_integer_value(glowingInkDefaultJ);
+    if (glowingInkDefaultJ)
+        glowingInkDefault = json_boolean_value(glowingInkDefaultJ);
 
     json_t* vuLightsDefaultJ = json_object_get(settingsJ, "vuLightsDefault");
-    if (vuLightsDefaultJ) vuLightsDefault = json_integer_value(vuLightsDefaultJ);
+    if (vuLightsDefaultJ)
+        vuLightsDefault = json_boolean_value(vuLightsDefaultJ);
 
     json_t* allowMultipleModesJ = json_object_get(settingsJ, "Allow Multiple Modes");
     json_t* allowanceJ; size_t allowanceIndex;
@@ -81,9 +86,12 @@ void FMDelexanderSettings::readFromJson() {
     json_array_foreach(auxInputDefaultsJ, auxDefaultsIndex, auxDefaultJ) {
         auxInputDefaults[auxIndex][mode] = json_boolean_value(json_object_get(auxDefaultJ, "Aux Default"));
         mode++;
-        // AuxInputModes::NUM_MODES = 18
-        if (mode > 18)
+        // AuxInputModes::NUM_MODES = 19
+        // TODO: Use AuxInputModes::NUM_MODES
+        if (mode > 19) {
+            mode = 0;
             auxIndex++;
+        }
     }
 
     fclose(file);

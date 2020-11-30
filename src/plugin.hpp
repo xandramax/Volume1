@@ -1,6 +1,7 @@
 #pragma once
 #include <rack.hpp>
 #include "pluginsettings.hpp"
+#include "GraphData.hpp"
 #include <bitset>
 
 using namespace rack;
@@ -9,7 +10,8 @@ extern Plugin* pluginInstance;
 
 extern FMDelexanderSettings pluginSettings;
 
-extern Model* modelAlgomorph4;
+extern Model* modelAlgomorphLarge;
+extern Model* modelAlgomorphSmall;
 
 ///
 
@@ -48,7 +50,7 @@ struct AuxInputModes : AuxSourceModes {
 	static const int WILDCARD_SUM = 	AuxSourceModes::NUM_MODES + 8;
 	static const int SHADOW = 			AuxSourceModes::NUM_MODES + 9;
 	// 4 shadow modes
-	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 13;
+	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 14;
 };
 
 //Order must match above
@@ -111,6 +113,10 @@ static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
 																	1.f,
 																	0.f,
 																	0.f	};
+
+/// Algorithm Display Graph Data
+
+static const GraphData GRAPH_DATA;
 
 /// Undo/Redo History
 
@@ -268,7 +274,7 @@ struct AuxInputSetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput[auxIndex]->unsetMode(mode);
+		m->unsetAuxMode(auxIndex, mode);
 		for (int c = 0; c < channels; c++)
 			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
 		m->rescaleVoltage(mode, channels);
@@ -297,7 +303,7 @@ struct AuxInputSwitchAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput[auxIndex]->unsetMode(newMode);
+		m->unsetAuxMode(auxIndex, newMode);
 		for (int c = 0; c < channels; c++)
 			m->auxInput[auxIndex]->voltage[newMode][c] = m->auxInput[auxIndex]->defVoltage[newMode];
 		m->rescaleVoltage(newMode, channels);
@@ -310,7 +316,7 @@ struct AuxInputSwitchAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput[auxIndex]->unsetMode(oldMode);
+		m->unsetAuxMode(auxIndex, oldMode);
 		for (int c = 0; c < channels; c++)
 			m->auxInput[auxIndex]->voltage[oldMode][c] = m->auxInput[auxIndex]->defVoltage[oldMode];
 		m->rescaleVoltage(oldMode, channels);
@@ -341,7 +347,7 @@ struct AuxInputUnsetAction : history::ModuleAction {
 		assert(mw);
 		MODULE* m = dynamic_cast<MODULE*>(mw->module);
 		assert(m);
-		m->auxInput[auxIndex]->unsetMode(mode);
+		m->unsetAuxMode(auxIndex, mode);
 		for (int c = 0; c < channels; c++)
 			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
 		m->rescaleVoltage(mode, channels);
@@ -1278,9 +1284,15 @@ struct SvgKnobLight : SvgLight {
 	}
 };
 
-struct DLXKnobLight : SvgKnobLight {
-	DLXKnobLight() {
+struct DLXLargeKnobLight : SvgKnobLight {
+	DLXLargeKnobLight() {
 		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large_light.svg")));
+	}
+};
+
+struct DLXMediumKnobLight : SvgKnobLight {
+	DLXMediumKnobLight() {
+		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_medium_light.svg")));
 	}
 };
 
@@ -1290,7 +1302,7 @@ struct DLXSmallKnobLight : SvgKnobLight {
 	}
 };
 
-template <class TKnobLight = DLXKnobLight>
+template <class TKnobLight = DLXSmallKnobLight>
 struct LightKnob : RoundKnob {
 	TKnobLight* sibling;
 
@@ -1322,9 +1334,15 @@ struct LightKnob : RoundKnob {
 	}
 };
 
-struct DLXLightKnob : LightKnob<DLXKnobLight> {
-	DLXLightKnob() {
+struct DLXLargeLightKnob : LightKnob<DLXLargeKnobLight> {
+	DLXLargeLightKnob() {
 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large.svg")));
+	}
+};
+
+struct DLXMediumLightKnob : LightKnob<DLXMediumKnobLight> {
+	DLXMediumLightKnob() {
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_medium.svg")));
 	}
 };
 
@@ -1334,7 +1352,7 @@ struct DLXSmallLightKnob : LightKnob<DLXSmallKnobLight> {
 	}
 };
 
-template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob>
+template <class TKnobLight = DLXSmallKnobLight, class TDLXLightKnob = DLXSmallLightKnob>
 TDLXLightKnob* createLightKnob(Vec pos, engine::Module* module, int paramId, TKnobLight* kl) {
 	TDLXLightKnob* o = new TDLXLightKnob();
 	o->box.pos = pos;
@@ -1345,17 +1363,9 @@ TDLXLightKnob* createLightKnob(Vec pos, engine::Module* module, int paramId, TKn
 	return o;
 }
 
-template <class TKnobLight = DLXKnobLight, class TDLXLightKnob = DLXLightKnob>
+template <class TKnobLight = DLXSmallKnobLight, class TDLXLightKnob = DLXSmallLightKnob>
 TDLXLightKnob* createLightKnobCentered(Vec pos, engine::Module* module, int paramId, TKnobLight* kl) {
 	TDLXLightKnob* o = createLightKnob<TKnobLight, TDLXLightKnob>(pos, module, paramId, kl);
 	o->box.pos = o->box.pos.minus(o->box.size.div(2));
 	return o;
 }
-
-///Glowing Ink
-
-struct DLXGlowingInk : SvgLight {
-	DLXGlowingInk() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/GlowingInk.svg")));
-	}
-};
