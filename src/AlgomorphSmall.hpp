@@ -46,6 +46,8 @@ struct AlgomorphSmall : Algomorph {
         ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         NUM_LIGHTS
     };
+
+    float gain = 1.f;
     
     AlgomorphSmall();
     void process(const ProcessArgs& args) override;
@@ -92,8 +94,25 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
                                                 {mm2px(32.968), mm2px(76.591)},
                                                 {mm2px(32.968), mm2px(66.570)}  };
 
+    struct SetGainLevelAction : history::ModuleAction {
+        float oldGain, newGain;
+
+        SetGainLevelAction();
+        void undo() override;
+        void redo() override;
+    };
+
     struct AlgomorphSmallMenuItem : MenuItem {
         AlgomorphSmall* module;
+    };
+    struct SetGainLevelItem : AlgomorphSmallMenuItem {
+        float gain;
+
+        void onAction(const event::Action &e) override;
+    };
+    struct GainLevelMenuItem : AlgomorphSmallMenuItem {
+        Menu* createChildMenu() override;
+        void createGainLevelMenu(AlgomorphSmall* module, ui::Menu* menu);
     };
 
     AlgomorphSmallWidget(AlgomorphSmall* module);
