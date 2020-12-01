@@ -62,9 +62,9 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Click Filter Strength",
 																			"Double Morph",
 																			"Triple Morph",
-																			"Sum Output Gain",
-																			"Mod Output Gain",
-																			"Op Input Gain",
+																			"Sum Outputs Gain",
+																			"Mod Outputs Gain",
+																			"Op Inputs Gain",
 																			"Unipolar Triple Morph",
 																			"Endless Morph"};
 

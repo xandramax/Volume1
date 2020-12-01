@@ -722,8 +722,9 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             carSumOut[c] += wildcardSum[c];
         }
         for (int mod = 0; mod < 4; mod++) {
-            modOut[mod][c] *= modAttenuversion[c] * modGain * runClickFilterGain;
-            modSumOut[c] += modOut[mod][c];
+            modOut[mod][c] *= runClickFilterGain;
+            modSumOut[c] += modOut[mod][c] * sumAttenuversion[c] * sumGain;
+            modOut[mod][c] *= modAttenuversion[c] * modGain;
         }
         carSumOut[c] *= sumAttenuversion[c] * sumGain * runClickFilterGain;
     }
