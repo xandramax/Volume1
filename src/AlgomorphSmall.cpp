@@ -439,6 +439,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
         wildcardMod[c] += inputs[WILDCARD_INPUT].getPolyVoltage(c);
         for (int mod = 0; mod < 4; mod++) {
             modOut[mod][c] += wildcardMod[c];
+            modOut[mod][c] *= gain;
         }
     }
 
@@ -977,6 +978,7 @@ json_t* AlgomorphSmall::dataToJson() {
     json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
     json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
+    json_object_set_new(rootJ, "Mod Gain", json_real(gain));
 
     json_t* algoNamesJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
@@ -1050,6 +1052,10 @@ void AlgomorphSmall::dataFromJson(json_t* rootJ) {
     if (vuLights)
         this->vuLights = json_boolean_value(vuLights);
 
+    auto gain = json_object_get(rootJ, "Mod Gain");
+    if (gain)
+        this->gain = json_real_value(gain);
+
     json_t* algoNamesJ = json_object_get(rootJ, "Scenes: Algorithm Names");
     if (algoNamesJ) {
         json_t* nameJ; size_t nameIndex;
@@ -1104,6 +1110,58 @@ float AlgomorphSmall::getOutputBrightness(int portID) {
 
 
 ///// Panel Widget
+
+/// Disallow Multiple Modes Menu Item
+
+AlgomorphSmallWidget::SetGainLevelAction::SetGainLevelAction() {
+    name = "Delexander Algomorph set gain level";
+}
+
+void AlgomorphSmallWidget::SetGainLevelAction::undo() {
+    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    assert(mw);
+    AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
+    assert(m);
+    
+    m->gain = oldGain;
+}
+
+void AlgomorphSmallWidget::SetGainLevelAction::redo() {
+    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    assert(mw);
+    AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
+    assert(m);
+    
+    m->gain = newGain;
+}
+
+void AlgomorphSmallWidget::SetGainLevelItem::onAction(const event::Action &e) {
+    if (module->gain != gain) {
+        // History
+        SetGainLevelAction* h = new SetGainLevelAction;
+        h->moduleId = module->id;
+        h->oldGain = module->gain;
+        h->newGain = gain;
+        
+        module->gain = gain;
+
+        APP->history->push(h);
+    }
+}
+
+Menu* AlgomorphSmallWidget::GainLevelMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createGainLevelMenu(module, menu);
+    return menu;
+}
+
+void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(AlgomorphSmall* module, ui::Menu* menu) {
+    menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+12 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 4.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 4.f)));
+    menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+6 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 2.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 2.f)));
+    menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "0 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 1.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 1.f)));
+    menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "-6 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 0.5f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 0.5f)));
+    menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "-12 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 0.25f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 0.25f)));
+}
 
 AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     setModule(module);
@@ -1255,6 +1313,8 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio & Interaction Settings"));
+
+    menu->addChild(construct<GainLevelMenuItem>(&MenuItem::text, "Modulator Gain adjustment…", &MenuItem::rightText, RIGHT_ARROW, &GainLevelMenuItem::module, module));
 
     menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 

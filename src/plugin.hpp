@@ -22,7 +22,7 @@ struct bitsetCompare {
 };
 
 static const NVGcolor DLXDarkPurple = nvgRGB(0x14, 0x0d, 0x13);
-static const NVGcolor DLXLightPurple = nvgRGB(139, 112, 162);
+static const NVGcolor DLXLightPurple = nvgRGB(0x8b, 0x70, 0xa2);
 static const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 static const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 

@@ -9,9 +9,9 @@ AlgomorphLarge::AlgomorphLarge() {
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], " millimorphs", 0, 1000);
-    configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
-    configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
-    configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
@@ -1722,6 +1722,102 @@ void AlgomorphLargeWidget::DisallowMultipleModesAction::redo() {
     m->auxInput[auxIndex]->allowMultipleModes = false;
 }
 
+void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const event::Action &e) {
+    if (module->auxInput[auxIndex]->allowMultipleModes) {
+        // History
+        DisallowMultipleModesAction* h = new DisallowMultipleModesAction;
+        h->moduleId = module->id;
+        h->auxIndex = auxIndex;
+        h->channels = module->auxInput[auxIndex]->channels;
+
+        if (module->auxInput[auxIndex]->activeModes > 1) {
+            h->multipleActive = true;
+            for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
+                if (module->auxInput[auxIndex]->modeIsActive[mode] && mode != module->auxInput[auxIndex]->lastSetMode) {
+                    h->enabled[mode] = true;
+                    module->unsetAuxMode(auxIndex, mode);
+                    for (int c = 0; c < h->channels; c++)
+                        module->auxInput[auxIndex]->voltage[mode][c] = module->auxInput[auxIndex]->defVoltage[mode];
+                    module->rescaleVoltage(mode, h->channels);
+                }
+            }
+        }
+        module->auxInput[auxIndex]->allowMultipleModes = false;
+
+        APP->history->push(h);
+    }
+    else {
+        // History
+        AllowMultipleModesAction<AlgomorphLarge>* h = new AllowMultipleModesAction<AlgomorphLarge>;
+        h->moduleId = module->id;
+        h->auxIndex = auxIndex;
+
+        module->auxInput[auxIndex]->allowMultipleModes = true;
+
+        APP->history->push(h);
+    }
+}
+
+Menu* AlgomorphLargeWidget::AllowMultipleModesMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createAllowMultipleModesMenu(module, menu);
+    return menu;
+}
+
+void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, ui::Menu* menu) {
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Aqua", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Fira", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Sol",  &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Cura", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 3, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[3]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Vida", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 4, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[4]->allowMultipleModes)));
+}
+
+/// Wildcard Input Menu
+
+Menu* AlgomorphLargeWidget::WildcardInputMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createWildcardInputMenu(module, menu, auxIndex);
+    return menu;
+}
+
+void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
+    for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::WILDCARD_SUM; i++)
+        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
+}
+
+/// Shadow Input Menu
+
+Menu* AlgomorphLargeWidget::ShadowInputMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createShadowInputMenu(module, menu, auxIndex);
+    return menu;
+}
+
+void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
+    for (int i = AuxInputModes::SHADOW; i <= AuxInputModes::SHADOW + 3; i++)
+        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
+}
+
+void AlgomorphLargeWidget::ResetOnRunItem::onAction(const event::Action &e) {
+    // History
+    ToggleResetOnRunAction<AlgomorphLarge>* h = new ToggleResetOnRunAction<AlgomorphLarge>;
+    h->moduleId = module->id;
+
+    module->resetOnRun ^= true;
+
+    APP->history->push(h);
+}
+
+void AlgomorphLargeWidget::RunSilencerItem::onAction(const event::Action &e) {
+    // History
+    ToggleRunSilencerAction<AlgomorphLarge>* h = new ToggleRunSilencerAction<AlgomorphLarge>;
+    h->moduleId = module->id;
+
+    module->runSilencer ^= true;
+
+    APP->history->push(h);
+}
+
 void AlgomorphLargeWidget::AuxModeItem::onAction(const event::Action &e) {
     if (module->auxInput[auxIndex]->modeIsActive[mode]) {
         // History
@@ -1771,88 +1867,6 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const event::Action &e) {
     }
 }
 
-/// Wildcard Input Menu
-
-Menu* AlgomorphLargeWidget::WildcardInputMenuItem::createChildMenu() {
-    Menu* menu = new Menu;
-    createWildcardInputMenu(module, menu, auxIndex);
-    return menu;
-}
-
-void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
-    for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::WILDCARD_SUM; i++)
-        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
-}
-
-/// Shadow Input Menu
-
-Menu* AlgomorphLargeWidget::ShadowInputMenuItem::createChildMenu() {
-    Menu* menu = new Menu;
-    createShadowInputMenu(module, menu, auxIndex);
-    return menu;
-}
-
-void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
-    for (int i = AuxInputModes::SHADOW; i <= AuxInputModes::SHADOW + 3; i++)
-        menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
-}
-
-void AlgomorphLargeWidget::ResetOnRunItem::onAction(const event::Action &e) {
-    // History
-    ToggleResetOnRunAction<AlgomorphLarge>* h = new ToggleResetOnRunAction<AlgomorphLarge>;
-    h->moduleId = module->id;
-
-    module->resetOnRun ^= true;
-
-    APP->history->push(h);
-}
-
-void AlgomorphLargeWidget::RunSilencerItem::onAction(const event::Action &e) {
-    // History
-    ToggleRunSilencerAction<AlgomorphLarge>* h = new ToggleRunSilencerAction<AlgomorphLarge>;
-    h->moduleId = module->id;
-
-    module->runSilencer ^= true;
-
-    APP->history->push(h);
-}
-
-void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const event::Action &e) {
-    if (module->auxInput[auxIndex]->allowMultipleModes) {
-        // History
-        DisallowMultipleModesAction* h = new DisallowMultipleModesAction;
-        h->moduleId = module->id;
-        h->auxIndex = auxIndex;
-        h->channels = module->auxInput[auxIndex]->channels;
-
-        if (module->auxInput[auxIndex]->activeModes > 1) {
-            h->multipleActive = true;
-            for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
-                if (module->auxInput[auxIndex]->modeIsActive[mode] && mode != module->auxInput[auxIndex]->lastSetMode) {
-                    h->enabled[mode] = true;
-                    module->unsetAuxMode(auxIndex, mode);
-                    for (int c = 0; c < h->channels; c++)
-                        module->auxInput[auxIndex]->voltage[mode][c] = module->auxInput[auxIndex]->defVoltage[mode];
-                    module->rescaleVoltage(mode, h->channels);
-                }
-            }
-        }
-        module->auxInput[auxIndex]->allowMultipleModes = false;
-
-        APP->history->push(h);
-    }
-    else {
-        // History
-        AllowMultipleModesAction<AlgomorphLarge>* h = new AllowMultipleModesAction<AlgomorphLarge>;
-        h->moduleId = module->id;
-        h->auxIndex = auxIndex;
-
-        module->auxInput[auxIndex]->allowMultipleModes = true;
-
-        APP->history->push(h);
-    }
-}
-
 Menu* AlgomorphLargeWidget::AuxInputModeMenuItem::createChildMenu() {
     Menu* menu = new Menu;
     createAuxInputModeMenu(module, menu, auxIndex);
@@ -1883,20 +1897,6 @@ void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(Algomorp
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::MORPH_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SCENE_OFFSET], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::SCENE_OFFSET]), &AuxModeItem::mode, AuxInputModes::SCENE_OFFSET));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLICK_FILTER], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::CLICK_FILTER]), &AuxModeItem::mode, AuxInputModes::CLICK_FILTER));
-}
-
-Menu* AlgomorphLargeWidget::AllowMultipleModesMenuItem::createChildMenu() {
-    Menu* menu = new Menu;
-    createAllowMultipleModesMenu(module, menu);
-    return menu;
-}
-
-void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, ui::Menu* menu) {
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Aqua", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Fira", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Sol",  &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Cura", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 3, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[3]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Vida", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 4, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[4]->allowMultipleModes)));
 }
 
 void AlgomorphLargeWidget::SaveAuxInputSettingsItem::onAction(const event::Action& e) {
