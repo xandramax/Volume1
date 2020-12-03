@@ -739,9 +739,9 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                 for (int i = 0; i < 4; i++) {
                     brightness = 0.f;
                     if (horizontalMarks[centerMorphScene[0]].test(i))
-                        brightness += getInputBrightness(OPERATOR_INPUTS + i) * (1.f - relativeMorphMagnitude[0]);
+                        brightness += getOutputBrightness(MODULATOR_OUTPUTS + i) * (1.f - relativeMorphMagnitude[0]);
                     if (horizontalMarks[forwardMorphScene[0]].test(i))
-                        brightness += getInputBrightness(OPERATOR_INPUTS + i) * relativeMorphMagnitude[0];
+                        brightness += getOutputBrightness(MODULATOR_OUTPUTS + i) * relativeMorphMagnitude[0];
                     //Purple lights
                     lights[H_CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
                     //Yellow
@@ -752,9 +752,9 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                 for (int i = 0; i < 12; i++) {
                     brightness = 0.f;
                     if (algoName[centerMorphScene[0]].test((i / 3) * 3 + (i % 3)))
-                        brightness += getInputBrightness(OPERATOR_INPUTS + i / 3) * (1.f - relativeMorphMagnitude[0]);
+                        brightness += getOutputBrightness(MODULATOR_OUTPUTS + i / 3) * (1.f - relativeMorphMagnitude[0]);
                     if (algoName[forwardMorphScene[0]].test((i / 3) * 3 + (i % 3)))
-                        brightness += getInputBrightness(OPERATOR_INPUTS + i / 3) * relativeMorphMagnitude[0];
+                        brightness += getOutputBrightness(MODULATOR_OUTPUTS + i / 3) * relativeMorphMagnitude[0];
                     //Purple lights
                     lights[CONNECTION_LIGHTS + i * 3].setSmoothBrightness(brightness, args.sampleTime * lightDivider.getDivision());
                     //Yellow
@@ -765,7 +765,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
             }
             else {
                 for (int i = 0; i < 4; i++) {
-                    brightness = getInputBrightness(OPERATOR_INPUTS + i);
+                    brightness = getOutputBrightness(MODULATOR_OUTPUTS + i);
                     for (int j = 0; j < 3; j++) {
                         float morphBrightness = 0.f;
                         if (algoName[centerMorphScene[0]].test(i * 3 + j)) {
