@@ -7,9 +7,9 @@
 AlgomorphLarge::AlgomorphLarge() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
-    configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
-    configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
-    configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN, -2.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN, -3.f, 3.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
@@ -1237,7 +1237,7 @@ void AlgomorphLarge::scaleAuxMorphDoubleAttenCV(int channels) {
     for (int c = 0; c < channels; c++) {
         scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] = 1.f;
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-            scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] *= 2.f * auxInput[auxIndex]->voltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] / 5.f;
+            scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] *= auxInput[auxIndex]->voltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] / FIVE_D_TWO;
     }
 }
 
@@ -1245,7 +1245,7 @@ void AlgomorphLarge::scaleAuxMorphTripleAttenCV(int channels) {
     for (int c = 0; c < channels; c++) {
         scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] = 1.f;
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-            scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] *= 3.f * auxInput[auxIndex]->voltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] / 5.f;
+            scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] *= auxInput[auxIndex]->voltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] / FIVE_D_THREE;
     }
 }
 
@@ -1659,8 +1659,8 @@ AuxInput<MODULE>::AuxInput(int id, MODULE* module) {
     defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
     defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
     defVoltage[AuxInputModes::MORPH_ATTEN] = 5.f;
-    defVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN] = 5.f;
-    defVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN] = 5.f;
+    defVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN] = FIVE_D_TWO;
+    defVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN] = FIVE_D_THREE;
     resetVoltages();
 }
 
