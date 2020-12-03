@@ -91,6 +91,8 @@ struct AlgomorphLarge : Algomorph {
     void scaleAuxDoubleMorphCV(int channels);
     void scaleAuxTripleMorphCV(int channels);
     void scaleAuxMorphAttenCV(int channels);
+    void scaleAuxMorphDoubleAttenCV(int channels);
+    void scaleAuxMorphTripleAttenCV(int channels);
     void scaleAuxShadow(float sampleTime, int op, int channels);
     void initRun();
     void rescaleVoltage(int mode, int channels);
