@@ -77,15 +77,17 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Morph CV Triple Ampliverter"};
 
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
-                                                                    0.f,
-                                                                    1.f,
-                                                                    0.f,
-                                                                    0.f,
-                                                                    1.f,
                                                                     1.f,
                                                                     1.f,
                                                                     0.f,
-                                                                    0.f	};
+                                                                    0.f,
+                                                                    1.f,
+                                                                    1.f,
+                                                                    1.f,
+                                                                    0.f,
+                                                                    0.f,
+																	1.f,
+																	1.f	};
 
 
 template < typename MODULE >
