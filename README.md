@@ -29,8 +29,9 @@ Specifications:
 * 1 phase output
 * 5 assignable aux inputs, with 18 possible modes and optional multimode
 * 6 built-in preset assignments for the aux inputs
+* 3 configurable strengths for Morph CV inputs: standard, double, and triple
 * 1 morph knob
-* 1 assignable aux knob, with 10 possible modes
+* 1 assignable aux knob, with 10 possible modes including an endless rotary morph mode
 * 3 algorithm slots
 * Click/pop filters across all audio paths, with user-configurable strength
 * 2 separate modes for the routing logic: standard and "Alter Ego"
@@ -45,18 +46,21 @@ Instructions:
 * Connect the same number of Modulation Outputs from Algomorph to the linear through-zero FM inputs of the operators.  
 * Connect the Sum output to your audio device or a mixer.  
 * Press an Operator Button followed by a Modulation Button to connect one operator to another. Repeat until you have built a desired algorithm.  
-* After you have finished building your algorithm, press Algorithm Button 1 or 2 to build a new algorithm.  
+* After you have finished building your algorithm, press Algorithm Button 1 or 3 to build a new algorithm.  
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
-* The CV input can also be used instead of (or in addition to) the knob, accepting +/-5V.
+* The CV input can also be used instead of (or in addition to) the knob, accepting +/-5V
 * Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a forced-carrier for the current algorithm.
 * The assignments for the AUX inputs and AUX knob can be found at a glance in the module's contextual menu, and from there they can also be changed. Be sure to check out Algomorph's included presets, each of which changes the configuration for the five AUX inputs.
+
+![Example](res/AlgomorphLarge_GroupImage.png)
+![Example](res/AlgomorphSmall_GroupImage.png)
 
 There is additionally an "Alter Ego" mode of operation, which makes has two significant differences:
 
 * Operators can be routed horizontally. Making horizontal connections does not disable operators here.
 * Automatic carrier assignment does not occur. The only operators which are routed to the Sum output are those which are forcible marked as carriers by the user (see instructions above).
 
-![Example](res/AlgomorphLarge_GroupImage.png)
-![Example](res/AlgomorphSmall_GroupImage.png)
+Note: while the expected CV range is scaled around +/- 5V, the morph CV inputs will actually accept "unlimited" voltage in either the positve or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO through a multiplier like NYSTHI [ConstAddMult](https://library.vcvrack.com/NYSTHI/ConstAddMult) for some truly wild circular morphing at high rates of multiplication.
+
 ![Example](res/Algomorph_FullPatchImage.png)
