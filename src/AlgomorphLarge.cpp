@@ -2217,6 +2217,8 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
             DLXSmallKnobLight* auxKl = createLight<DLXSmallKnobLight>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOB_LIGHTS + i);
             DLXSmallLightKnob* auxKlParam = createLightKnob<DLXSmallKnobLight, DLXSmallLightKnob>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOBS + i, auxKl);
+            if (i == AuxKnobModes::MORPH || i == AuxKnobModes::DOUBLE_MORPH || i == AuxKnobModes::TRIPLE_MORPH || i == AuxKnobModes::UNI_MORPH || i == AuxKnobModes::ENDLESS_MORPH)
+                auxKlParam->randomizable = false;
             if (i != module->knobMode) {
                 auxKlParam->hide();
                 auxKlParam->sibling->hide();
