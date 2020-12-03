@@ -8,13 +8,15 @@ AlgomorphLarge::AlgomorphLarge() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH, -1.f, 1.f, 0.f, "AUX " + AuxKnobModeLabels[AuxKnobModes::MORPH], " millimorphs", 0, 1000);
+    configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
+    configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
-    configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH, -2.f, 2.f, 0.f, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], " millimorphs", 0, 1000);
-    configParam(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH, -3.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " limits", 0, 0);
     configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
     for (int i = 0; i < 4; i++) {
@@ -205,10 +207,18 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     //  Update morph status
     if (auxModeFlags[AuxInputModes::MORPH_ATTEN])
         rescaleVoltage(AuxInputModes::MORPH_ATTEN, channels);
+    if (auxModeFlags[AuxInputModes::DOUBLE_MORPH_ATTEN])
+        rescaleVoltage(AuxInputModes::DOUBLE_MORPH_ATTEN, channels);
+    if (auxModeFlags[AuxInputModes::TRIPLE_MORPH_ATTEN])
+        rescaleVoltage(AuxInputModes::TRIPLE_MORPH_ATTEN, channels);
     float morphAttenuversion[16] = {0.f};
     for (int c = 0; c < channels; c++) {
         morphAttenuversion[c] = scaledAuxVoltage[AuxInputModes::MORPH_ATTEN][c]
-                                * params[AUX_KNOBS + AuxKnobModes::MORPH_ATTEN].getValue();
+                                * scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c]
+                                * scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c]
+                                * params[AUX_KNOBS + AuxKnobModes::MORPH_ATTEN].getValue()
+                                * params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN].getValue()
+                                * params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN].getValue();
     }
     if (auxModeFlags[AuxInputModes::MORPH])
         rescaleVoltage(AuxInputModes::MORPH, channels);
@@ -1223,6 +1233,22 @@ void AlgomorphLarge::scaleAuxMorphAttenCV(int channels) {
     }
 }
 
+void AlgomorphLarge::scaleAuxMorphDoubleAttenCV(int channels) {
+    for (int c = 0; c < channels; c++) {
+        scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] = 1.f;
+        for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
+            scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] *= 2.f * auxInput[auxIndex]->voltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c] / 5.f;
+    }
+}
+
+void AlgomorphLarge::scaleAuxMorphTripleAttenCV(int channels) {
+    for (int c = 0; c < channels; c++) {
+        scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] = 1.f;
+        for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
+            scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] *= 3.f * auxInput[auxIndex]->voltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c] / 5.f;
+    }
+}
+
 void AlgomorphLarge::scaleAuxShadow(float sampleTime, int op, int channels) {
     for (int c = 0; c < channels; c++) {
         scaledAuxVoltage[AuxInputModes::SHADOW + op][c] = 0.f;
@@ -1246,6 +1272,12 @@ void AlgomorphLarge::rescaleVoltage(int mode, int channels) {
             break;
         case AuxInputModes::MORPH_ATTEN:
             scaleAuxMorphAttenCV(channels);
+            break;
+        case AuxInputModes::DOUBLE_MORPH_ATTEN:
+            scaleAuxMorphDoubleAttenCV(channels);
+            break;
+        case AuxInputModes::TRIPLE_MORPH_ATTEN:
+            scaleAuxMorphTripleAttenCV(channels);
             break;
         case AuxInputModes::MORPH:
             scaleAuxMorphCV(channels);
@@ -1627,6 +1659,8 @@ AuxInput<MODULE>::AuxInput(int id, MODULE* module) {
     defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
     defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
     defVoltage[AuxInputModes::MORPH_ATTEN] = 5.f;
+    defVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN] = 5.f;
+    defVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN] = 5.f;
     resetVoltages();
 }
 
@@ -1896,6 +1930,8 @@ void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(Algomorp
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MOD_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::MOD_ATTEN]), &AuxModeItem::mode, AuxInputModes::MOD_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SUM_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::SUM_ATTEN]), &AuxModeItem::mode, AuxInputModes::SUM_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::MORPH_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::DOUBLE_MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::DOUBLE_MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::DOUBLE_MORPH_ATTEN));
+    menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::TRIPLE_MORPH_ATTEN], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::TRIPLE_MORPH_ATTEN]), &AuxModeItem::mode, AuxInputModes::TRIPLE_MORPH_ATTEN));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::SCENE_OFFSET], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::SCENE_OFFSET]), &AuxModeItem::mode, AuxInputModes::SCENE_OFFSET));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLICK_FILTER], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::CLICK_FILTER]), &AuxModeItem::mode, AuxInputModes::CLICK_FILTER));
 }
@@ -2088,6 +2124,8 @@ void AlgomorphLargeWidget::PhaseOutRangeItem::onAction(const event::Action &e) {
 Menu* AlgomorphLargeWidget::KnobModeMenuItem::createChildMenu() {
     Menu* menu = new Menu;
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MORPH_ATTEN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MORPH_ATTEN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MORPH_ATTEN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MORPH_ATTEN));
+    menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH_ATTEN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::DOUBLE_MORPH_ATTEN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::DOUBLE_MORPH_ATTEN));
+    menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::TRIPLE_MORPH_ATTEN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::TRIPLE_MORPH_ATTEN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::TRIPLE_MORPH_ATTEN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MOD_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MOD_GAIN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::SUM_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::SUM_GAIN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::OP_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::OP_GAIN));

@@ -24,7 +24,9 @@ struct AuxInputModes : AuxSourceModes {
 	static const int WILDCARD_SUM = 	AuxSourceModes::NUM_MODES + 8;
 	static const int SHADOW = 			AuxSourceModes::NUM_MODES + 9;
 	// 4 shadow modes
-	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 13;
+	static const int DOUBLE_MORPH_ATTEN = AuxSourceModes::NUM_MODES + 13;
+	static const int TRIPLE_MORPH_ATTEN = AuxSourceModes::NUM_MODES + 14;
+	static const int NUM_MODES = AuxSourceModes::NUM_MODES + 15;
 };
 
 //Order must match above
@@ -45,7 +47,9 @@ static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph
 																			"Operator 1",
 																			"Operator 2",
 																			"Operator 3",
-																			"Operator 4"};
+																			"Operator 4",
+																			"Morph CV Double Ampliverter",
+																			"Morph CV Triple Ampliverter"};
 
 struct AuxKnobModes : AuxSourceModes {
 	static const int SUM_GAIN = 		AuxSourceModes::NUM_MODES;
@@ -53,7 +57,9 @@ struct AuxKnobModes : AuxSourceModes {
 	static const int OP_GAIN = 			AuxSourceModes::NUM_MODES + 2;
 	static const int UNI_MORPH = 		AuxSourceModes::NUM_MODES + 3;
 	static const int ENDLESS_MORPH = 	AuxSourceModes::NUM_MODES + 4;
-	static const int NUM_MODES = 		AuxSourceModes::NUM_MODES + 5;
+	static const int DOUBLE_MORPH_ATTEN = 	AuxSourceModes::NUM_MODES + 5;
+	static const int TRIPLE_MORPH_ATTEN = 	AuxSourceModes::NUM_MODES + 6;
+	static const int NUM_MODES = 		AuxSourceModes::NUM_MODES + 7;
 };
 
 //Order must match above
@@ -66,7 +72,9 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Mod Outputs Gain",
 																			"Op Inputs Gain",
 																			"Unipolar Triple Morph",
-																			"Endless Morph"};
+																			"Endless Morph",
+																			"Morph CV Double Ampliverter",
+																			"Morph CV Triple Ampliverter"};
 
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
                                                                     0.f,

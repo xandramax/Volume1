@@ -6,7 +6,7 @@
 AlgomorphSmall::AlgomorphSmall() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
-    configParam(MORPH_ATTEN_KNOB, -1.f, 1.f, 0.f, "Morph CV Attenuverter", "%", 0, 100);
+    configParam(MORPH_ATTEN_KNOB, -3.f, 3.f, 0.f, "Morph CV Triple Ampliverter", "%", 0, 100);
     for (int i = 0; i < 4; i++) {
         configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
         configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
