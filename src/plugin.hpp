@@ -1269,8 +1269,48 @@ struct DLXMediumLightKnob : LightKnob<DLXMediumKnobLight> {
 };
 
 struct DLXSmallLightKnob : LightKnob<DLXSmallKnobLight> {
+	bool randomizable = true;
+	bool resettable = true;
+
 	DLXSmallLightKnob() {
 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB.svg")));
+	}
+
+	void randomize() override {
+		if (randomizable)
+			Knob::randomize();
+	}
+
+	void reset() override {
+		if (paramQuantity && resettable) {
+			paramQuantity->reset();
+			oldValue = snapValue = paramQuantity->getValue();
+		}
+	}
+
+	void onDoubleClick(const event::DoubleClick& e) override {
+		resetAction();
+	}
+
+	void resetAction() {
+		if (paramQuantity && resettable) {
+			float oldValue = paramQuantity->getValue();
+			reset();
+			// Here's another way of doing it, but either works.
+			// paramQuantity->getParam()->reset();
+			float newValue = paramQuantity->getValue();
+
+			if (oldValue != newValue) {
+				// Push ParamChange history action
+				history::ParamChange* h = new history::ParamChange;
+				h->name = "reset parameter";
+				h->moduleId = paramQuantity->module->id;
+				h->paramId = paramQuantity->paramId;
+				h->oldValue = oldValue;
+				h->newValue = newValue;
+				APP->history->push(h);
+			}
+		}
 	}
 };
 
