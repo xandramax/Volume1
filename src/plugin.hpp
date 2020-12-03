@@ -705,9 +705,33 @@ struct Line {
 	}
 };
 
-struct ConnectionBgWidget : TransparentWidget {
+template <class MODULE>
+struct RandomizeCurrentAlgorithmItem : MenuItem {
+	MODULE* module;
+
+	void onAction(const event::Action &e) override {
+		module->randomizeAlgorithm(module->centerMorphScene[0]);
+		module->graphDirty = true;
+	}
+};
+
+template <class MODULE>
+struct RandomizeAllAlgorithmsItem : MenuItem {
+	MODULE* module;
+
+	void onAction(const event::Action &e) override {
+		for (int scene = 0; scene < 3; scene++)
+			module->randomizeAlgorithm(scene);
+		module->graphDirty = true;
+	}
+};
+
+template <class MODULE>
+struct ConnectionBgWidget : OpaqueWidget {
+	MODULE* module;
 	std::vector<Line> lines;
-	ConnectionBgWidget(std::vector<Vec> left, std::vector<Vec> right) {
+	ConnectionBgWidget(std::vector<Vec> left, std::vector<Vec> right, MODULE* module) {
+		this->module = module;	
 		for (unsigned i = 0; i < left.size(); i++) {
 			for (unsigned j = 0; j < right.size(); j++) {
 				lines.push_back(Line(left[i], right[j]));
@@ -731,6 +755,20 @@ struct ConnectionBgWidget : TransparentWidget {
 			nvgStroke(args.vg);
         }
     }
+
+	void onButton(const event::Button& e) override {
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
+			createContextMenu();
+			e.consume(this);
+		}
+		OpaqueWidget::onButton(e);
+	}
+
+	void createContextMenu() {
+		ui::Menu* menu = createMenu();
+		menu->addChild(construct<RandomizeCurrentAlgorithmItem<MODULE>>(&MenuItem::text, "Randomize Algorithm " +  std::to_string((module->configMode ? module->configScene : module->centerMorphScene[0]) + 1), &RandomizeCurrentAlgorithmItem<MODULE>::module, module));
+		menu->addChild(construct<RandomizeAllAlgorithmsItem<MODULE>>(&MenuItem::text, "Randomize All Algorithms", &RandomizeAllAlgorithmsItem<MODULE>::module, module));
+	}
 };
 
 template < typename TBase = GrayModuleLightWidget >

@@ -2245,9 +2245,9 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(60.341, 98.678)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 1));
         addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(60.341, 108.699)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 0));
 
-        ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters);
-        connectionBgWidget->box.pos = this->box.pos;
-        connectionBgWidget->box.size = this->box.size;
+        ConnectionBgWidget<AlgomorphLarge>* connectionBgWidget = new ConnectionBgWidget<AlgomorphLarge>(OpButtonCenters, ModButtonCenters, module);
+        connectionBgWidget->box.pos = OpButtonCenters[3];
+        connectionBgWidget->box.size = ModButtonCenters[0].minus(OpButtonCenters[3]);
         addChild(connectionBgWidget);
 
         addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[3], module, AlgomorphLarge::H_CONNECTION_LIGHTS + 9));
