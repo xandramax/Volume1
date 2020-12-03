@@ -73,4 +73,9 @@ There is additionally an "Alter Ego" mode of operation, which makes has two sign
 
 Note: while the expected CV range is scaled around +/- 5V, the morph CV inputs will actually accept "unlimited" voltage in either the positive or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO through a multiplier like NYSTHI [ConstAddMult](https://library.vcvrack.com/NYSTHI/ConstAddMult) for some truly wild circular morphing at high rates of multiplication.
 
+All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, are independently and simultaneously MIDI- and CV-mappable using modules like:
+* VCV [MIDI-MAP](https://library.vcvrack.com/Core/MIDI-Map)
+* stoermelder [CV-MAP](https://library.vcvrack.com/Stoermelder-P1/CVMap)/[µMAP](https://library.vcvrack.com/Stoermelder-P1/CVMapMicro)
+* 23volts [Multimap](https://library.vcvrack.com/23volts/MultimapK)
+
 ![Example](res/Algomorph_FullPatchImage.png)
