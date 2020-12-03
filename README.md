@@ -1,26 +1,42 @@
 # Algomorph
-Algomorph is a VCV Rack module which aids in the construction and visualization of FM algorithms. In addition, the module allows for storing up to 3 different algorithms and freely crossfading between them.
+Algomorph is a module for [VCV Rack](https://github.com/VCVRack/Rack).
 
-It is intended for use with modules capable of linear through-zero FM, or phase modulation, such as:
+Algomorph is an intelligent signal router, building from the familiar concepts of FM algorithms and expanding in service of both FM synthesis as well as general-purpose audio and CV routing.
+
+Algomorph is capable of storing three independing routing states and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
+
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations are hardcoded, and the vector data is generated using a combination of manual dot-language enumeration of the problem-space, rendering to SVG via [GraphViz](https://graphviz.org/), and further processing with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/).
+
+Algomorph features five user-assignable CV/trigger/audio inputs, two sum outputs (each of whose state is determined by algorithm and morphing), and a phase output. Try feeding Algomorph multiple clocked modulation sources as Morph CV, then use the phase output as a combined clock source and/or a source of combined Morph CV for chaining with a second Algomorph module.
+
+Algomorph has a user-assignable auxiliary knob located at the center of the main Morph Knob. By default, this functions as a morph CV attenuverter.
+
+It is intended for use with modules capable of linear through-zero FM, or phase modulation, such as these operators:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
 * Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
+* KauntenjaDSP [Mini Boss](https://github.com/Kautenja/PotatoChips/releases/tag/1.10.0)
 
-However, there are several configuration options available which expand the possibilities for using Algomorph as a more general-purpose signal router outside the realm of FM algorithms. Creativity is encouraged!
-
-![Algomorph](<res/AlgomorphSoloImage.png>)
+![Algomorph](<res/Algomorph_SoloImage.png>)
 
 Specifications:
 * 4 operator inputs
 * 4 modulator outputs
 * 1 carrier sum output
-* 4 assignable aux inputs, with 18 possible modes
+* 1 modulator sum output
+* 1 phase output
+* 5 assignable aux inputs, with 18 possible modes and optional multimode
+* 6 built-in preset assignments for the aux inputs
 * 1 morph knob
-* 1 assignable knob, with 10 possible modes
+* 1 assignable aux knob, with 10 possible modes
 * 3 algorithm slots
+* Click/pop filters across all audio paths, with user-configurable strength
+* 2 separate modes for the routing logic: standard and "Alter Ego"
+* Lights that respond to the levels of incoming and outgoing audio
 * Expected CV range: +/- 5V
+* Phase output configurable 0-10V or +/- 5V
 
 Instructions:
 
@@ -34,11 +50,13 @@ Instructions:
 * The CV input can also be used instead of (or in addition to) the knob, accepting +/-5V.
 * Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a forced-carrier for the current algorithm.
-* The assignments for the AUX inputs and AUX knob can be found at a glance in the module's contextual menu, and from there they can also be changed. Be sure to check out Algomorph's included presets, each of which changes contains a configuration for the four AUX inputs.
+* The assignments for the AUX inputs and AUX knob can be found at a glance in the module's contextual menu, and from there they can also be changed. Be sure to check out Algomorph's included presets, each of which changes the configuration for the five AUX inputs.
 
 There is additionally an "Alter Ego" mode of operation, which makes has two significant differences:
 
 * Operators can be routed horizontally. Making horizontal connections does not disable operators here.
 * Automatic carrier assignment does not occur. The only operators which are routed to the Sum output are those which are forcible marked as carriers by the user (see instructions above).
 
-![Example](res/AlgomorphGroupImage.png)
+![Example](res/AlgomorphLarge_GroupImage.png)
+![Example](res/AlgomorphSmall_GroupImage.png)
+![Example](res/Algomorph_FullPatchImage.png)
