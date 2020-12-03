@@ -81,151 +81,87 @@ void Algomorph::onReset() {
     graphDirty = true;
 }
 
+void Algomorph::randomizeAlgorithm(int scene) {
+    bool noCarrier = true;
+    algoName[scene].reset();    //Initialize
+    horizontalMarks[scene].reset();   //Initialize
+    if (modeB)
+        forcedCarriers[scene].reset();    //Initialize
+    for (int op = 0; op < 4; op++) {
+        if (modeB) {
+            bool disabled = true;           //Initialize
+            forcedCarriers[scene].set(op, false);   //Initialize
+            if (random::uniform() > .5f) {
+                forcedCarriers[scene].set(op, true);
+                noCarrier = false;
+                disabled = false;
+            }
+            if (random::uniform() > .5f) {
+                horizontalMarks[scene].set(op, true);
+                //Do not set algoName, because the operator is not disabled
+                disabled = false;
+            }
+            for (int mod = 0; mod < 3; mod++) {
+                if (random::uniform() > .5f) {
+                    algoName[scene].set(op * 3 + mod, true);
+                    disabled = false;
+                }
+            }
+            if (disabled)
+                algoName[scene].set(12 + op, true);
+        }
+        else {
+            forcedCarriers[scene].set(op, false);   //Disable
+            if (random::uniform() > .5f) {  //If true, operator is a carrier
+                noCarrier = false;
+                for (int mod = 0; mod < 3; mod++)
+                    algoName[scene].set(op * 3 + mod, false);
+            }
+            else {
+                if (random::uniform() > .5) {   //If true, operator is disabled
+                    horizontalMarks[scene].set(op, true);
+                    algoName[scene].set(12 + op, true);
+                    for (int mod = 0; mod < 3; mod++ )
+                        algoName[scene].set(op * 3 + mod, false);
+                }
+                else {
+                    for (int mod = 0; mod < 3; mod++) {
+                        if (random::uniform() > .5f)
+                            algoName[scene].set(op * 3 + mod, true);    
+                    }
+                }
+            }
+        }
+    }
+    if (noCarrier) {
+        int shortStraw = std::floor(random::uniform() * 4);
+        while (shortStraw == 4)
+            shortStraw = std::floor(random::uniform() * 4);
+        if (modeB) {
+            forcedCarriers[scene].set(shortStraw, true);
+            algoName[scene].set(12 + shortStraw, false);
+        }
+        else {
+            horizontalMarks[scene].set(shortStraw, false);
+            algoName[scene].set(12 + shortStraw, false);
+            for (int mod = 0; mod < 3; mod++)
+                algoName[scene].set(shortStraw * 3 + mod, false);
+        }
+    }
+    displayAlgoName[scene] = algoName[scene];   // Sync
+    updateCarriers(scene);
+    updateOpsDisabled(scene);
+    updateDisplayAlgo(scene);
+}
+
 void Algomorph::onRandomize() {
     //If in config mode, only randomize the current algorithm,
     //do not change the base scene and do not enable/disable ring morph
-    if (configMode) {
-        bool noCarrier = true;
-        algoName[configScene].reset();    //Initialize
-        horizontalMarks[configScene].reset();   //Initialize
-        if (modeB)
-            forcedCarriers[configScene].reset();
-        for (int op = 0; op < 4; op++) {
-            if (modeB) {
-                bool disabled = true;
-                forcedCarriers[configScene].set(op, false);   //Initialize
-                if (random::uniform() > .5f) {
-                    forcedCarriers[configScene].set(op, true);
-                    noCarrier = false;
-                    disabled = false;
-                }
-                if (random::uniform() > .5f) {
-                    horizontalMarks[configScene].set(op, true);
-                    //Do not set algoName, because the operator is not disabled
-                    disabled = false;
-                }
-                for (int mod = 0; mod < 3; mod++) {
-                    if (random::uniform() > .5f) {
-                        algoName[configScene].set(op * 3 + mod, true);
-                        disabled = false;    
-                    }
-                }
-                if (disabled)
-                    algoName[configScene].set(12 + op, true);
-            }
-            else {
-                forcedCarriers[configScene].set(op, false);  //Disable
-                if (random::uniform() > .5f) {      //If true, operator is a carrier
-                    noCarrier = false;
-                }
-                else {
-                    if (random::uniform() > .5) {    //If true, operator is disabled
-                        horizontalMarks[configScene].set(op, true);
-                        algoName[configScene].set(12 + op, true);
-                    }
-                    else {
-                        for (int mod = 0; mod < 3; mod++) {
-                            if (random::uniform() > .5f)
-                                algoName[configScene].set(op * 3 + mod, true);    
-                        }
-                    }
-                }
-            }
-        }
-        if (noCarrier) {
-            int shortStraw = std::floor(random::uniform() * 4);
-            while (shortStraw == 4)
-                shortStraw = std::floor(random::uniform() * 4);
-            if (modeB) {
-                forcedCarriers[configScene].set(shortStraw, true);
-                algoName[configScene].set(12 + shortStraw, false);
-            }
-            else {
-                horizontalMarks[configScene].set(shortStraw, false);
-                algoName[configScene].set(12 + shortStraw, false);
-                for (int k = 0; k < 3; k++)
-                    algoName[configScene].set(shortStraw * 3 + k, false);
-            }
-        }
-        displayAlgoName[configScene] = algoName[configScene];   // Sync
-        updateCarriers(configScene);
-        updateOpsDisabled(configScene);
-        updateDisplayAlgo(configScene);
-    }
-    //Otherwise, randomize everything
+    if (configMode)
+        randomizeAlgorithm(configScene);
     else {
-        for (int scene = 0; scene < 3; scene++) {
-            bool noCarrier = true;
-            algoName[scene].reset();    //Initialize
-            horizontalMarks[scene].reset();   //Initialize
-            if (modeB)
-                forcedCarriers[scene].reset();    //Initialize
-            for (int op = 0; op < 4; op++) {
-                if (modeB) {
-                    bool disabled = true;           //Initialize
-                    if (random::uniform() > .5f) {
-                        forcedCarriers[scene].set(op, true);
-                        noCarrier = false;
-                        disabled = false;
-                    }
-                    if (random::uniform() > .5f) {
-                        horizontalMarks[scene].set(op, true);
-                        //Do not set algoName, because the operator is not disabled
-                        disabled = false;
-                    }
-                    for (int mod = 0; mod < 3; mod++) {
-                        if (random::uniform() > .5f) {
-                            algoName[scene].set(op * 3 + mod, true);
-                            disabled = false;
-                        }
-                    }
-                    if (disabled)
-                        algoName[configScene].set(12 + op, true);
-                }
-                else {
-                    forcedCarriers[scene].set(op, false);   //Disable
-                    if (random::uniform() > .5f) {      //If true, operator is a carrier
-                        noCarrier = false;
-                        for (int mod = 0; mod < 3; mod++)
-                            algoName[scene].set(op * 3 + mod, false);
-                    }
-                    else {
-                        if (random::uniform() > .5) {     //If true, operator is disabled
-                            horizontalMarks[scene].set(op, true);
-                            algoName[scene].set(12 + op, true);
-                            for (int mod = 0; mod < 3; mod++ )
-                                algoName[scene].set(op * 3 + mod, false);
-                        }
-                        else {
-                            for (int mod = 0; mod < 3; mod++) {
-                                if (random::uniform() > .5f) {
-                                    algoName[scene].set(op * 3 + mod, true);    
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (noCarrier) {
-                int shortStraw = std::floor(random::uniform() * 4);
-                while (shortStraw == 4)
-                    shortStraw = std::floor(random::uniform() * 4);
-                if (modeB) {
-                    forcedCarriers[scene].set(shortStraw, true);
-                    algoName[scene].set(12 + shortStraw, false);
-                }
-                else {
-                    horizontalMarks[scene].set(shortStraw, false);
-                    algoName[scene].set(12 + shortStraw, false);
-                    for (int mod = 0; mod < 3; mod++)
-                        algoName[scene].set(shortStraw * 3 + mod, false);
-                }
-            }
-            displayAlgoName[scene] = algoName[scene];   // Sync
-            updateCarriers(scene);
-            updateOpsDisabled(scene);
-            updateDisplayAlgo(scene);
-        }
+        for (int scene = 0; scene < 3; scene++)
+            randomizeAlgorithm(scene);
     }
     graphDirty = true;
 }

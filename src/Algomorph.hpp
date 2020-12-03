@@ -80,6 +80,7 @@ struct Algomorph : Module {
 
     Algomorph();
     void onReset() override;
+    void randomizeAlgorithm(int scene);
     void onRandomize() override;
     float routeHorizontal(float sampleTime, float inputVoltage, int op, int c);
     float routeHorizontalRing(float sampleTime, float inputVoltage, int op, int c);
