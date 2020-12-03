@@ -3,13 +3,13 @@ Algomorph is a module for [VCV Rack](https://github.com/VCVRack/Rack).
 
 Algomorph is an intelligent signal router, building from the familiar concepts of FM algorithms and expanding in service of both FM synthesis as well as general-purpose audio and CV routing.
 
-Algomorph is capable of storing three independing routing states and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
+Algomorph is capable of storing three independent routing states and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations are hardcoded, and the vector data is generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs as defined for the purposes of this project), rendering to SVG via [GraphViz](https://graphviz.org/), and further processing with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/).
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations are hard-coded, and the vector data is generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs as defined for the purposes of this project), rendering to SVG via [GraphViz](https://graphviz.org/), and further processing with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/).
 
 Algomorph features five user-assignable CV/trigger/audio inputs, two sum outputs (each of whose state is determined by algorithm and morphing), and a phase output. Try feeding Algomorph multiple clocked modulation sources as Morph CV, then use the phase output as a combined clock source and/or a source of combined Morph CV for chaining with a second Algomorph module.
 
-Algomorph has a user-assignable auxiliary knob located at the center of the main Morph Knob. By default, this functions as a morph CV attenuverter.
+Algomorph has a user-assignable auxiliary knob located at the center of the main Morph Knob. By default, this functions as a Morph CV attenuverter.
 
 It is intended for use with modules capable of linear through-zero FM, or phase modulation, such as these operators:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
@@ -21,27 +21,35 @@ It is intended for use with modules capable of linear through-zero FM, or phase 
 
 ![Algomorph](<res/Algomorph_SoloImage.png>)
 
-Specifications:
+# Specifications:
+Algomorph (both sizes):
 * 4 operator inputs
 * 4 modulator outputs
 * 1 carrier sum output
-* 1 modulator sum output
-* 1 phase output
-* 5 assignable aux inputs, with 18 possible modes and optional multimode
-* 6 built-in preset assignments for the aux inputs
 * 3 configurable strengths for Morph CV inputs: standard, double, and triple
 * 1 morph knob
-* 1 assignable aux knob, with 10 possible modes including an endless rotary morph mode
 * 3 algorithm slots
 * Click/pop filters across all audio paths, with user-configurable strength
 * 2 separate modes for the routing logic: standard and "Alter Ego"
 * Expected CV range: +/- 5V
-* Phase output configurable 0-10V or +/- 5V
 * Lights that respond to the levels of incoming and outgoing audio
-* A dynamiclly morphing display capable of displaying 1979 graphs, as well as a question mark when a graph cannot be visualized
+* A dynamically morphing display capable of displaying 1979 graphs, as well as a question mark when a graph cannot be visualized
 * 11 purple/yellow/red ring lights, with additional rotational indicator functionality for improved informational clarity and density
 
-Instructions:
+Algomorph (full-size):
+* 1 modulator sum output
+* 1 phase output
+* 5 assignable auxiliary inputs, with 18 possible modes and optional multimode
+* 6 built-in preset assignments for the aux inputs
+* 1 assignable auxiliary knob, with 10 possible modes including an endless rotary morph mode
+* Phase output configurable 0-10V or +/- 5V
+
+Algomorph Pocket:
+* 1 Wildcard Modulator audio input
+* 2 Morph CV inputs
+* 1 Morph CV attenuverter knob, which functions instead as a Morph Knob when both CV inputs are un-patched
+
+# Instructions:
 
 * To install a [pre-compiled build](https://github.com/anlexmatos/FM-Delexander/releases/tag/AzureCI), follow [these directions](https://vcvrack.com/manual/Installing#installing-plugins-not-available-on-the-vcv-library).
 * Connect the output of up to four operators to the Operator Inputs.  
