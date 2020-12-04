@@ -743,8 +743,8 @@ struct ConnectionBgWidget : OpaqueWidget {
         //Colors from GrayModuleLightWidget
 		for (Line line : lines) {
 			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, line.left.x, line.left.y);
-			nvgLineTo(args.vg, line.right.x, line.right.y);
+			nvgMoveTo(args.vg, line.left.x - box.pos.x, line.left.y - box.pos.y);
+			nvgLineTo(args.vg, line.right.x - box.pos.x, line.right.y - box.pos.y);
 			nvgStrokeWidth(args.vg, 1.1f);
 			// Background
 			nvgStrokeColor(args.vg, nvgRGB(0x5a, 0x5a, 0x5a));
