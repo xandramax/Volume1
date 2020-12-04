@@ -2004,7 +2004,7 @@ Menu* AlgomorphLargeWidget::InteractionSettingsMenuItem::createChildMenu() {
 }
 
 void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSettingsMenu(AlgomorphLarge* module, ui::Menu* menu) {
-    menu->addChild(construct<AllowMultipleModesMenuItem>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[0]->allowMultipleModes ? "Aqua" : "") + std::string(module->auxInput[1]->allowMultipleModes ? " Fira" : "") + std::string(module->auxInput[2]->allowMultipleModes ? " Sol" : "") + std::string(module->auxInput[3]->allowMultipleModes ? " Cura" : "") + std::string(module->auxInput[4]->allowMultipleModes ? " Vida" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem::module, module));
+    menu->addChild(construct<AllowMultipleModesMenuItem>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[0]->allowMultipleModes ? "Aqua" : "") + std::string(module->auxInput[1]->allowMultipleModes ? " Fira" : "") + std::string(module->auxInput[2]->allowMultipleModes ? " Sol" : "") + std::string(module->auxInput[3]->allowMultipleModes ? " Cura" : "") + std::string(module->auxInput[4]->allowMultipleModes ? " Vida" : "") + ((!module->auxInput[0]->allowMultipleModes && !module->auxInput[1]->allowMultipleModes && !module->auxInput[2]->allowMultipleModes && !module->auxInput[3]->allowMultipleModes && !module->auxInput[4]->allowMultipleModes) ? "None" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem::module, module));
 
     menu->addChild(construct<ResetSceneMenuItem>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem::module, module));
     
