@@ -1,6 +1,7 @@
 #include "plugin.hpp"
 #include "AlgomorphLarge.hpp"
 #include "AlgomorphDisplayWidget.hpp"
+#include "AlgomorphAuxInputPanelWidget.hpp"
 #include "AuxSources.hpp"
 #include <bitset>
 
@@ -81,6 +82,8 @@ void AlgomorphLarge::unsetAuxMode(int auxIndex, int mode) {
                 break;
             }
     }
+
+    auxPanelDirty = true;
 }
 
 void AlgomorphLarge::process(const ProcessArgs& args) {
@@ -1557,10 +1560,16 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (vuLights)
         this->vuLights = json_boolean_value(vuLights);
 
+    bool reset = true;
 
     //Set allowMultipleModes before loading modes
     json_t* allowMultipleModesJ = json_object_get(rootJ, "Aux Inputs: Allow Multiple Modes");
     if (allowMultipleModesJ) {
+        if (reset) {
+            reset = false;
+            for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
+                auxInput[auxIndex]->clearAuxModes();
+        }
         json_t* allowanceJ; size_t allowIndex;
         json_array_foreach(allowMultipleModesJ, allowIndex, allowanceJ) {
             auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowIndex)).c_str()));
@@ -1570,12 +1579,17 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     for (int auxIndex = 0; auxIndex < 5; auxIndex++) {
         json_t* auxInputModesJ = json_object_get(rootJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Modes").c_str());
         if (auxInputModesJ) {
+            if (reset) {
+                reset = false;
+                for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
+                    auxInput[auxIndex]->clearAuxModes();
+            }
             json_t* inputModeJ; size_t inputModeIndex;
             json_array_foreach(auxInputModesJ, inputModeIndex, inputModeJ) {
                 if (json_boolean_value(json_object_get(inputModeJ, AuxInputModeLabels[inputModeIndex].c_str())))
                     auxInput[auxIndex]->setMode(inputModeIndex);
                 else
-                    auxInput[auxIndex]->unsetAuxMode(inputModeIndex);
+                    unsetAuxMode(auxIndex, inputModeIndex);
             }
         }
     }
@@ -1682,6 +1696,8 @@ void AuxInput<MODULE>::setMode(int newMode) {
     modeIsActive[newMode] = true;
     lastSetMode = newMode;
     module->auxModeFlags[newMode] = true;
+
+    module->auxPanelDirty = true;
 }
 
 template < typename MODULE >
@@ -1691,6 +1707,8 @@ void AuxInput<MODULE>::unsetAuxMode(int oldMode) {
         
         modeIsActive[oldMode] = false;
     }
+
+    module->auxPanelDirty = true;
 }
 
 template < typename MODULE >
@@ -1699,6 +1717,8 @@ void AuxInput<MODULE>::clearAuxModes() {
         module->unsetAuxMode(id, mode);
 
     activeModes = 0;
+
+    module->auxPanelDirty = true;
 }
 
 template < typename MODULE >
@@ -2182,6 +2202,11 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         addChild(screenWidget);
         //Place backlight _above_ in scene in order for brightness to affect screenWidget
         addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(16.411, 11.631)), mm2px(Vec(38.295, 31.590)), module, AlgomorphLarge::DISPLAY_BACKLIGHT));
+
+        AlgomorphAuxInputPanelWidget* auxPanelWidget = new AlgomorphAuxInputPanelWidget(module);
+        auxPanelWidget->box.pos = mm2px(Vec(2.750, 13.570));
+        auxPanelWidget->box.size = mm2px(Vec(9.057, 61.191));
+        addChild(auxPanelWidget);
 
         addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(35.428, 49.297)), 8.862, module, AlgomorphLarge::SCREEN_BUTTON_RING_LIGHT, .4));
         addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
