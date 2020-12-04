@@ -33,15 +33,15 @@ void FMDelexanderSettings::saveToJson() {
     }
     json_object_set_new(settingsJ, "Aux Inputs: Allow Multiple Modes", allowMultipleModesJ);
 
-    json_t* auxInputDefaultsJ = json_array();
     for (int auxIndex = 0; auxIndex < 5; auxIndex++) {
+        json_t* auxDefaultsJ = json_array();
         for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
             json_t* auxDefaultJ = json_object();
-            json_object_set_new(auxDefaultJ, (std::string("Aux Input ") + std::to_string(auxIndex).c_str() + " Default: " + AuxInputModeLabels[mode]).c_str(), json_boolean(auxInputDefaults[auxIndex][mode]));
-            json_array_append_new(auxInputDefaultsJ, auxDefaultJ);
+            json_object_set_new(auxDefaultJ, AuxInputModeLabels[mode].c_str(), json_boolean(auxInputDefaults[auxIndex][mode]));
+            json_array_append_new(auxDefaultsJ, auxDefaultJ);
         }
+        json_object_set_new(settingsJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Default Modes").c_str(), auxDefaultsJ);
     }
-    json_object_set_new(settingsJ, "Aux Inputs: Default Modes", auxInputDefaultsJ);
 
     std::string settingsFilename = rack::asset::user("FM-Delexander.json");
     FILE* file = fopen(settingsFilename.c_str(), "w");
@@ -83,19 +83,15 @@ void FMDelexanderSettings::readFromJson() {
     if (allowMultipleModesJ) {
         json_t* allowanceJ; size_t allowanceIndex;
         json_array_foreach(allowMultipleModesJ, allowanceIndex, allowanceJ)
-            allowMultipleModes[allowanceIndex] = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowanceIndex).c_str() + ": " + "Multimode Allowed").c_str()));
+            allowMultipleModes[allowanceIndex] = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowanceIndex) + ": " + "Multimode Allowed").c_str()));
     }
 
-    json_t* auxInputDefaultsJ = json_object_get(settingsJ, "Aux Inputs: Default Modes");
-    if (auxInputDefaultsJ) {
-        json_t* auxDefaultJ; size_t auxDefaultsIndex;
-        int auxIndex = 0; int mode = 0;
-        json_array_foreach(auxInputDefaultsJ, auxDefaultsIndex, auxDefaultJ) {
-            auxInputDefaults[auxIndex][mode] = json_boolean_value(json_object_get(auxDefaultJ, (std::string("Aux Input ") + std::to_string(auxIndex).c_str() + " Default: " + AuxInputModeLabels[mode]).c_str()));
-            mode++;
-            if (mode > AuxInputModes::NUM_MODES - 1) {
-                mode = 0;
-                auxIndex++;
+    for (int auxIndex = 0; auxIndex < 5; auxIndex++) {
+        json_t* auxInputDefaultsJ = json_object_get(settingsJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Default Modes").c_str());
+        if (auxInputDefaultsJ) {
+            json_t* auxDefaultJ; size_t auxDefaultIndex;
+            json_array_foreach(auxInputDefaultsJ, auxDefaultIndex, auxDefaultJ) {
+                auxInputDefaults[auxIndex][auxDefaultIndex] = json_boolean_value(json_object_get(auxDefaultJ, AuxInputModeLabels[auxDefaultIndex].c_str()));
             }
         }
     }
