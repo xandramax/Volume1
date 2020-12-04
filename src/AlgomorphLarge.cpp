@@ -1436,7 +1436,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_t* lastSetModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* lastModeJ = json_object();
-        json_object_set_new(lastModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Last Set Mode").c_str(), json_integer(auxInput[auxIndex]->lastSetMode));
+        json_object_set_new(lastModeJ, (std::string("Aux Input ") + std::to_string(auxIndex)).c_str(), json_integer(auxInput[auxIndex]->lastSetMode));
         json_array_append_new(lastSetModesJ, lastModeJ);
     }
     json_object_set_new(rootJ, "Aux Inputs: Last Set Mode", lastSetModesJ);
@@ -1444,7 +1444,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_t* allowMultipleModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* allowanceJ = json_object();
-        json_object_set_new(allowanceJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Multimode Allowed").c_str(), json_boolean(auxInput[auxIndex]->allowMultipleModes));
+        json_object_set_new(allowanceJ, (std::string("Aux Input ") + std::to_string(auxIndex)).c_str(), json_boolean(auxInput[auxIndex]->allowMultipleModes));
         json_array_append_new(allowMultipleModesJ, allowanceJ);
     }
     json_object_set_new(rootJ, "Aux Inputs: Allow Multiple Modes", allowMultipleModesJ);
@@ -1452,7 +1452,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_t* auxConnectionsJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         json_t* auxConnectedJ = json_object();
-        json_object_set_new(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxIndex) + ": " + "Connection Status").c_str(), json_boolean(auxInput[auxIndex]->connected));
+        json_object_set_new(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxIndex)).c_str(), json_boolean(auxInput[auxIndex]->connected));
         json_array_append_new(auxConnectionsJ, auxConnectedJ);
     }
     json_object_set_new(rootJ, "Aux Inputs: Connection Status", auxConnectionsJ);
@@ -1461,7 +1461,7 @@ json_t* AlgomorphLarge::dataToJson() {
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
         for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
             json_t* inputModeJ = json_object();
-            json_object_set_new(inputModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Mode: " + AuxInputModeLabels[mode]).c_str(), json_boolean(auxInput[auxIndex]->modeIsActive[mode]));
+            json_object_set_new(inputModeJ, AuxInputModeLabels[mode].c_str(), json_boolean(auxInput[auxIndex]->modeIsActive[mode]));
             json_array_append_new(auxInputModesJ, inputModeJ);
         }
     }
@@ -1472,26 +1472,26 @@ json_t* AlgomorphLarge::dataToJson() {
     json_t* algoNamesJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* nameJ = json_object();
-        json_object_set_new(nameJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Algorithm ID").c_str(), json_integer(algoName[scene].to_ullong()));
+        json_object_set_new(nameJ, (std::string("Algorithm ") + std::to_string(scene)).c_str(), json_integer(algoName[scene].to_ullong()));
         json_array_append_new(algoNamesJ, nameJ);
     }
-    json_object_set_new(rootJ, "Scenes: Algorithm Names", algoNamesJ);
+    json_object_set_new(rootJ, "Algorithms: Algorithm IDs", algoNamesJ);
     
     json_t* horizontalMarksJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneMarksJ = json_object();
-        json_object_set_new(sceneMarksJ, (std::string("Scene ") + std::to_string(scene) + ": " + "Horizontal Marks").c_str(), json_integer(horizontalMarks[scene].to_ullong()));
+        json_object_set_new(sceneMarksJ, (std::string("Algorithm ") + std::to_string(scene)).c_str(), json_integer(horizontalMarks[scene].to_ullong()));
         json_array_append_new(horizontalMarksJ, sceneMarksJ);
     }
-    json_object_set_new(rootJ, "Scenes: Horizontal Marks", horizontalMarksJ);
+    json_object_set_new(rootJ, "Algorithms: Horizontal Marks", horizontalMarksJ);
 
     json_t* forcedCarriersJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
         json_t* sceneForcedCarriers = json_object();
-        json_object_set_new(sceneForcedCarriers, (std::string("Scene ") + std::to_string(scene) + ": " + "Forced Carriers").c_str(), json_integer(forcedCarriers[scene].to_ullong()));
+        json_object_set_new(sceneForcedCarriers, (std::string("Algorithm ") + std::to_string(scene)).c_str(), json_integer(forcedCarriers[scene].to_ullong()));
         json_array_append_new(forcedCarriersJ, sceneForcedCarriers);
     }
-    json_object_set_new(rootJ, "Scenes: Forced Carriers", forcedCarriersJ);
+    json_object_set_new(rootJ, "Algorithms: Forced Carriers", forcedCarriersJ);
 
     return rootJ;
 }
@@ -1563,7 +1563,7 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (allowMultipleModesJ) {
         json_t* allowanceJ; size_t allowIndex;
         json_array_foreach(allowMultipleModesJ, allowIndex, allowanceJ) {
-            auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowIndex) + ": " + "Multimode Allowed").c_str()));
+            auxInput[allowIndex]->allowMultipleModes = json_boolean_value(json_object_get(allowanceJ, (std::string("Aux Input ") + std::to_string(allowIndex)).c_str()));
         }
     }
 
@@ -1572,7 +1572,7 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
         json_t* inputModeJ; size_t inputModeIndex;
         int auxIndex = 0; int mode = 0;
         json_array_foreach(auxInputModesJ, inputModeIndex, inputModeJ) {
-            if (json_boolean_value(json_object_get(inputModeJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Mode: " + AuxInputModeLabels[mode]).c_str())))
+            if (json_boolean_value(json_object_get(inputModeJ, AuxInputModeLabels[mode].c_str())))
                 auxInput[auxIndex]->setMode(mode);
             mode++;
             if (mode >= AuxInputModes::NUM_MODES) {
@@ -1586,7 +1586,7 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (auxConnectionsJ) {
         json_t* auxConnectedJ; size_t auxConnectionIndexJ;
         json_array_foreach(auxConnectionsJ, auxConnectionIndexJ, auxConnectedJ) {
-            auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxConnectionIndexJ) + ": " + "Connection Status").c_str()));
+            auxInput[auxConnectionIndexJ]->connected = json_boolean_value(json_object_get(auxConnectedJ, (std::string("Aux Input ") + std::to_string(auxConnectionIndexJ)).c_str()));
         }
     }
 
@@ -1594,31 +1594,31 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (lastSetModesJ) {
         json_t* lastModeJ; size_t lastModeIndex;
         json_array_foreach(lastSetModesJ, lastModeIndex, lastModeJ) {
-            auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, (std::string("Aux Input ") + std::to_string(lastModeIndex) + ": " + "Last Set Mode").c_str()));
+            auxInput[lastModeIndex]->lastSetMode = json_integer_value(json_object_get(lastModeJ, (std::string("Aux Input ") + std::to_string(lastModeIndex)).c_str()));
         }
     }
 
-    json_t* algoNamesJ = json_object_get(rootJ, "Scenes: Algorithm Names");
+    json_t* algoNamesJ = json_object_get(rootJ, "Algorithms: Algorithm IDs");
     if (algoNamesJ) {
         json_t* nameJ; size_t nameIndex;
         json_array_foreach(algoNamesJ, nameIndex, nameJ) {
-            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, (std::string("Scene ") + std::to_string(nameIndex) + ": " + "Algorithm ID").c_str()));
+            algoName[nameIndex] = json_integer_value(json_object_get(nameJ, (std::string("Algorithm ") + std::to_string(nameIndex)).c_str()));
         }
     }
     
-    json_t* horizontalMarksJ = json_object_get(rootJ, "Scenes: Horizontal Marks");
+    json_t* horizontalMarksJ = json_object_get(rootJ, "Algorithms: Horizontal Marks");
     if (horizontalMarksJ) {
         json_t* sceneMarksJ; size_t sceneIndex;
         json_array_foreach(horizontalMarksJ, sceneIndex, sceneMarksJ) {
-            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Horizontal Marks").c_str()));
+            horizontalMarks[sceneIndex] = json_integer_value(json_object_get(sceneMarksJ, (std::string("Algorithm ") + std::to_string(sceneIndex)).c_str()));
         }
     }
     
-    json_t* forcedCarriersJ = json_object_get(rootJ, "Scenes: Forced Carriers");
+    json_t* forcedCarriersJ = json_object_get(rootJ, "Algorithms: Forced Carriers");
     if (forcedCarriersJ) {
         json_t* sceneForcedCarriersJ; size_t sceneIndex;
         json_array_foreach(forcedCarriersJ, sceneIndex, sceneForcedCarriersJ) {
-            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriersJ, (std::string("Scene ") + std::to_string(sceneIndex) + ": " + "Forced Carriers").c_str()));
+            forcedCarriers[sceneIndex] = json_integer_value(json_object_get(sceneForcedCarriersJ, (std::string("Algorithm ") + std::to_string(sceneIndex)).c_str()));
         }
     }
 
