@@ -1,313 +1,351 @@
 {
-  "id": 3926,
+  "id": 4001,
   "plugin": "FM-Delexander2",
   "version": "1.0.0",
   "model": "Algomorph",
   "data": {
     "Aux Inputs: Last Set Mode": [
       {
-        "Aux Input 0: Last Set Mode": 1
+        "Aux Input 0": 18
       },
       {
-        "Aux Input 1: Last Set Mode": 1
+        "Aux Input 1": 1
       },
       {
-        "Aux Input 2: Last Set Mode": 3
+        "Aux Input 2": 4
       },
       {
-        "Aux Input 3: Last Set Mode": 4
+        "Aux Input 3": 3
       },
       {
-        "Aux Input 4: Last Set Mode": 4
+        "Aux Input 4": 4
       }
     ],
     "Aux Inputs: Allow Multiple Modes": [
       {
-        "Aux Input 0: Multimode Allowed": false
+        "Aux Input 0": true
       },
       {
-        "Aux Input 1: Multimode Allowed": false
+        "Aux Input 1": true
       },
       {
-        "Aux Input 2: Multimode Allowed": true
+        "Aux Input 2": true
       },
       {
-        "Aux Input 3: Multimode Allowed": true
+        "Aux Input 3": true
       },
       {
-        "Aux Input 4: Multimode Allowed": true
+        "Aux Input 4": true
       }
     ],
-    "Aux Inputs: Modes": [
+    "Aux Input 0 Modes": [
       {
-        "Aux Input 0 Mode: Morph": false
+        "Morph": false
       },
       {
-        "Aux Input 0 Mode: Morph CV Attenuverter": true
+        "Morph CV Attenuverter": false
       },
       {
-        "Aux Input 0 Mode: Click Filter Strength": false
+        "Click Filter Strength": false
       },
       {
-        "Aux Input 0 Mode: Double Morph": false
+        "Double Morph": false
       },
       {
-        "Aux Input 0 Mode: Triple Morph": false
+        "Triple Morph": false
       },
       {
-        "Aux Input 0 Mode: Sum Output Attenuverter": false
+        "Sum Output Attenuverter": false
       },
       {
-        "Aux Input 0 Mode: Mod Output Attenuverter": false
+        "Mod Output Attenuverter": false
       },
       {
-        "Aux Input 0 Mode: Clock": false
+        "Clock": false
       },
       {
-        "Aux Input 0 Mode: Reverse Clock": false
+        "Reverse Clock": false
       },
       {
-        "Aux Input 0 Mode: Reset": false
+        "Reset": false
       },
       {
-        "Aux Input 0 Mode: Run": false
+        "Run": false
       },
       {
-        "Aux Input 0 Mode: Algorithm Offset": false
+        "Algorithm Offset": false
       },
       {
-        "Aux Input 0 Mode: Wildcard Modulator": false
+        "Wildcard Modulator": false
       },
       {
-        "Aux Input 0 Mode: Carrier": false
+        "Carrier": false
       },
       {
-        "Aux Input 0 Mode: Operator 1": false
+        "Operator 1": false
       },
       {
-        "Aux Input 0 Mode: Operator 2": false
+        "Operator 2": false
       },
       {
-        "Aux Input 0 Mode: Operator 3": false
+        "Operator 3": false
       },
       {
-        "Aux Input 0 Mode: Operator 4": false
+        "Operator 4": false
       },
       {
-        "Aux Input 1 Mode: Morph": false
+        "Morph CV Double Ampliverter": true
       },
       {
-        "Aux Input 1 Mode: Morph CV Attenuverter": true
+        "Morph CV Triple Ampliverter": true
+      }
+    ],
+    "Aux Input 1 Modes": [
+      {
+        "Morph": false
+      },
+      {
+        "Morph CV Attenuverter": true
+      },
+      {
+        "Click Filter Strength": false
+      },
+      {
+        "Double Morph": false
+      },
+      {
+        "Triple Morph": false
+      },
+      {
+        "Sum Output Attenuverter": false
+      },
+      {
+        "Mod Output Attenuverter": false
       },
       {
-        "Aux Input 1 Mode: Click Filter Strength": false
+        "Clock": false
       },
       {
-        "Aux Input 1 Mode: Double Morph": false
+        "Reverse Clock": false
       },
       {
-        "Aux Input 1 Mode: Triple Morph": false
+        "Reset": false
       },
       {
-        "Aux Input 1 Mode: Sum Output Attenuverter": false
+        "Run": false
       },
       {
-        "Aux Input 1 Mode: Mod Output Attenuverter": false
+        "Algorithm Offset": false
       },
       {
-        "Aux Input 1 Mode: Clock": false
+        "Wildcard Modulator": false
       },
       {
-        "Aux Input 1 Mode: Reverse Clock": false
+        "Carrier": false
       },
       {
-        "Aux Input 1 Mode: Reset": false
+        "Operator 1": false
       },
       {
-        "Aux Input 1 Mode: Run": false
+        "Operator 2": false
       },
       {
-        "Aux Input 1 Mode: Algorithm Offset": false
+        "Operator 3": false
       },
       {
-        "Aux Input 1 Mode: Wildcard Modulator": false
+        "Operator 4": false
       },
       {
-        "Aux Input 1 Mode: Carrier": false
+        "Morph CV Double Ampliverter": false
       },
+      {
+        "Morph CV Triple Ampliverter": true
+      }
+    ],
+    "Aux Input 2 Modes": [
       {
-        "Aux Input 1 Mode: Operator 1": false
+        "Morph": true
       },
       {
-        "Aux Input 1 Mode: Operator 2": false
+        "Morph CV Attenuverter": false
       },
       {
-        "Aux Input 1 Mode: Operator 3": false
+        "Click Filter Strength": false
       },
       {
-        "Aux Input 1 Mode: Operator 4": false
+        "Double Morph": true
       },
       {
-        "Aux Input 2 Mode: Morph": true
+        "Triple Morph": true
       },
       {
-        "Aux Input 2 Mode: Morph CV Attenuverter": false
+        "Sum Output Attenuverter": false
       },
       {
-        "Aux Input 2 Mode: Click Filter Strength": false
+        "Mod Output Attenuverter": false
       },
       {
-        "Aux Input 2 Mode: Double Morph": true
+        "Clock": false
       },
       {
-        "Aux Input 2 Mode: Triple Morph": true
+        "Reverse Clock": false
       },
       {
-        "Aux Input 2 Mode: Sum Output Attenuverter": false
+        "Reset": false
       },
       {
-        "Aux Input 2 Mode: Mod Output Attenuverter": false
+        "Run": false
       },
       {
-        "Aux Input 2 Mode: Clock": false
+        "Algorithm Offset": false
       },
       {
-        "Aux Input 2 Mode: Reverse Clock": false
+        "Wildcard Modulator": false
       },
       {
-        "Aux Input 2 Mode: Reset": false
+        "Carrier": false
       },
       {
-        "Aux Input 2 Mode: Run": false
+        "Operator 1": false
       },
       {
-        "Aux Input 2 Mode: Algorithm Offset": false
+        "Operator 2": false
       },
       {
-        "Aux Input 2 Mode: Wildcard Modulator": false
+        "Operator 3": false
       },
       {
-        "Aux Input 2 Mode: Carrier": false
+        "Operator 4": false
       },
       {
-        "Aux Input 2 Mode: Operator 1": false
+        "Morph CV Double Ampliverter": false
       },
       {
-        "Aux Input 2 Mode: Operator 2": false
+        "Morph CV Triple Ampliverter": false
+      }
+    ],
+    "Aux Input 3 Modes": [
+      {
+        "Morph": false
       },
       {
-        "Aux Input 2 Mode: Operator 3": false
+        "Morph CV Attenuverter": false
       },
       {
-        "Aux Input 2 Mode: Operator 4": false
+        "Click Filter Strength": false
       },
       {
-        "Aux Input 3 Mode: Morph": false
+        "Double Morph": true
       },
       {
-        "Aux Input 3 Mode: Morph CV Attenuverter": false
+        "Triple Morph": true
       },
       {
-        "Aux Input 3 Mode: Click Filter Strength": false
+        "Sum Output Attenuverter": false
       },
       {
-        "Aux Input 3 Mode: Double Morph": true
+        "Mod Output Attenuverter": false
       },
       {
-        "Aux Input 3 Mode: Triple Morph": true
+        "Clock": false
       },
       {
-        "Aux Input 3 Mode: Sum Output Attenuverter": false
+        "Reverse Clock": false
       },
       {
-        "Aux Input 3 Mode: Mod Output Attenuverter": false
+        "Reset": false
       },
       {
-        "Aux Input 3 Mode: Clock": false
+        "Run": false
       },
       {
-        "Aux Input 3 Mode: Reverse Clock": false
+        "Algorithm Offset": false
       },
       {
-        "Aux Input 3 Mode: Reset": false
+        "Wildcard Modulator": false
       },
       {
-        "Aux Input 3 Mode: Run": false
+        "Carrier": false
       },
       {
-        "Aux Input 3 Mode: Algorithm Offset": false
+        "Operator 1": false
       },
       {
-        "Aux Input 3 Mode: Wildcard Modulator": false
+        "Operator 2": false
       },
       {
-        "Aux Input 3 Mode: Carrier": false
+        "Operator 3": false
       },
       {
-        "Aux Input 3 Mode: Operator 1": false
+        "Operator 4": false
       },
       {
-        "Aux Input 3 Mode: Operator 2": false
+        "Morph CV Double Ampliverter": false
       },
+      {
+        "Morph CV Triple Ampliverter": false
+      }
+    ],
+    "Aux Input 4 Modes": [
       {
-        "Aux Input 3 Mode: Operator 3": false
+        "Morph": true
       },
       {
-        "Aux Input 3 Mode: Operator 4": false
+        "Morph CV Attenuverter": false
       },
       {
-        "Aux Input 4 Mode: Morph": true
+        "Click Filter Strength": false
       },
       {
-        "Aux Input 4 Mode: Morph CV Attenuverter": false
+        "Double Morph": false
       },
       {
-        "Aux Input 4 Mode: Click Filter Strength": false
+        "Triple Morph": true
       },
       {
-        "Aux Input 4 Mode: Double Morph": false
+        "Sum Output Attenuverter": false
       },
       {
-        "Aux Input 4 Mode: Triple Morph": true
+        "Mod Output Attenuverter": false
       },
       {
-        "Aux Input 4 Mode: Sum Output Attenuverter": false
+        "Clock": false
       },
       {
-        "Aux Input 4 Mode: Mod Output Attenuverter": false
+        "Reverse Clock": false
       },
       {
-        "Aux Input 4 Mode: Clock": false
+        "Reset": false
       },
       {
-        "Aux Input 4 Mode: Reverse Clock": false
+        "Run": false
       },
       {
-        "Aux Input 4 Mode: Reset": false
+        "Algorithm Offset": false
       },
       {
-        "Aux Input 4 Mode: Run": false
+        "Wildcard Modulator": false
       },
       {
-        "Aux Input 4 Mode: Algorithm Offset": false
+        "Carrier": false
       },
       {
-        "Aux Input 4 Mode: Wildcard Modulator": false
+        "Operator 1": false
       },
       {
-        "Aux Input 4 Mode: Carrier": false
+        "Operator 2": false
       },
       {
-        "Aux Input 4 Mode: Operator 1": false
+        "Operator 3": false
       },
       {
-        "Aux Input 4 Mode: Operator 2": false
+        "Operator 4": false
       },
       {
-        "Aux Input 4 Mode: Operator 3": false
+        "Morph CV Double Ampliverter": false
       },
       {
-        "Aux Input 4 Mode: Operator 4": false
+        "Morph CV Triple Ampliverter": false
       }
     ]
   }

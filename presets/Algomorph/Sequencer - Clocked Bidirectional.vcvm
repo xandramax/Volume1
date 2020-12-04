@@ -1,5 +1,5 @@
 {
-  "id": 4002,
+  "id": 4001,
   "plugin": "FM-Delexander2",
   "version": "1.0.0",
   "model": "Algomorph",
@@ -15,7 +15,7 @@
         "Aux Input 2": 10
       },
       {
-        "Aux Input 3": 12
+        "Aux Input 3": 8
       },
       {
         "Aux Input 4": 0
@@ -250,7 +250,7 @@
         "Clock": false
       },
       {
-        "Reverse Clock": false
+        "Reverse Clock": true
       },
       {
         "Reset": false
@@ -262,7 +262,7 @@
         "Algorithm Offset": false
       },
       {
-        "Wildcard Modulator": true
+        "Wildcard Modulator": false
       },
       {
         "Carrier": false
