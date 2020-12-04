@@ -45,7 +45,7 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& 
                 s = "ERROR";
             char const *id = s.c_str();
             nvgTextBounds(args.vg, LABEL_BOUNDS[i].x, LABEL_BOUNDS[i].y, id, id + s.length(), textBounds);
-            float xOffset = 1.125f;//(textBounds[2] - textBounds[0]) / 2.f;
+            float xOffset = 1.15f;//(textBounds[2] - textBounds[0]) / 2.f;
             float yOffset = -35.f;//(textBounds[3] - textBounds[1]) / 3.25f;
             nvgText(args.vg, LABEL_BOUNDS[i].x + xOffset, LABEL_BOUNDS[i].y + yOffset, id, id + s.length());
         }
