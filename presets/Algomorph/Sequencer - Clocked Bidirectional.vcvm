@@ -12,10 +12,10 @@
         "Aux Input 1": 7
       },
       {
-        "Aux Input 2": 12
+        "Aux Input 2": 10
       },
       {
-        "Aux Input 3": 3
+        "Aux Input 3": 8
       },
       {
         "Aux Input 4": 0
@@ -194,13 +194,13 @@
         "Reset": false
       },
       {
-        "Run": false
+        "Run": true
       },
       {
         "Algorithm Offset": false
       },
       {
-        "Wildcard Modulator": true
+        "Wildcard Modulator": false
       },
       {
         "Carrier": false
@@ -235,7 +235,7 @@
         "Click Filter Strength": false
       },
       {
-        "Double Morph": true
+        "Double Morph": false
       },
       {
         "Triple Morph": false
@@ -250,7 +250,7 @@
         "Clock": false
       },
       {
-        "Reverse Clock": false
+        "Reverse Clock": true
       },
       {
         "Reset": false

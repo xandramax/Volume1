@@ -1457,15 +1457,15 @@ json_t* AlgomorphLarge::dataToJson() {
     }
     json_object_set_new(rootJ, "Aux Inputs: Connection Status", auxConnectionsJ);
     
-    json_t* auxInputModesJ = json_array();
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
+        json_t* auxInputModesJ = json_array();
         for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
             json_t* inputModeJ = json_object();
             json_object_set_new(inputModeJ, AuxInputModeLabels[mode].c_str(), json_boolean(auxInput[auxIndex]->modeIsActive[mode]));
             json_array_append_new(auxInputModesJ, inputModeJ);
         }
+        json_object_set_new(rootJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Modes").c_str(), auxInputModesJ);
     }
-    json_object_set_new(rootJ, "Aux Inputs: Modes", auxInputModesJ);
 
     json_object_set_new(rootJ, "Aux Knob Mode", json_integer(knobMode));
 
@@ -1567,18 +1567,16 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
         }
     }
 
-    json_t* auxInputModesJ = json_object_get(rootJ, "Aux Inputs: Modes");
-    if (auxInputModesJ) {
-        json_t* inputModeJ; size_t inputModeIndex;
-        int auxIndex = 0; int mode = 0;
-        json_array_foreach(auxInputModesJ, inputModeIndex, inputModeJ) {
-            if (json_boolean_value(json_object_get(inputModeJ, AuxInputModeLabels[mode].c_str())))
-                auxInput[auxIndex]->setMode(mode);
-            mode++;
-            if (mode >= AuxInputModes::NUM_MODES) {
-                mode = 0;
-                auxIndex++;
-            } 
+    for (int auxIndex = 0; auxIndex < 5; auxIndex++) {
+        json_t* auxInputModesJ = json_object_get(rootJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Modes").c_str());
+        if (auxInputModesJ) {
+            json_t* inputModeJ; size_t inputModeIndex;
+            json_array_foreach(auxInputModesJ, inputModeIndex, inputModeJ) {
+                if (json_boolean_value(json_object_get(inputModeJ, AuxInputModeLabels[inputModeIndex].c_str())))
+                    auxInput[auxIndex]->setMode(inputModeIndex);
+                else
+                    auxInput[auxIndex]->unsetAuxMode(inputModeIndex);
+            }
         }
     }
 

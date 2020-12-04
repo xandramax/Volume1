@@ -239,7 +239,7 @@ void Algomorph::toggleHorizontalDestination(int scene, int op) {
     if (!modeB) {
         toggleDisabled(scene, op);
         if (horizontalMarks[scene].test(op))
-            carrier[scene].set(op, false);
+            carrier[scene].set(op, forcedCarriers[scene].test(op));
         else
             carrier[scene].set(op, isCarrier(scene, op));
     }
@@ -254,7 +254,7 @@ void Algomorph::toggleDiagonalDestination(int scene, int op, int mod) {
     algoName[scene].flip(op * 3 + mod);
     if (!modeB) {
         if (algoName[scene].test(op * 3 + mod))
-            carrier[scene].set(op, false);
+            carrier[scene].set(op, forcedCarriers[scene].test(op));
         else
             carrier[scene].set(op, isCarrier(scene, op));
     }
