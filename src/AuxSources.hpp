@@ -51,6 +51,28 @@ static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph
 																			"Morph CV Double Ampliverter",
 																			"Morph CV Triple Ampliverter"};
 
+//Order must match above
+static const std::string AuxInputModeShortLabels[AuxInputModes::NUM_MODES] = {	"CV",
+																				"CV%",
+																				"CLFL",
+																				"CV2",
+																				"CV3",
+																				"SUM%",
+																				"MOD%",
+																				"CLK",
+																				"RCLK",
+																				"RES",
+																				"RUN",
+																				"ADDR",
+																				"WILD",
+																				"CARR",
+																				"OP1",
+																				"OP2",
+																				"OP3",
+																				"OP4",
+																				"CV%2",
+																				"CV%3"	};
+
 struct AuxKnobModes : AuxSourceModes {
 	static const int SUM_GAIN = 		AuxSourceModes::NUM_MODES;
 	static const int MOD_GAIN = 		AuxSourceModes::NUM_MODES + 1;

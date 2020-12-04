@@ -1,3 +1,4 @@
+#pragma once
 #include "plugin.hpp"
 #include "Algomorph.hpp"
 #include "AuxSources.hpp"
@@ -70,6 +71,8 @@ struct AlgomorphLarge : Algomorph {
     int resetScene = 1;
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
     
+    bool auxPanelDirty = true;
+
     AlgomorphLarge();
     void onReset() override;
     void unsetAuxMode(int auxIndex, int mode);
