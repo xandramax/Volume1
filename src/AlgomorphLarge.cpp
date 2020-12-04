@@ -2341,6 +2341,7 @@ void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
     menu->addChild(construct<VisualSettingsMenuItem>(&MenuItem::text, "Visual…", &MenuItem::rightText, RIGHT_ARROW, &VisualSettingsMenuItem::module, module));
 
     menu->addChild(new MenuSeparator());
+    
     ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
     menu->addChild(toggleModeBItem);

@@ -1312,23 +1312,26 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
     AlgomorphSmall* module = dynamic_cast<AlgomorphSmall*>(this->module);
 
     menu->addChild(new MenuSeparator());
-    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio & Interaction Settings"));
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio Settings"));
 
-    menu->addChild(construct<GainLevelMenuItem>(&MenuItem::text, "Modulator Gain adjustment…", &MenuItem::rightText, RIGHT_ARROW, &GainLevelMenuItem::module, module));
+    menu->addChild(construct<GainLevelMenuItem>(&MenuItem::text, "Modulator Gain adjustment…", &MenuItem::rightText, std::string(module->gain == 1.f ? "0dB " : module->gain == 2.f ? "+6dB " : module->gain == 4.f ? "+12dB " : module->gain == 0.5f ? "-6dB " : module->gain == 0.25f ? "-12dB " : "err ") + RIGHT_ARROW, &GainLevelMenuItem::module, module));
 
     menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
     RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
     ringMorphItem->module = module;
     menu->addChild(ringMorphItem);
-    
-    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
-    exitConfigItem->module = module;
-    menu->addChild(exitConfigItem);
+
+    menu->addChild(new MenuSeparator());
+    menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction Settings"));
 
     ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
     menu->addChild(toggleModeBItem);
+    
+    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
+    exitConfigItem->module = module;
+    menu->addChild(exitConfigItem);
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual Settings"));
