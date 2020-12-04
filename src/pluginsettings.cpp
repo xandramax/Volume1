@@ -14,7 +14,7 @@ void FMDelexanderSettings::initDefaults() {
     auxInputDefaults[0][AuxInputModes::RESET] = true;
     auxInputDefaults[1][AuxInputModes::CLOCK] = true;
     auxInputDefaults[2][AuxInputModes::WILDCARD_MOD] = true;
-    auxInputDefaults[3][AuxInputModes::MORPH] = true;
+    auxInputDefaults[3][AuxInputModes::DOUBLE_MORPH] = true;
     auxInputDefaults[4][AuxInputModes::MORPH] = true;
 }
 
