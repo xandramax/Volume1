@@ -18,6 +18,13 @@ AlgomorphSmall::AlgomorphSmall() {
     onReset();
 }
 
+void AlgomorphSmall::onReset() {
+    morphMult[0] = 1.f;
+    morphMult[1] = 2.f;
+    gain = 1.f;
+    Algomorph::onReset();
+}
+
 void AlgomorphSmall::process(const ProcessArgs& args) {
     float in[16] = {0.f};                                   // Operator input channels
     float modOut[4][16] = {{0.f}};                          // Modulator outputs & channels
@@ -74,8 +81,8 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     float morphAttenuversion = params[MORPH_ATTEN_KNOB].getValue();
     // Only redraw display if morph on channel 1 has changed
     float newMorph0 =   + morphFromKnob
-                        + ((inputs[MORPH_INPUTS + 0].getVoltage()
-                        + inputs[MORPH_INPUTS + 1].getVoltage())
+                        + ((inputs[MORPH_INPUTS + 0].getVoltage() * morphMult[0]
+                        + inputs[MORPH_INPUTS + 1].getVoltage() * morphMult[1])
                         / 5.f)
                         * morphAttenuversion;
     while (newMorph0 > 3.f)
@@ -979,6 +986,8 @@ json_t* AlgomorphSmall::dataToJson() {
     json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
     json_object_set_new(rootJ, "Mod Gain", json_real(gain));
+    json_object_set_new(rootJ, "Morph CV 1 Multiplier", json_real(morphMult[0]));
+    json_object_set_new(rootJ, "Morph CV 2 Multiplier", json_real(morphMult[1]));
 
     json_t* algoNamesJ = json_array();
     for (int scene = 0; scene < 3; scene++) {
@@ -1056,6 +1065,14 @@ void AlgomorphSmall::dataFromJson(json_t* rootJ) {
     if (gain)
         this->gain = json_real_value(gain);
 
+    auto morphMult1 = json_object_get(rootJ, "Morph CV 1 Multiplier");
+    if (morphMult1)
+        this->morphMult[0] = json_real_value(morphMult1);
+
+    auto morphMult2 = json_object_get(rootJ, "Morph CV 2 Multiplier");
+    if (morphMult2)
+        this->morphMult[1] = json_real_value(morphMult2);
+
     json_t* algoNamesJ = json_object_get(rootJ, "Algorithms: Algorithm IDs");
     if (algoNamesJ) {
         json_t* nameJ; size_t nameIndex;
@@ -1111,8 +1128,6 @@ float AlgomorphSmall::getOutputBrightness(int portID) {
 
 ///// Panel Widget
 
-/// Disallow Multiple Modes Menu Item
-
 AlgomorphSmallWidget::SetGainLevelAction::SetGainLevelAction() {
     name = "Delexander Algomorph set gain level";
 }
@@ -1161,6 +1176,54 @@ void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(AlgomorphSmall
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "0 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 1.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 1.f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "-6 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 0.5f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 0.5f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "-12 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 0.25f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 0.25f)));
+}
+
+AlgomorphSmallWidget::SetMorphMultAction::SetMorphMultAction() {
+    name = "Delexander Algomorph set morph multiplier";
+}
+
+void AlgomorphSmallWidget::SetMorphMultAction::undo() {
+    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    assert(mw);
+    AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
+    assert(m);
+    
+    m->morphMult[inputId] = oldMult;
+}
+
+void AlgomorphSmallWidget::SetMorphMultAction::redo() {
+    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    assert(mw);
+    AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
+    assert(m);
+    
+    m->morphMult[inputId] = newMult;
+}
+
+void AlgomorphSmallWidget::SetMorphMultItem::onAction(const event::Action &e) {
+    if (module->morphMult[inputId] != morphMult) {
+        // History
+        SetMorphMultAction* h = new SetMorphMultAction;
+        h->moduleId = module->id;
+        h->oldMult = module->morphMult[inputId];
+        h->newMult = morphMult;
+        
+        module->morphMult[inputId] = morphMult;
+
+        APP->history->push(h);
+    }
+}
+
+Menu* AlgomorphSmallWidget::MorphMultMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createMorphMultMenu(module, menu, inputId);
+    return menu;
+}
+
+void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall* module, ui::Menu* menu, int inputId) {
+    menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "1x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 1.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 1.f)));
+    menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "2x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 2.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 2.f)));
+    menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "3x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 3.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 3.f)));
 }
 
 AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
@@ -1324,6 +1387,9 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction Settings"));
+
+    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "Morph CV 1 multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[0]) + " " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 0));
+    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "Morph CV 2 multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[1]) + " " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 1));
 
     ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;

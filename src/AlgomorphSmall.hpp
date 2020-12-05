@@ -48,8 +48,10 @@ struct AlgomorphSmall : Algomorph {
     };
 
     float gain = 1.f;
+    float morphMult[2] = {1.f, 2.f};
     
     AlgomorphSmall();
+    void onReset() override;
     void process(const ProcessArgs& args) override;
     float routeHorizontal(float sampleTime, float inputVoltage, int op, int c);
     float routeHorizontalRing(float sampleTime, float inputVoltage, int op, int c);
@@ -102,6 +104,15 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
         void redo() override;
     };
 
+    struct SetMorphMultAction : history::ModuleAction {
+        float oldMult, newMult;
+        int inputId;
+
+        SetMorphMultAction();
+        void undo() override;
+        void redo() override;
+    };
+
     struct AlgomorphSmallMenuItem : MenuItem {
         AlgomorphSmall* module;
     };
@@ -113,6 +124,18 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
     struct GainLevelMenuItem : AlgomorphSmallMenuItem {
         Menu* createChildMenu() override;
         void createGainLevelMenu(AlgomorphSmall* module, ui::Menu* menu);
+    };
+    struct SetMorphMultItem : AlgomorphSmallMenuItem {
+        float morphMult;
+        int inputId;
+
+        void onAction(const event::Action &e) override;
+    };
+    struct MorphMultMenuItem : AlgomorphSmallMenuItem {
+        int inputId;
+
+        Menu* createChildMenu() override;
+        void createMorphMultMenu(AlgomorphSmall* module, ui::Menu* menu, int inputId);
     };
 
     AlgomorphSmallWidget(AlgomorphSmall* module);
