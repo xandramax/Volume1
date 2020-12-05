@@ -21,7 +21,7 @@ It is intended for use with modules capable of linear through-zero FM, or phase 
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
 * KauntenjaDSP [Mini Boss](https://github.com/Kautenja/PotatoChips/releases/tag/1.10.0)
 
-![Algomorph](<res/Algomorph_SoloImage.png>)
+![Algomorph and Algomorph Pocket](<res/Algomorph_SoloImage.png>)
 
 # Specifications:
 Algomorph (both sizes):
@@ -46,6 +46,8 @@ Algomorph (full-size):
 * 1 morph knob
 * 1 assignable auxiliary knob, with 12 possible modes including an endless rotary morph mode
 * Phase output configurable 0-10V or +/- 5V
+
+![Algomorph - Presets](res/AlgomorphLarge_Presets.png)
 
 Algomorph Pocket:
 * 1 Wildcard Modulator audio input
@@ -93,8 +95,8 @@ Algomorph Pocket:
 * The assignments for the AUX inputs and AUX knob can be changed in the module's contextual menu. Be sure to check out Algomorph's included presets, each of which contains a unique configuration for the five AUX inputs.
 * To randomize only the algorithms or only a single algorithm, and not any of the knobs, right click on the connection area to find the Algorithm Randomization menu.
 
-![Example](res/AlgomorphLarge_GroupImage.png)
-![Example](res/AlgomorphSmall_GroupImage.png)
+![Algomorph - Example Patch](res/AlgomorphLarge_GroupImage.png)
+![Algomorph Pocket - Example Patch](res/AlgomorphSmall_GroupImage.png)
 
 There is additionally an "Alter Ego" mode of operation, which makes has two significant differences:
 
@@ -110,4 +112,4 @@ All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, a
 
 Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code has not (yet) been optimized for this use-case; expect significant CPU usage.
 
-![Example](res/Algomorph_FullPatchImage.png)
+![Full Example Patch](res/Algomorph_FullPatchImage.png)
