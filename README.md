@@ -123,8 +123,11 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Yamaha
 * Xenakios
 * Antonio Tuzzi
+* Serge Tcherepnin
 * Ben Stoermelder
 * Aria Salvatrice
+* David O'Rourke
+* Bob Moog
 * Leonardo Laguna Ruiz
 * Christian Kauten
 * Dale Johnson
@@ -135,6 +138,7 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Omri Cohen
 * Pierre Collard
 * John Chowning
+* Don Buchla
 * Marc Boulé
 * Blargg
 * Andrew Belt
