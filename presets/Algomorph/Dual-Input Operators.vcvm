@@ -6,19 +6,19 @@
   "data": {
     "Aux Inputs: Last Set Mode": [
       {
-        "Aux Input 0": 17
+        "Aux Input 0": 12
       },
       {
-        "Aux Input 1": 16
+        "Aux Input 1": 17
       },
       {
-        "Aux Input 2": 15
+        "Aux Input 2": 16
       },
       {
-        "Aux Input 3": 14
+        "Aux Input 3": 15
       },
       {
-        "Aux Input 4": 12
+        "Aux Input 4": 14
       }
     ],
     "Aux Inputs: Allow Multiple Modes": [
