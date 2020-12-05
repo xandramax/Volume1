@@ -38,7 +38,7 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& 
             if (auxInputModes[i] > -1)
                 s = AuxInputModeShortLabels[auxInputModes[i]];
             else if (auxInputModes[i] == -2)
-                s = "MULT";
+                s = "MULTI";
             else if (auxInputModes[i] == -1)
                 s = "NONE";
             else
