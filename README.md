@@ -113,3 +113,29 @@ All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, a
 Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code has not (yet) been optimized for this use-case; expect significant CPU usage.
 
 ![Full Example Patch](res/Algomorph_FullPatchImage.png)
+
+# Acknowledgements
+All source code and panel graphics are © 2020 Anthony Lexander Matos and Ina Carter. All source code is licensed GPL-3.0-or-later. All panel graphics are licensed CC BY-NC-ND 4.0.
+
+The Miriam Libre font is © 2016 Michal Sahar and licensed under the SIL Open Font License, Version 1.1.
+
+Thanks go out to the developers, educators, and artists who have contributed to the VCV Rack community, Eurorack, and the electronic music creative space in general, without whose work Algomorph would not be nearly as interesting, and in some cases it would not be possible at all, including but certainly not limited to:
+* Yamaha
+* Xenakios
+* Antonio Tuzzi
+* Ben Stoermelder
+* Aria Salvatrice
+* Leonardo Laguna Ruiz
+* Christian Kauten
+* Dale Johnson
+* Grayscale
+* Émilie Gillet
+* Bruce Frazer
+* Matt Demanett
+* Omri Cohen
+* Pierre Collard
+* John Chowning
+* Marc Boulé
+* Blargg
+* Andrew Belt
+* Steve Baker
