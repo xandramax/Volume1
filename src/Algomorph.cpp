@@ -346,6 +346,7 @@ void Algomorph::updateOpsDisabled(int scene) {
 }
 
 void Algomorph::updateDisplayAlgo(int scene) {
+    displayAlgoName[scene] = algoName[scene];
     // Set display algorithm
     for (int op = 0; op < 4; op++) {
         if (opsDisabled[scene].test(op)) {
