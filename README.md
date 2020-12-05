@@ -3,7 +3,7 @@ Algomorph is a module for [VCV Rack](https://github.com/VCVRack/Rack).
 
 Algomorph is an intelligent signal router, building from the familiar concepts of FM algorithms and expanding in service of both FM synthesis as well as general-purpose audio and CV routing.
 
-Algomorph is capable of storing three independent routing states and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
+Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
 Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations are hard-coded, and the vector data is generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs as defined for the purposes of this project), rendering to SVG via [GraphViz](https://graphviz.org/), and further processing with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/).
 
@@ -27,7 +27,6 @@ Algomorph (both sizes):
 * 4 modulator outputs
 * 1 carrier sum output
 * 3 configurable strengths for Morph CV inputs: standard, double, and triple
-* 1 morph knob
 * 3 algorithm slots
 * Click/pop filters across all audio paths, with user-configurable strength
 * 2 separate modes for the routing logic: standard and "Alter Ego"
@@ -39,15 +38,17 @@ Algomorph (both sizes):
 Algomorph (full-size):
 * 1 modulator sum output
 * 1 phase output
-* 5 assignable auxiliary inputs, with 18 possible modes and optional multimode
+* 5 assignable auxiliary inputs, with 20 possible modes and optional multimode
+* Dynamically updating labels for each auxiliary input
 * 6 built-in preset assignments for the aux inputs
-* 1 assignable auxiliary knob, with 10 possible modes including an endless rotary morph mode
+* 1 morph knob
+* 1 assignable auxiliary knob, with 12 possible modes including an endless rotary morph mode
 * Phase output configurable 0-10V or +/- 5V
 
 Algomorph Pocket:
 * 1 Wildcard Modulator audio input
 * 2 Morph CV inputs
-* 1 Morph CV attenuverter knob, which functions instead as a Morph Knob when both CV inputs are un-patched
+* 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x, which functions instead as a Morph Knob when both CV inputs are un-patched
 
 # Instructions:
 
@@ -61,7 +62,8 @@ Algomorph Pocket:
 * The CV input can also be used instead of (or in addition to) the knob, accepting +/- 5V
 * Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a forced-carrier for the current algorithm.
-* The assignments for the AUX inputs and AUX knob can be found at a glance in the module's contextual menu, and from there they can also be changed. Be sure to check out Algomorph's included presets, each of which changes the configuration for the five AUX inputs.
+* The assignments for the AUX inputs and AUX knob can be changed in the module's contextual menu. Be sure to check out Algomorph's included presets, each of which contains a unique configuration for the five AUX inputs.
+* To randomize only the algorithms or only a single algorithm, and not any of the knobs, right click on the connection area to find the Algorithm Randomization menu.
 
 ![Example](res/AlgomorphLarge_GroupImage.png)
 ![Example](res/AlgomorphSmall_GroupImage.png)
@@ -71,11 +73,13 @@ There is additionally an "Alter Ego" mode of operation, which makes has two sign
 * Operators can be routed horizontally. Making horizontal connections does not disable operators here.
 * Automatic carrier assignment does not occur. The only operators which are routed to the Sum output are those which are forcible marked as carriers by the user (see instructions above).
 
-Note: while the expected CV range is scaled around +/- 5V, the morph CV inputs will actually accept "unlimited" voltage in either the positive or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO through a multiplier like NYSTHI [ConstAddMult](https://library.vcvrack.com/NYSTHI/ConstAddMult) for some truly wild circular morphing at high rates of multiplication.
+Note: while the expected CV range is scaled around +/- 5V, the morph CV inputs will actually accept "unlimited" voltage in either the positive or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO into triple strength Morph CV while also feeding 5V into triple strength Morph CV Ampliversion; this results in 9x strength, which creates particularly wild circular morphing. For further exploration into these depths, bear in mind that multiple Morph CV inputs always stack additively, and multiple Morph CV Attenuversion/Ampliversion inputs stack multiplicatively.
 
 All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, are independently and simultaneously MIDI- and CV-mappable using modules like:
 * VCV [MIDI-MAP](https://library.vcvrack.com/Core/MIDI-Map)
 * stoermelder [CV-MAP](https://library.vcvrack.com/Stoermelder-P1/CVMap)/[µMAP](https://library.vcvrack.com/Stoermelder-P1/CVMapMicro)
 * 23volts [Multimap](https://library.vcvrack.com/23volts/MultimapK)
+
+Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code has not (yet) been optimized for this use-case; expect significant CPU usage.
 
 ![Example](res/Algomorph_FullPatchImage.png)
