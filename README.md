@@ -126,9 +126,9 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Serge Tcherepnin
 * Ben Stoermelder
 * Aria Salvatrice
+* Leonardo Laguna Ruiz
 * David O'Rourke
 * Bob Moog
-* Leonardo Laguna Ruiz
 * Christian Kauten
 * Dale Johnson
 * Grayscale
