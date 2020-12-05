@@ -5,7 +5,7 @@ Algomorph is an intelligent signal router, building from the familiar concepts o
 
 Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations are hard-coded, and the vector data is generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs*), rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatted as a series of arrays.
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs*), rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
 
 Algomorph features five user-assignable CV/trigger/audio inputs with 20+ possible modes** as well as built-in preset configurations. There are two sum audio outputs, one delivering all carriers and the other all modulators, as determined according to the current algorithm and morph-state once per sample.
 
