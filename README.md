@@ -5,7 +5,7 @@ Algomorph is an intelligent signal router, building from the familiar concepts o
 
 Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem-space (1979 graphs*), rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)*, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
 
 Algomorph features five user-assignable CV/trigger/audio inputs with 20+ possible modes** as well as built-in preset configurations. There are two sum audio outputs, one delivering all carriers and the other all modulators, as determined according to the current algorithm and morph-state once per sample.
 
@@ -34,7 +34,7 @@ Algomorph (both sizes):
 * 2 separate modes for the routing logic: standard and "Alter Ego"
 * Expected CV range: +/- 5V
 * Lights that respond to the levels of incoming and outgoing audio
-* A dynamically morphing display capable of displaying 1979 graphs, as well as a question mark when a graph cannot be visualized
+* A dynamically morphing display capable of displaying 1979 graphs and countless states between them, as well as a question mark when a graph cannot be visualized
 * 11 purple/yellow/red ring lights, with additional rotational indicator functionality for improved informational clarity and density
 
 Algomorph (full-size):
@@ -56,6 +56,8 @@ Algomorph Pocket:
 * 1979 possible graphs, including the "zero-operator graph"
 * Capable of visualizing all 1-, 2-, 3-, and 4-operator algorithms which feature at least 1 obvious carrier
 * Supports linearly crossfading between two graph visualizations, in order to track the module's morph-state
+* No special provision is made for operator feedback (i.e. algorithms with single-operator-feedback are not included in the graph set). Feedback is generally considered by this design to be the domain of the operators, and operators cannot be routed to their own modulation outputs in Algomorph under default settings. Most "FM operator modules" in VCV Rack feature their own feedback knobs (as well as feedback CV inputs).
+* That said, Algomorph's "Alter Ego" mode allows for feedback routing. Adding visualization for feedback routing in Alter Ego mode, as well as visualization for carriers in both modes, should be feasible in a future update.
 
 **Auxiliary Input Modes:
 * Morph, Double Morph, & Triple Morph

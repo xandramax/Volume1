@@ -1388,8 +1388,8 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction Settings"));
 
-    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "Morph CV 1 multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[0]) + " " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 0));
-    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "Morph CV 2 multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[1]) + " " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 1));
+    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "CV A multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[0]) + "x " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 0));
+    menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "CV B multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[1]) + "x " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 1));
 
     ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
