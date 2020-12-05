@@ -1,12 +1,12 @@
 {
-  "id": 4002,
+  "id": 4015,
   "plugin": "FM-Delexander2",
   "version": "1.0.0",
   "model": "Algomorph",
   "data": {
     "Aux Inputs: Last Set Mode": [
       {
-        "Aux Input 0": 12
+        "Aux Input 0": 4
       },
       {
         "Aux Input 1": 17
@@ -52,7 +52,7 @@
         "Double Morph": false
       },
       {
-        "Triple Morph": false
+        "Triple Morph": true
       },
       {
         "Sum Output Attenuverter": false
@@ -76,7 +76,7 @@
         "Algorithm Offset": false
       },
       {
-        "Wildcard Modulator": true
+        "Wildcard Modulator": false
       },
       {
         "Carrier": false
