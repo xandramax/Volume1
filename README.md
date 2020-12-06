@@ -1,17 +1,17 @@
 # Algomorph
 Algomorph is a module for [VCV Rack](https://github.com/VCVRack/Rack).
 
-Algomorph is an intelligent signal router, building from the familiar concepts of FM algorithms and expanding in service of both FM synthesis as well as general-purpose audio and CV routing.
+Algomorph is an intelligent signal router, building from the familiar concepts of FM algorithms and expanding in service of both FM synthesis as well as general-purpose audio and CV routing, AM synthesis, and ring modulation.
 
 Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)*, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)<sup>1</sup>, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
 
-Algomorph features five user-assignable CV/trigger/audio inputs with 20+ possible modes** as well as built-in preset configurations. There are two sum audio outputs, one delivering all carriers and the other all modulators, as determined according to the current algorithm and morph-state once per sample.
+Algomorph features five user-assignable CV/trigger/audio inputs with 20+ possible modes<sup>2</sup> as well as built-in preset configurations. There are two sum audio outputs, one delivering all carriers and the other all modulators, as determined according to the current algorithm and morph-state once per sample.
 
 Algomorph also features a phase output. Try feeding Algomorph multiple clocked modulation sources as Morph CV, then use the phase output as a combined clock source and/or a source of combined Morph CV for chaining with a second Algomorph module.
 
-Algomorph has a user-assignable auxiliary knob with 12 possible modes***, located at the center of the main Morph Knob. By default, this functions as a Morph CV attenuverter.
+Algomorph has a user-assignable auxiliary knob with 12 possible modes<sup>3</sup>, located at the center of the main Morph Knob. By default, this functions as a Morph CV attenuverter.
 
 It is intended for use with modules capable of linear through-zero FM, or phase modulation, such as these operators:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
@@ -53,32 +53,6 @@ Algomorph Pocket:
 * 1 Wildcard Modulator audio input
 * 2 Morph CV inputs
 * 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x, which functions instead as a Morph Knob when both CV inputs are un-patched
-
-*Graph Visualization:
-* 1979 possible graphs, including the "zero-operator graph"
-* Capable of visualizing all 1-, 2-, 3-, and 4-operator algorithms which feature at least 1 obvious carrier
-* Supports linearly crossfading between two graph visualizations, in order to track the module's morph-state
-* No special provision is made for operator feedback (i.e. algorithms with single-operator-feedback are not included in the graph set). Feedback is generally considered by this design to be the domain of the operators, and operators cannot be routed to their own modulation outputs in Algomorph under default settings. Most "FM operator modules" in VCV Rack feature their own feedback knobs (as well as feedback CV inputs).
-* That said, Algomorph's "Alter Ego" mode allows for feedback routing. Adding visualization for feedback routing in Alter Ego mode, as well as visualization for carriers in both modes, should be feasible in a future update.
-
-**Auxiliary Input Modes:
-* Morph, Double Morph, & Triple Morph
-* Morph CV Attenuverter, Double Ampliverter, and Triple Ampliverter
-* Sum Outputs Attenuverter
-* Modulator Outputs Attenuverter
-* Clock & Reverse Clock
-* Reset & Run
-* Algorithm Offset (Addressable Sequence Input)
-* Wildcard Modulator
-* Carrier
-* Operator 1/2/3/4
-
-***Auxiliary Knob Modes:
-* Morph, Double Morph, Triple Morph, Unipolar Triple Morph, & Endless Morph
-* Morph CV Attenuverter, Double Ampliverter, and Triple Ampliverter
-* Sum Outputs Gain
-* Mod Outputs Gain
-* Op Inputs Gain
 
 # Instructions:
 
@@ -147,3 +121,31 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Blargg
 * Andrew Belt
 * Steve Baker
+
+# Footnotes
+
+<sup>1</sup> Graph Visualization:
+* 1979 possible graphs, including the "zero-operator graph"
+* Capable of visualizing all 1-, 2-, 3-, and 4-operator algorithms which feature at least 1 obvious carrier
+* Supports linearly crossfading between two graph visualizations, in order to track the module's morph-state
+* No special provision is made for operator feedback (i.e. algorithms with single-operator-feedback are not included in the graph set). Feedback is generally considered by this design to be the domain of the operators, and operators cannot be routed to their own modulation outputs in Algomorph under default settings. Most "FM operator modules" in VCV Rack feature their own feedback knobs (as well as feedback CV inputs).
+* That said, Algomorph's "Alter Ego" mode allows for feedback routing. Adding visualization for feedback routing in Alter Ego mode, as well as visualization for carriers in both modes, should be feasible in a future update.
+
+<sup>2</sup> Auxiliary Input Modes:
+* Morph, Double Morph, & Triple Morph
+* Morph CV Attenuverter, Double Ampliverter, and Triple Ampliverter
+* Sum Outputs Attenuverter
+* Modulator Outputs Attenuverter
+* Clock & Reverse Clock
+* Reset & Run
+* Algorithm Offset (Addressable Sequence Input)
+* Wildcard Modulator
+* Carrier
+* Operator 1/2/3/4
+
+<sup>3</sup> Auxiliary Knob Modes:
+* Morph, Double Morph, Triple Morph, Unipolar Triple Morph, & Endless Morph
+* Morph CV Attenuverter, Double Ampliverter, and Triple Ampliverter
+* Sum Outputs Gain
+* Mod Outputs Gain
+* Op Inputs Gain
