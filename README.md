@@ -128,6 +128,8 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Ben Stoermelder
 * Aria Salvatrice
 * Leonardo Laguna Ruiz
+* Plogue Art et Technologie
+* Papernoise
 * David O'Rourke
 * Bob Moog
 * Christian Kauten
