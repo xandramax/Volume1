@@ -42,17 +42,17 @@ Algomorph (full-size):
 * 1 phase output
 * 5 assignable auxiliary inputs, with 20 possible modes and optional multimode
 * Dynamically updating labels for each auxiliary input
-* 6 built-in preset assignments for the aux inputs
 * 1 morph knob
 * 1 assignable auxiliary knob, with 12 possible modes including an endless rotary morph mode
 * Phase output configurable 0-10V or +/- 5V
+* 6 built-in preset assignments for the aux inputs:
 
 ![Algomorph - Presets](res/AlgomorphLarge_Presets.png)
 
 Algomorph Pocket:
 * 1 Wildcard Modulator audio input
 * 2 Morph CV inputs
-* 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x, which functions instead as a Morph Knob when both CV inputs are un-patched
+* 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x. This knob functions instead as a Morph Knob when both CV inputs are un-patched
 
 # Instructions:
 
