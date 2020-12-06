@@ -96,8 +96,8 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     // morph[0] was just processed, so start this loop with [1]
     for (int c = 1; c < channels; c++) {
         morph[c] =  + morphFromKnob
-                    + (inputs[MORPH_INPUTS + 0].getPolyVoltage(c)
-                    + inputs[MORPH_INPUTS + 1].getPolyVoltage(c))
+                    + (inputs[MORPH_INPUTS + 0].getPolyVoltage(c) * morphMult[0]
+                    + inputs[MORPH_INPUTS + 1].getPolyVoltage(c) * morphMult[1])
                     * morphAttenuversion;
         while (morph[c] > 3.f)
             morph[c] = -3.f + (morph[c] - 3.f);
