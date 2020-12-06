@@ -17,6 +17,7 @@ AlgomorphLarge::AlgomorphLarge() {
     configParam(AUX_KNOBS + AuxKnobModes::SUM_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::MOD_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::OP_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], "%", 0, 100);
+    configParam(AUX_KNOBS + AuxKnobModes::WILDCARD_MOD_GAIN, 0.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::WILDCARD_MOD_GAIN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " limits", 0, 0);
     configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
@@ -613,6 +614,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         rescaleVoltage(AuxInputModes::SUM_ATTEN, channels);
     float modGain = params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue();
     float sumGain = params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue();
+    float wildcardModGain = params[AUX_KNOBS + AuxKnobModes::WILDCARD_MOD_GAIN].getValue();
     float modAttenuversion[16] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
     if (auxModeFlags[AuxInputModes::MOD_ATTEN]) {
         for (int c = 0; c < channels; c++)
@@ -724,7 +726,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 wildcardMod[c] += auxInput[auxIndex]->voltage[AuxInputModes::WILDCARD_MOD][c] * auxInput[auxIndex]->wildcardModClickGain;
             }
             for (int mod = 0; mod < 4; mod++) {
-                modOut[mod][c] += wildcardMod[c];
+                modOut[mod][c] += wildcardMod[c] * wildcardModGain;
             }
         }
         if (auxModeFlags[AuxInputModes::WILDCARD_SUM]) {
@@ -2147,6 +2149,7 @@ Menu* AlgomorphLargeWidget::KnobModeMenuItem::createChildMenu() {
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MOD_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MOD_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MOD_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MOD_GAIN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::SUM_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::SUM_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::SUM_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::SUM_GAIN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::OP_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::OP_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::OP_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::OP_GAIN));
+    menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::WILDCARD_MOD_GAIN], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::WILDCARD_MOD_GAIN)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::WILDCARD_MOD_GAIN]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::WILDCARD_MOD_GAIN]->getUnit(), &KnobModeItem::mode, AuxKnobModes::WILDCARD_MOD_GAIN));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::CLICK_FILTER)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::CLICK_FILTER]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::CLICK_FILTER]->getUnit(), &KnobModeItem::mode, AuxKnobModes::CLICK_FILTER));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::MORPH)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MORPH]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::MORPH));
     menu->addChild(construct<KnobModeItem>(&MenuItem::text, AuxKnobModeLabels[AuxKnobModes::DOUBLE_MORPH], &KnobModeItem::module, module, &KnobModeItem::rightText, std::string(CHECKMARK(module->knobMode == AuxKnobModes::DOUBLE_MORPH)) + " " + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH]->getDisplayValueString() + module->paramQuantities[AlgomorphLarge::AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH]->getUnit(), &KnobModeItem::mode, AuxKnobModes::DOUBLE_MORPH));

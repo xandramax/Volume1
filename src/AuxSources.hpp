@@ -74,14 +74,15 @@ static const std::string AuxInputModeShortLabels[AuxInputModes::NUM_MODES] = {	"
 																				"CV%x3"	};
 
 struct AuxKnobModes : AuxSourceModes {
-	static const int SUM_GAIN = 		AuxSourceModes::NUM_MODES;
-	static const int MOD_GAIN = 		AuxSourceModes::NUM_MODES + 1;
-	static const int OP_GAIN = 			AuxSourceModes::NUM_MODES + 2;
-	static const int UNI_MORPH = 		AuxSourceModes::NUM_MODES + 3;
-	static const int ENDLESS_MORPH = 	AuxSourceModes::NUM_MODES + 4;
+	static const int SUM_GAIN = 			AuxSourceModes::NUM_MODES;
+	static const int MOD_GAIN = 			AuxSourceModes::NUM_MODES + 1;
+	static const int OP_GAIN = 				AuxSourceModes::NUM_MODES + 2;
+	static const int UNI_MORPH = 			AuxSourceModes::NUM_MODES + 3;
+	static const int ENDLESS_MORPH = 		AuxSourceModes::NUM_MODES + 4;
 	static const int DOUBLE_MORPH_ATTEN = 	AuxSourceModes::NUM_MODES + 5;
 	static const int TRIPLE_MORPH_ATTEN = 	AuxSourceModes::NUM_MODES + 6;
-	static const int NUM_MODES = 		AuxSourceModes::NUM_MODES + 7;
+	static const int WILDCARD_MOD_GAIN = 	AuxSourceModes::NUM_MODES + 7;
+	static const int NUM_MODES = 			AuxSourceModes::NUM_MODES + 8;
 };
 
 //Order must match above
@@ -96,7 +97,8 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Unipolar Triple Morph",
 																			"Endless Morph",
 																			"Morph CV Double Ampliverter",
-																			"Morph CV Triple Ampliverter"};
+																			"Morph CV Triple Ampliverter",
+																			"Wildcard Mod Gain"};
 
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
                                                                     1.f,
@@ -108,6 +110,7 @@ static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
                                                                     1.f,
                                                                     0.f,
                                                                     0.f,
+																	1.f,
 																	1.f,
 																	1.f	};
 
