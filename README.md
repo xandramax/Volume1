@@ -5,7 +5,7 @@ Algomorph is an intelligent signal router, building from the familiar concepts o
 
 Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)<sup>1</sup>, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as a series of arrays.
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)<sup>1</sup>, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as [a series of arrays](<src/GraphData.hpp>).
 
 Algomorph features five user-assignable CV/trigger/audio inputs with 20+ possible modes<sup>2</sup> as well as built-in preset configurations. There are two sum audio outputs, one delivering all carriers and the other all modulators, as determined according to the current algorithm and morph-state once per sample.
 
@@ -74,14 +74,16 @@ There is additionally an "Alter Ego" mode of operation, which makes has two sign
 * Operators can be routed horizontally. Making horizontal connections does not disable operators here.
 * Automatic carrier assignment does not occur. The only operators which are routed to the Sum output are those which are forcible marked as carriers by the user (see instructions above).
 
-Note: while the expected CV range is scaled around +/- 5V, the morph CV inputs will actually accept "unlimited" voltage in either the positive or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO into triple strength Morph CV while also feeding 5V into triple strength Morph CV Ampliversion; this results in 9x strength, which creates particularly wild circular morphing. For further exploration into these depths, bear in mind that multiple Morph CV inputs always stack additively, and multiple Morph CV Attenuversion/Ampliversion inputs stack multiplicatively.
+Note: while the expected CV range at Algomorph's Morph inputs is scaled around +/- 5V, these inputs will actually accept "unlimited" voltage in either the positive or negative direction. At standard morph strength, 15V is equivalent to 0V. At triple morph strength, -5V = 0V = 5V. Try feeding a +/- 5V LFO into triple strength Morph CV while also feeding 5V into triple strength Morph CV Ampliversion; this results in 9x strength, which creates particularly wild circular morphing.
 
-All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, are independently and simultaneously MIDI- and CV-mappable using modules like:
+For further exploration into these depths, bear in mind that multiple Morph CV inputs (or knobs) always stack additively, and multiple Morph CV Attenuversion/Ampliversion inputs (or knobs) stack multiplicatively.
+
+All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, retain their value even when not visible. They are also independently and simultaneously MIDI- and CV-mappable using modules like:
 * VCV [MIDI-MAP](https://library.vcvrack.com/Core/MIDI-Map)
-* stoermelder [CV-MAP](https://library.vcvrack.com/Stoermelder-P1/CVMap)/[µMAP](https://library.vcvrack.com/Stoermelder-P1/CVMapMicro)
+* stoermelder [CV-MAP](https://library.vcvrack.com/Stoermelder-P1/CVMap)/[µMAP](https://library.vcvrack.com/Stoermelder-P1/CVMapMicro), [MACRO](https://library.vcvrack.com/Stoermelder-P1/Macro), [TRANSIT](https://library.vcvrack.com/Stoermelder-P1/Transit), and [X4](https:/library.vcvrack.com/Stoermelder-P1/X4)
 * 23volts [Multimap](https://library.vcvrack.com/23volts/MultimapK)
 
-Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code has not (yet) been optimized for this use-case; expect significant CPU usage.
+Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code has not (yet) been optimized for this use-case; expect significant CPU usage, especially if the operator modules in-use are also not optimized for polyphony.
 
 ![Full Example Patch](res/Algomorph_FullPatchImage.png)
 
