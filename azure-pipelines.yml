@@ -137,7 +137,7 @@ jobs:
       gitHubConnection: github.com_anlexmatos
       repositoryName: anlexmatos/FM-Delexander
       action: edit
-      tag: AzureCI
+      tag: Beta-3
       target: '$(Build.SourceVersion)'
       addChangeLog: false
       releaseNotesFile: $(Build.ArtifactStagingDirectory)/ReleaseNotes.md
