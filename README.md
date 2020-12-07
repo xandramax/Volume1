@@ -53,7 +53,6 @@ Algomorph Pocket:
 * 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x. This knob functions instead as a Morph Knob when both CV inputs are un-patched
 
 # Instructions:
-
 * To install a [pre-compiled build](https://github.com/anlexmatos/FM-Delexander/releases/tag/AzureCI), follow [these directions](https://vcvrack.com/manual/Installing#installing-plugins-not-available-on-the-vcv-library).
 * Connect the output of up to four operators to the Operator Inputs.  
 * Connect the same number of Modulation Outputs from Algomorph to the linear through-zero FM inputs of the operators.  
@@ -86,37 +85,7 @@ Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code 
 
 ![Full Example Patch](res/Algomorph_FullPatchImage.png)
 
-# Acknowledgements
-All source code and panel graphics are © 2020 Anthony Lexander Matos and Ina Carter. All source code is licensed GPL-3.0-or-later. All panel graphics are licensed CC BY-NC-ND 4.0.
-
-The Miriam Libre font is © 2016 Michal Sahar and licensed under the SIL Open Font License, Version 1.1.
-
-Thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack community, Eurorack, and the electronic music creative space in general, without whose work Algomorph would not be nearly as interesting, and in some cases it would not be possible at all, including but certainly not limited to:
-* Xenakios
-* Sergey Ukolov
-* Antonio Tuzzi
-* Ben Stoermelder
-* Aria Salvatrice
-* Leonardo Laguna Ruiz
-* Plogue Art et Technologie
-* Papernoise
-* David O'Rourke
-* Christian Kauten
-* Dale Johnson
-* Grayscale
-* Émilie Gillet
-* Bruce Frazer
-* Matt Demanett
-* Omri Cohen
-* Pierre Collard
-* John Chowning
-* Marc Boulé
-* Blargg
-* Andrew Belt
-* Steve Baker
-
 # Footnotes
-
 <sup>1</sup> Graph Visualization:
 * 1979 possible graphs, including the "zero-operator graph"
 * Capable of visualizing all 1-, 2-, 3-, and 4-operator algorithms which feature at least 1 obvious carrier
@@ -153,3 +122,32 @@ Thanks go out to the all the developers, educators, and artists who have contrib
 * Voltage-Controlled Attenuverters
 
 ![Algomorph - Presets](res/AlgomorphLarge_Presets.png)
+
+# Acknowledgements
+All source code and panel graphics are © 2020 Anthony Lexander Matos and Ina Carter. All source code is licensed GPL-3.0-or-later. All panel graphics are licensed CC BY-NC-ND 4.0.
+
+The Miriam Libre font is © 2016 Michal Sahar and licensed under the SIL Open Font License, Version 1.1.
+
+Thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack community, Eurorack, and the electronic music creative space in general, without whose work Algomorph would not be nearly as interesting, and in some cases it would not be possible at all, including but certainly not limited to:
+* Xenakios
+* Sergey Ukolov
+* Antonio Tuzzi
+* Ben Stoermelder
+* Aria Salvatrice
+* Leonardo Laguna Ruiz
+* Plogue Art et Technologie
+* Papernoise
+* David O'Rourke
+* Christian Kauten
+* Dale Johnson
+* Grayscale
+* Émilie Gillet
+* Bruce Frazer
+* Matt Demanett
+* Omri Cohen
+* Pierre Collard
+* John Chowning
+* Marc Boulé
+* Blargg
+* Andrew Belt
+* Steve Baker
