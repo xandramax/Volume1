@@ -45,9 +45,7 @@ Algomorph (full-size):
 * 1 morph knob
 * 1 assignable auxiliary knob, with 12 possible modes including an endless rotary morph mode
 * Phase output configurable 0-10V or +/- 5V
-* 6 built-in preset assignments for the aux inputs:
-
-![Algomorph - Presets](res/AlgomorphLarge_Presets.png)
+* 6 built-in preset assignments for the aux inputs<sup>4</sup>
 
 Algomorph Pocket:
 * 1 Wildcard Modulator audio input
@@ -149,3 +147,14 @@ Thanks go out to the developers, educators, and artists who have contributed to 
 * Sum Outputs Gain
 * Mod Outputs Gain
 * Op Inputs Gain
+
+<sup>4</sup> Auxiliary Input Presets:
+* Standard
+* Dual-Input Operators
+* Bidirectional Clocked Sequencer
+* Clocked Sequencer
+* Voltage-Addressed Sequencer
+* Super Morph
+* Voltage-Controlled Attenuverters
+
+![Algomorph - Presets](res/AlgomorphLarge_Presets.png)
