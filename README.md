@@ -13,7 +13,7 @@ Algomorph in its full-size configuration also features:
 * One phase output. Try feeding Algomorph multiple clocked modulation sources as Morph CV, then use the phase output as a combined clock source and/or a source of combined Morph CV for chaining with a second Algomorph module.
 * Algomorph has a user-assignable auxiliary knob with 12 possible modes<sup>3</sup>, located at the center of the main Morph Knob. By default, this functions as a Morph CV attenuverter.
 
-Algomorph is intended for use with modules capable of linear through-zero FM, or phase modulation, such as VCV Rack these operator modules:
+Algomorph is intended for use with modules capable of linear through-zero FM, or phase modulation, such as these Rack operator modules:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
