@@ -144,6 +144,7 @@ Thanks go out to the all the developers, educators, and artists who have contrib
 * Artem Leonov
 * Christian Kauten
 * Dale Johnson
+* Richie Hindle
 * Grayscale
 * Émilie Gillet
 * unless games
