@@ -130,7 +130,7 @@ All source code and panel graphics are © 2020 Anthony Lexander Matos and Ina Ca
 
 The Miriam Libre font is © 2016 Michal Sahar and licensed under the SIL Open Font License, Version 1.1.
 
-Thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack community, Eurorack, and the electronic music creative space in general, without whose work Algomorph would not be nearly as interesting, and in some cases it would not be possible at all, including but certainly not limited to:
+Thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack community, Eurorack, and the electronic music creative space in general, without whose work Algomorph would not be nearly as interesting or in some cases it would not be possible at all, including but certainly not limited to:
 * Xenakios
 * Jeremy Wentworth
 * Sergey Ukolov
@@ -151,8 +151,8 @@ Thanks go out to the all the developers, educators, and artists who have contrib
 * Bruce Frazer
 * Matt Demanett
 * Pablo DeLaLoza
-* Omri Cohen
 * Pierre Collard
+* Omri Cohen
 * John Chowning
 * Marc Boulé
 * Blargg
