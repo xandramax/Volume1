@@ -5,7 +5,7 @@ Algomorph is an intelligent signal router, building from the familiar concepts o
 
 Algomorph is capable of storing three independent routing states (i.e. algorithms) and crossfading between them. Crossfading can be controlled both manually and via control voltage, including at audio rates.
 
-Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1979 graphs)<sup>1</sup>, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as [a series of arrays](<src/GraphData.hpp>).
+Algomorph includes a visualizer which displays the current algorithm as a directed graph. The graph visualizations consist of pre-rendered vector graphics which can be linearly crossfaded between at run-time. The vector graphics are generated using a combination of manual dot-language enumeration of the problem space (1980 graphs)<sup>1</sup>, rendering to SVG via [GraphViz](https://graphviz.org/), conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), and finally formatting as [a series of arrays](<src/GraphData.hpp>).
 
 Algomorph in its full-size configuration also features:
 * Five user-assignable CV/trigger/audio inputs with 20+ possible modes<sup>2</sup> as well as built-in preset configurations
@@ -34,7 +34,7 @@ Algomorph (both sizes):
 * 2 separate modes for the routing logic: standard and "Alter Ego"
 * Expected CV range: +/- 5V
 * Lights that respond to the levels of incoming and outgoing audio
-* A dynamically morphing display capable of displaying 1979 graphs and countless states between them, as well as a question mark when a graph cannot be visualized
+* A dynamically morphing display capable of displaying 1980 graphs and countless states between them, as well as a question mark when a graph cannot be visualized
 * 11 purple/yellow/red ring lights, with additional rotational indicator functionality for improved informational clarity and density
 
 Algomorph (full-size):
@@ -78,7 +78,7 @@ All auxiliary knob modes, as well as both states of the Algomorph Pocket knob, r
 * stoermelder [CV-MAP](https://library.vcvrack.com/Stoermelder-P1/CVMap)/[µMAP](https://library.vcvrack.com/Stoermelder-P1/CVMapMicro), [MACRO](https://library.vcvrack.com/Stoermelder-P1/Macro), [TRANSIT](https://library.vcvrack.com/Stoermelder-P1/Transit), and [X4](https:/library.vcvrack.com/Stoermelder-P1/X4)
 * 23volts [Multimap](https://library.vcvrack.com/23volts/MultimapK)
 
-There is additionally an "Alter Ego" mode of operation, which makes has two significant differences:
+There is additionally an "Alter Ego" mode of operation, which has two significant differences:
 
 * Operators can be routed horizontally. Making horizontal connections does not disable operators here.
 * Automatic carrier assignment does not occur. The only operators which are routed to the Sum output are those which are forcible marked as carriers by the user (see instructions above).
@@ -89,7 +89,7 @@ Algomorph and Algomorph Pocket are also 16-channel polyphonic, however the code 
 
 # Footnotes
 <sup>1</sup> Graph Visualization:
-* 1979 possible graphs, including the "zero-operator graph"
+* 1980 possible graphs, including the "zero-operator graph"
 * Capable of visualizing all 1-, 2-, 3-, and 4-operator algorithms which feature at least 1 obvious carrier
 * Supports linearly crossfading between two graph visualizations, in order to track the module's morph-state
 * No special provision is made for operator feedback (i.e. algorithms with single-operator-feedback are not included in the graph set). Feedback is generally considered by this design to be the domain of the operators, and operators cannot be routed to their own modulation outputs in Algomorph under default settings. Most "FM operator modules" in VCV Rack feature their own feedback knobs (as well as feedback CV inputs).
@@ -150,6 +150,7 @@ Thanks go out to the all the developers, educators, and artists who have contrib
 * unless games
 * Bruce Frazer
 * Matt Demanett
+* Pablo DeLaLoza
 * Omri Cohen
 * Pierre Collard
 * John Chowning
