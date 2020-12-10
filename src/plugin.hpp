@@ -447,6 +447,29 @@ struct ToggleCCWSceneSelectionAction : history::ModuleAction {
 };
 
 template < typename MODULE >
+struct ToggleWildModSumAction : history::ModuleAction {
+	ToggleWildModSumAction() {
+		name = "Delexander Algomorph toggle wildcard mod summing";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->wildModIsSummed ^= true;
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->wildModIsSummed ^= true;
+	}
+};
+
+template < typename MODULE >
 struct ToggleClickFilterAction : history::ModuleAction {
 	ToggleClickFilterAction() {
 		name = "Delexander Algomorph toggle click filter";

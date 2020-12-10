@@ -70,6 +70,7 @@ void AlgomorphLarge::onReset() {
     resetOnRun = false;
     resetScene = 1;
     ccwSceneSelection = true;
+    wildModIsSummed =  false;
 }
 
 void AlgomorphLarge::unsetAuxMode(int auxIndex, int mode) {
@@ -145,17 +146,17 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 if (auxInput[auxIndex]->sceneAdvCVTrigger.process(auxInput[auxIndex]->voltage[AuxInputModes::CLOCK][0])) {
                     //Advance base scene
                     if (!ccwSceneSelection)
-                    baseScene = (baseScene + 1) % 3;
+                        baseScene = (baseScene + 1) % 3;
                     else
-                    baseScene = (baseScene + 2) % 3;
+                        baseScene = (baseScene + 2) % 3;
                     graphDirty = true;
                 }
                 if (auxInput[auxIndex]->reverseSceneAdvCVTrigger.process(auxInput[auxIndex]->voltage[AuxInputModes::REVERSE_CLOCK][0])) {
                     //Advance base scene
                     if (!ccwSceneSelection)
-                    baseScene = (baseScene + 2) % 3;
+                        baseScene = (baseScene + 2) % 3;
                     else
-                    baseScene = (baseScene + 1) % 3;
+                        baseScene = (baseScene + 1) % 3;
                     graphDirty = true;
                 }
             }
@@ -730,6 +731,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             for (int mod = 0; mod < 4; mod++) {
                 modOut[mod][c] += wildcardMod[c] * wildcardModGain;
             }
+            if (wildModIsSummed)
+                modSumOut[c] += wildcardMod[c] * wildcardModGain * sumAttenuversion[c] * sumGain * runClickFilterGain;
         }
         for (int mod = 0; mod < 4; mod++)
             modOut[mod][c] *= runClickFilterGain * modAttenuversion[c] * modGain;
@@ -1432,6 +1435,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_object_set_new(rootJ, "Randomize Ring Morph", json_boolean(randomRingMorph));
     json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
     json_object_set_new(rootJ, "CCW Scene Selection", json_boolean(ccwSceneSelection));
+    json_object_set_new(rootJ, "Wildcard Modulator Summing Enabled", json_boolean(wildModIsSummed));
     json_object_set_new(rootJ, "Reset on Run", json_boolean(resetOnRun));
     json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
     json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
@@ -1544,6 +1548,10 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     auto ccwSceneSelection = json_object_get(rootJ, "CCW Scene Selection");
     if (ccwSceneSelection)
         this->ccwSceneSelection = json_boolean_value(ccwSceneSelection);
+
+    auto wildModIsSummed = json_object_get(rootJ, "Wildcard Modulator Summing Enabled");
+    if (wildModIsSummed)
+        this->wildModIsSummed = json_boolean_value(wildModIsSummed);
 
     auto resetOnRun = json_object_get(rootJ, "Reset on Run");
     if (resetOnRun)
@@ -1994,6 +2002,16 @@ Menu* AlgomorphLargeWidget::AudioSettingsMenuItem::createChildMenu() {
     return menu;
 }
 
+void AlgomorphLargeWidget::WildModSumItem::onAction(const event::Action &e) {
+    // History
+    ToggleWildModSumAction<AlgomorphLarge>* h = new ToggleWildModSumAction<AlgomorphLarge>;
+    h->moduleId = module->id;
+
+    module->wildModIsSummed ^= true;
+
+    APP->history->push(h);
+}
+
 void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(AlgomorphLarge* module, ui::Menu* menu) {
     menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
@@ -2004,6 +2022,10 @@ void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(Algomo
     RunSilencerItem *runSilencerItem = createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
     runSilencerItem->module = module;
     menu->addChild(runSilencerItem);
+
+    WildModSumItem *wildModSumItem = createMenuItem<WildModSumItem>("Add Wildcard Mod to Mod Sum", CHECKMARK(module->wildModIsSummed));
+    wildModSumItem->module = module;
+    menu->addChild(wildModSumItem);
 }
 
 void AlgomorphLargeWidget::CCWScenesItem::onAction(const event::Action &e) {
