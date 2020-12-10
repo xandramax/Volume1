@@ -720,6 +720,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
             }
         }
+        for (int mod = 0; mod < 4; mod++)
+            modSumOut[c] += modOut[mod][c] * sumAttenuversion[c] * sumGain * runClickFilterGain;
         if (auxModeFlags[AuxInputModes::WILDCARD_MOD]) {
             for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
                 auxInput[auxIndex]->wildcardModClickGain = (clickFilterEnabled ? auxInput[auxIndex]->wildcardModClickFilter[c].process(args.sampleTime, auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_MOD]) : auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_MOD]);
@@ -729,17 +731,14 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 modOut[mod][c] += wildcardMod[c] * wildcardModGain;
             }
         }
+        for (int mod = 0; mod < 4; mod++)
+            modOut[mod][c] *= runClickFilterGain * modAttenuversion[c] * modGain;
         if (auxModeFlags[AuxInputModes::WILDCARD_SUM]) {
             for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
                 auxInput[auxIndex]->wildcardSumClickGain = (clickFilterEnabled ? auxInput[auxIndex]->wildcardSumClickFilter[c].process(args.sampleTime, auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_SUM]) : auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_SUM]);
                 wildcardSum[c] += auxInput[auxIndex]->voltage[AuxInputModes::WILDCARD_SUM][c] * auxInput[auxIndex]->wildcardSumClickGain;
             }
             carSumOut[c] += wildcardSum[c];
-        }
-        for (int mod = 0; mod < 4; mod++) {
-            modOut[mod][c] *= runClickFilterGain;
-            modSumOut[c] += modOut[mod][c] * sumAttenuversion[c] * sumGain;
-            modOut[mod][c] *= modAttenuversion[c] * modGain;
         }
         carSumOut[c] *= sumAttenuversion[c] * sumGain * runClickFilterGain;
     }
