@@ -70,6 +70,7 @@ struct AlgomorphLarge : Algomorph {
     bool resetOnRun = false;
     int resetScene = 1;
     bool ccwSceneSelection = true;      // Default true to interface with rising ramp LFO at Morph CV input
+    bool wildModIsSummed = false;
     
     bool auxPanelDirty = true;
 
@@ -169,6 +170,9 @@ struct AlgomorphLargeWidget : AlgomorphWidget {
         void onAction(const event::Action &e) override;
     };
     struct CCWScenesItem : AlgomorphLargeMenuItem {
+        void onAction(const event::Action &e) override;
+    };
+    struct WildModSumItem : AlgomorphLargeMenuItem {
         void onAction(const event::Action &e) override;
     };
     struct AllowMultipleModesItem : AlgomorphLargeMenuItem {
