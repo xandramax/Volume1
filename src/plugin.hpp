@@ -733,7 +733,7 @@ struct RandomizeCurrentAlgorithmItem : MenuItem {
 	MODULE* module;
 
 	void onAction(const event::Action &e) override {
-		module->randomizeAlgorithm(module->centerMorphScene[0]);
+		module->randomizeAlgorithm(module->configMode ? module->configScene : module->centerMorphScene[0]);
 		module->graphDirty = true;
 	}
 };
