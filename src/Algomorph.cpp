@@ -46,7 +46,8 @@ Algomorph::Algomorph() {
 void Algomorph::onReset() {
     for (int scene = 0; scene < 3; scene++) {
         algoName[scene].reset();
-        displayAlgoName[scene].reset();
+        displayAlgoName[scene].clear();
+        // displayAlgoName[scene].push(std::bitset<16> initName);
         for (int op = 0; op < 4; op++) {
             horizontalMarks[scene].set(op, false);
             forcedCarriers[scene].set(op, false);
@@ -65,6 +66,14 @@ void Algomorph::onReset() {
         forwardMorphScene[c]   = (baseScene + 1) % 3;
         backwardMorphScene[c]  = (baseScene + 2) % 3;
     }
+
+    displayMorph.clear();
+    displayScene.clear();
+    displayMorphScene.clear();
+
+    displayMorph.push(0.f);
+    displayScene.push(baseScene);
+    displayMorphScene.push(forwardMorphScene[0]);
 
     clickFilterEnabled = true;
     clickFilterSlew = DEF_CLICK_FILTER_SLEW;
@@ -148,7 +157,7 @@ void Algomorph::randomizeAlgorithm(int scene) {
                 algoName[scene].set(shortStraw * 3 + mod, false);
         }
     }
-    displayAlgoName[scene] = algoName[scene];   // Sync
+    displayAlgoName[scene].push(algoName[scene]);   // Sync
     updateCarriers(scene);
     updateOpsDisabled(scene);
     updateDisplayAlgo(scene);
@@ -264,12 +273,13 @@ void Algomorph::toggleDiagonalDestination(int scene, int op, int mod) {
             toggleDisabled(scene, op);
     }
     if (!opsDisabled[scene].test(op)) {
-        displayAlgoName[scene].set(op * 3 + mod, algoName[scene][op * 3 + mod]);
+        tempDisplayAlgoName = algoName[scene];
+        tempDisplayAlgoName.set(op * 3 + mod, algoName[scene][op * 3 + mod]);
         // If the mod output in question corresponds to a disabled operator
         if (opsDisabled[scene].test(threeToFour[op][mod])) {
             // If a connection has been made, enable that operator visually
             if (algoName[scene].test(op * 3 + mod)) {
-                displayAlgoName[scene].set(12 + threeToFour[op][mod], false);
+                tempDisplayAlgoName.set(12 + threeToFour[op][mod], false);
             }
             // If a connection has been broken, 
             else {
@@ -279,11 +289,12 @@ void Algomorph::toggleDiagonalDestination(int scene, int op, int mod) {
                         disabled = false;
                 }
                 if (disabled)
-                    displayAlgoName[scene].set(12 + threeToFour[op][mod], true);
+                    tempDisplayAlgoName.set(12 + threeToFour[op][mod], true);
                 else
-                    displayAlgoName[scene].set(12 + threeToFour[op][mod], false);
+                    tempDisplayAlgoName.set(12 + threeToFour[op][mod], false);
             }
         }
+        displayAlgoName[scene].push(tempDisplayAlgoName);
     }
 }
 
@@ -334,7 +345,6 @@ bool Algomorph::isDisabled(int scene, int op) {
 
 void Algomorph::toggleDisabled(int scene, int op) {
     algoName[scene].flip(12 + op);
-    displayAlgoName[scene].set(12 + op, algoName[scene].test(12 + op));
     opsDisabled[scene].flip(op);
     updateDisplayAlgo(scene);
 }
@@ -346,13 +356,13 @@ void Algomorph::updateOpsDisabled(int scene) {
 }
 
 void Algomorph::updateDisplayAlgo(int scene) {
-    displayAlgoName[scene] = algoName[scene];
+    tempDisplayAlgoName = algoName[scene];
     // Set display algorithm
     for (int op = 0; op < 4; op++) {
         if (opsDisabled[scene].test(op)) {
             // Set all destinations to false
             for (int mod = 0; mod < 3; mod++)
-                displayAlgoName[scene].set(op * 3 + mod, false);
+                tempDisplayAlgoName.set(op * 3 + mod, false);
             // Check if any operators are modulating this operator
             bool fullDisable = true;
             for (int i = 0; i < 4; i++) {     
@@ -360,23 +370,24 @@ void Algomorph::updateDisplayAlgo(int scene) {
                     fullDisable = false;
             }
             if (fullDisable) {
-                displayAlgoName[scene].set(12 + op, true);
+                tempDisplayAlgoName.set(12 + op, true);
             }
             else
-                displayAlgoName[scene].set(12 + op, false);
+                tempDisplayAlgoName.set(12 + op, false);
         }
         else {
             // Enable destinations in the display and handle the consequences
             for (int i = 0; i < 3; i++) {
                 if (algoName[scene].test(op * 3 + i)) {
-                    displayAlgoName[scene].set(op * 3 + i, true);
+                    tempDisplayAlgoName.set(op * 3 + i, true);
                     // the consequences
                     if (opsDisabled[scene].test(threeToFour[op][i]))
-                        displayAlgoName[scene].set(12 + threeToFour[op][i], false);
+                        tempDisplayAlgoName.set(12 + threeToFour[op][i], false);
                 }
             }  
         }
     }
+    displayAlgoName[scene].push(tempDisplayAlgoName);
 }
 
 void Algomorph::toggleModeB() {

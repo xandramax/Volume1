@@ -262,23 +262,19 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) 
     yOrigin = box.size.y / 2.f;
 
     for (int i = 0; i < 3; i++) {
-        int name = module->graphAddressTranslation[module->displayAlgoName[i].to_ullong()];
+        int name = module->graphAddressTranslation[module->displayAlgoName[i].shift().to_ullong()];
         if (name != -1)
-            graphs[i] = alGraph(module->graphAddressTranslation[(int)module->displayAlgoName[i].to_ullong()]);
+            graphs[i] = alGraph(module->graphAddressTranslation[(int)module->displayAlgoName[i].shift().to_ullong()]);
         else {
             graphs[i] = alGraph(1979);
             graphs[i].mystery = true;
         }
     }
     
-    if (module->centerMorphScene[0] != -1 && module->forwardMorphScene[0] != -1) {
-        if (module->configMode && module->configScene != -1)
-            scene = module->configScene;
-        else {
-            scene = module->centerMorphScene[0];
-            morphScene = module->forwardMorphScene[0];
-            morph = module->relativeMorphMagnitude[0];
-        }
+    scene = module->displayScene.shift();
+    if (scene != -1) {
+        morphScene = module->displayMorphScene.shift();
+        morph = module->displayMorph.shift();
     }
 
     nvgBeginPath(args.vg);
