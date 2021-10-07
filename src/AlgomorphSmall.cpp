@@ -393,6 +393,19 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
         }
     }
     
+    // Update display
+    if (displayUpdateRequested.shift()) {
+        displayMorph.push(relativeMorphMagnitude[0]);
+        if (configMode) {
+            displayScene.push(configScene);
+        }
+        else {
+            displayScene.push(centerMorphScene[0]);
+            displayMorphScene.push(forwardMorphScene[0]);
+        }
+        displayUpdateRequested.push(false);
+    }
+    
     //Get operator input channel then route to modulation output channel or to sum output channel
     float wildcardMod[16] = {0.f};
     for (int c = 0; c < channels; c++) {

@@ -1343,6 +1343,7 @@ struct DLXSmallLightKnob : LightKnob<DLXSmallKnobLight> {
 	}
 
 	void reset() override {
+		
 		if (paramQuantity && resettable) {
 			paramQuantity->reset();
 			oldValue = snapValue = paramQuantity->getValue();
