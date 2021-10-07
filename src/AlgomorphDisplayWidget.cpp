@@ -257,26 +257,33 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::reticulateArrow(NVGcontext* ctx, Ar
 void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
     if (!module) return;
 
+    module->displayUpdateRequested.push(true);
+
     //Origin must be updated
     xOrigin = box.size.x / 2.f;
     yOrigin = box.size.y / 2.f;
 
     for (int i = 0; i < 3; i++) {
-        int name = module->graphAddressTranslation[module->displayAlgoName[i].shift().to_ullong()];
-        if (name != -1)
-            graphs[i] = alGraph(module->graphAddressTranslation[(int)module->displayAlgoName[i].shift().to_ullong()]);
-        else {
-            graphs[i] = alGraph(1979);
-            graphs[i].mystery = true;
+        if (!module->displayAlgoName[i].empty()) {
+            algoName[i] = module->displayAlgoName[i].shift();
+            if (algoName[i] != -1)
+                graphs[i] = alGraph(module->graphAddressTranslation[(int)algoName[i].to_ullong()]);
+            else {
+                graphs[i] = alGraph(1979);
+                graphs[i].mystery = true;
+            }
         }
     }
     
-    scene = module->displayScene.shift();
-    if (scene != -1) {
-        morphScene = module->displayMorphScene.shift();
-        morph = module->displayMorph.shift();
+    if (!module->displayScene.empty()) {   
+        scene = module->displayScene.shift();
+        if (scene != -1) {
+            if (!module->displayMorphScene.empty())
+                morphScene = module->displayMorphScene.shift();
+            if (!module->displayMorph.empty())
+                morph = module->displayMorph.shift();
+        }
     }
-
     nvgBeginPath(args.vg);
     nvgRoundedRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y, 3.675f);
     nvgStrokeWidth(args.vg, borderStroke);

@@ -46,14 +46,13 @@ Algomorph::Algomorph() {
 void Algomorph::onReset() {
     for (int scene = 0; scene < 3; scene++) {
         algoName[scene].reset();
-        displayAlgoName[scene].clear();
-        // displayAlgoName[scene].push(std::bitset<16> initName);
         for (int op = 0; op < 4; op++) {
             horizontalMarks[scene].set(op, false);
             forcedCarriers[scene].set(op, false);
             carrier[scene].set(op, true);
             opsDisabled[scene].set(op, false);
         }
+        updateDisplayAlgo(scene);
     }
 
     configMode = false;
@@ -67,13 +66,13 @@ void Algomorph::onReset() {
         backwardMorphScene[c]  = (baseScene + 2) % 3;
     }
 
-    displayMorph.clear();
-    displayScene.clear();
-    displayMorphScene.clear();
-
     displayMorph.push(0.f);
     displayScene.push(baseScene);
     displayMorphScene.push(forwardMorphScene[0]);
+
+    displayMorph.clear();
+    displayScene.clear();
+    displayMorphScene.clear();
 
     clickFilterEnabled = true;
     clickFilterSlew = DEF_CLICK_FILTER_SLEW;
@@ -157,7 +156,6 @@ void Algomorph::randomizeAlgorithm(int scene) {
                 algoName[scene].set(shortStraw * 3 + mod, false);
         }
     }
-    displayAlgoName[scene].push(algoName[scene]);   // Sync
     updateCarriers(scene);
     updateOpsDisabled(scene);
     updateDisplayAlgo(scene);
@@ -272,30 +270,8 @@ void Algomorph::toggleDiagonalDestination(int scene, int op, int mod) {
         if (mismatch)
             toggleDisabled(scene, op);
     }
-    if (!opsDisabled[scene].test(op)) {
-        tempDisplayAlgoName = algoName[scene];
-        tempDisplayAlgoName.set(op * 3 + mod, algoName[scene][op * 3 + mod]);
-        // If the mod output in question corresponds to a disabled operator
-        if (opsDisabled[scene].test(threeToFour[op][mod])) {
-            // If a connection has been made, enable that operator visually
-            if (algoName[scene].test(op * 3 + mod)) {
-                tempDisplayAlgoName.set(12 + threeToFour[op][mod], false);
-            }
-            // If a connection has been broken, 
-            else {
-                bool disabled = true;
-                for (int j = 0; j < 4; j++) {
-                    if (j != op && j != threeToFour[op][mod] && algoName[scene].test(j * 3 + fourToThree[j][op]))
-                        disabled = false;
-                }
-                if (disabled)
-                    tempDisplayAlgoName.set(12 + threeToFour[op][mod], true);
-                else
-                    tempDisplayAlgoName.set(12 + threeToFour[op][mod], false);
-            }
-        }
-        displayAlgoName[scene].push(tempDisplayAlgoName);
-    }
+    if (!opsDisabled[scene].test(op))
+        updateDisplayAlgo(scene);
 }
 
 bool Algomorph::isCarrier(int scene, int op) {
