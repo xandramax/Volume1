@@ -567,6 +567,19 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             }
         }
     }
+
+    // Update display
+    if (displayUpdateRequested.shift()) {
+        displayMorph.push(relativeMorphMagnitude[0]);
+        if (configMode) {
+            displayScene.push(configScene);
+        }
+        else {
+            displayScene.push(centerMorphScene[0]);
+            displayMorphScene.push(forwardMorphScene[0]);
+        }
+        displayUpdateRequested.push(false);
+    }
     
     //Update clickfilter rise/fall times
     if (clickFilterDivider.process()) {

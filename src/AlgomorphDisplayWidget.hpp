@@ -5,6 +5,7 @@ struct AlgomorphDisplayWidget : FramebufferWidget {
     struct AlgoDrawWidget : LightWidget {
         Algomorph* module;
         alGraph graphs[3];
+        std::bitset<16> algoName[3] = {0};
         int scene = 1;
         int morphScene = 1;
         float morph = 0.f;

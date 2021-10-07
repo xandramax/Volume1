@@ -2,23 +2,29 @@
 #include "plugin.hpp"
 
 struct Algomorph : Module {
-    float morph[16] = {0.f};                                    // Range -1.f -> 1.f
-    float relativeMorphMagnitude[16] = { morph[0] };            // Range 0.f -> 1.f
+    float morph[16] = {0.f};                                            // Range -1.f -> 1.f
+    float relativeMorphMagnitude[16] = { morph[0] };                    // Range 0.f -> 1.f
+    rack::dsp::RingBuffer<float, 4> displayMorph;
 
-    int baseScene = -1;                                         // Center the Morph knob on saved algorithm 0, 1, or 2
+    int baseScene = -1;                                                 // Center the Morph knob on saved algorithm 0, 1, or 2
     int centerMorphScene[16]    = { baseScene };
     int forwardMorphScene[16]   = { (baseScene + 1) % 3 };
     int backwardMorphScene[16]  = { (baseScene + 2) % 3 };
+    rack::dsp::RingBuffer<int, 4> displayScene;
+    rack::dsp::RingBuffer<int, 4> displayMorphScene;
 
-    std::bitset<16> algoName[3]         = {0};                  // 16-bit IDs of the three stored algorithms
+    std::bitset<16> algoName[3]         = {0};                          // 16-bit IDs of the three stored algorithms
 
-    std::bitset<4> horizontalMarks[3]   = {0};                  // If the user creates a horizontal connection, mark it here
-    std::bitset<4> forcedCarriers[3]    = {0};                  // If the user forces an operator to act as a carrier, mark it here 
-    std::bitset<4> carrier[3]           = {0xF, 0xF, 0xF};      // If an operator is acting as a carrier, whether forced or automatically, mark it here
-    std::bitset<4> opsDisabled[3]       = {0};                  // If an operator is disabled, whether forced or automatically, mark it here
+    std::bitset<4> horizontalMarks[3]   = {0};                          // If the user creates a horizontal connection, mark it here
+    std::bitset<4> forcedCarriers[3]    = {0};                          // If the user forces an operator to act as a carrier, mark it here 
+    std::bitset<4> carrier[3]           = {0xF, 0xF, 0xF};              // If an operator is acting as a carrier, whether forced or automatically, mark it here
+    std::bitset<4> opsDisabled[3]       = {0};                          // If an operator is disabled, whether forced or automatically, mark it here
     
-    std::bitset<16> displayAlgoName[3]  = {0};                  // When operators are disabled, remove their mod destinations from here
-                                                                // If a disabled operator is a mod destination, set it to enabled here
+    rack::dsp::RingBuffer<std::bitset<16>, 4> displayAlgoName[3];       // When operators are disabled, remove their mod destinations from here
+                                                                        // If a disabled operator is a mod destination, set it to enabled here
+    std::bitset<16> tempDisplayAlgoName = 0;
+
+    rack::dsp::RingBuffer<bool, 4> displayUpdateRequested;
 
     dsp::ClockDivider cvDivider;
     dsp::BooleanTrigger sceneButtonTrigger[3];
