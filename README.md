@@ -53,7 +53,6 @@ Algomorph Pocket:
 * 1 Morph CV "ampliverter" knob, capable of amplifying Morph CV by up to 3x. This knob functions instead as a Morph Knob when both CV inputs are un-patched
 
 # Instructions:
-* To install a [pre-compiled build](https://github.com/anlexmatos/FM-Delexander/releases/tag/Beta-3), follow [these directions](https://vcvrack.com/manual/Installing#installing-plugins-not-available-on-the-vcv-library).
 * Connect the output of up to four operators to the Operator Inputs.  
 * Connect the same number of Modulation Outputs from Algomorph to the linear through-zero FM inputs of the operators.  
 * Connect the Carrier Sum output to your audio device or a mixer.  
