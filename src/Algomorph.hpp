@@ -24,8 +24,6 @@ struct Algomorph : Module {
                                                                         // If a disabled operator is a mod destination, set it to enabled here
     std::bitset<16> tempDisplayAlgoName = 0;
 
-    rack::dsp::RingBuffer<bool, 4> displayUpdateRequested;
-
     dsp::ClockDivider cvDivider;
     dsp::BooleanTrigger sceneButtonTrigger[3];
     dsp::BooleanTrigger editTrigger;
