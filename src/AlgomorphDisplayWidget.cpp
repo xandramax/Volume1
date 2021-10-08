@@ -257,8 +257,6 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::reticulateArrow(NVGcontext* ctx, Ar
 void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
     if (!module) return;
 
-    module->displayUpdateRequested.push(true);
-
     //Origin must be updated
     xOrigin = box.size.x / 2.f;
     yOrigin = box.size.y / 2.f;
