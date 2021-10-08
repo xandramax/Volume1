@@ -3,10 +3,11 @@
 
 AlgomorphAuxInputPanelWidget::AlgoDrawWidget::AlgoDrawWidget(AlgomorphLarge* module) {
     this->module = module;
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/MiriamLibre-Regular.ttf"));
+    fontPath = "res/MiriamLibre-Regular.ttf"; 
 }
 
 void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
+    font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
     if (!module) return;
 
     for (int i = 0; i < 5; i++) {

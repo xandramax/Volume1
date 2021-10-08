@@ -2228,7 +2228,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
         addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
-        ink = createSvgLight<AlgomorphLargeGlowingInk>(Vec(0,0), module, AlgomorphLarge::GLOWING_INK);
+        ink = createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
         if (!module->glowingInk)
             ink->hide();
         addChildBottom(ink);
@@ -2247,22 +2247,22 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
         addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(35.428, 49.297)), 8.862, module, AlgomorphLarge::SCREEN_BUTTON_RING_LIGHT, .4));
         addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
-        addChild(createSvgSwitchLightCentered<DLXScreenButtonLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON_LIGHT, AlgomorphLarge::SCREEN_BUTTON));
+        addChild(createParamCentered<DLXScreenButtonLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 0, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 0, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
-        addChild(createSvgSwitchLightCentered<DLX1Light>(SceneButtonCenters[0], module, AlgomorphLarge::ONE_LIGHT, AlgomorphLarge::SCENE_BUTTONS + 0));
+        addChild(createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 3, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 3, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
-        addChild(createSvgSwitchLightCentered<DLX2Light>(SceneButtonCenters[1], module, AlgomorphLarge::TWO_LIGHT, AlgomorphLarge::SCENE_BUTTONS + 1));
+        addChild(createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 6, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 6, .75));
         addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
-        addChild(createSvgSwitchLightCentered<DLX3Light>(SceneButtonCenters[2], module, AlgomorphLarge::THREE_LIGHT, AlgomorphLarge::SCENE_BUTTONS + 2));
+        addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 17.065)), module, AlgomorphLarge::AUX_INPUTS + 0));
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 29.168)), module, AlgomorphLarge::AUX_INPUTS + 1));
@@ -2270,20 +2270,21 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 54.123)), module, AlgomorphLarge::AUX_INPUTS + 3));
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 66.600)), module, AlgomorphLarge::AUX_INPUTS + 4));
 
-        DLXLargeKnobLight* morphKnobLight = createLight<DLXLargeKnobLight>(mm2px(Vec(25.385, 97.379)), module, AlgomorphLarge::MORPH_KNOB_LIGHT);
-        addParam(createLightKnob<DLXLargeKnobLight, DLXLargeLightKnob>(mm2px(Vec(25.385, 97.379)), module, AlgomorphLarge::MORPH_KNOB, morphKnobLight));
-        addChild(morphKnobLight);
+        // DLXLargeKnobLight* morphKnobLight = createParam<DLXLargeKnobLight>(mm2px(Vec(25.385, 97.379)), module, AlgomorphLarge::MORPH_KNOB);
+        addParam(createParam<DLXLargeLightKnob>(mm2px(Vec(25.385, 97.379)), module, AlgomorphLarge::MORPH_KNOB));
+        // addParam(morphKnobLight);
 
         for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
-            DLXSmallKnobLight* auxKl = createLight<DLXSmallKnobLight>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOB_LIGHTS + i);
-            DLXSmallLightKnob* auxKlParam = createLightKnob<DLXSmallKnobLight, DLXSmallLightKnob>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOBS + i, auxKl);
-            if (i == AuxKnobModes::MORPH || i == AuxKnobModes::DOUBLE_MORPH || i == AuxKnobModes::TRIPLE_MORPH || i == AuxKnobModes::UNI_MORPH || i == AuxKnobModes::ENDLESS_MORPH)
-                auxKlParam->randomizable = false;
+            // DLXSmallKnobLight* auxKl = createLight<DLXSmallKnobLight>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOBS + i);
+            DLXSmallLightKnob* auxKlParam = createParam<DLXSmallLightKnob>(mm2px(Vec(31.712, 103.705)), module, AlgomorphLarge::AUX_KNOBS + i);
+            // TODO Use v2 method for setting non-randomizable knobs
+            // if (i == AuxKnobModes::MORPH || i == AuxKnobModes::DOUBLE_MORPH || i == AuxKnobModes::TRIPLE_MORPH || i == AuxKnobModes::UNI_MORPH || i == AuxKnobModes::ENDLESS_MORPH)
+            //     auxKlParam->randomizable = false;
             if (i != module->knobMode) {
                 auxKlParam->hide();
-                auxKlParam->sibling->hide();
+                // auxKlParam->sibling->hide();
             }
-            addChild(auxKl);
+            // addChild(auxKl);
             addParam(auxKlParam);
         }
 
@@ -2293,7 +2294,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(35.428, 91.561)), 8.862, module, AlgomorphLarge::EDIT_LIGHT, .4));
         addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
-        addChild(createSvgSwitchLightCentered<DLXPencilLight>(mm2px(Vec(35.428 + 0.07, 91.561 - 0.297)), module, AlgomorphLarge::EDIT_LIGHT, AlgomorphLarge::EDIT_BUTTON));
+        addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428 + 0.07, 91.561 - 0.297)), module, AlgomorphLarge::EDIT_BUTTON));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.777, 78.636)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.777, 88.657)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
@@ -2429,10 +2430,10 @@ void AlgomorphLargeWidget::setKnobMode(int mode) {
 
     DLXSmallLightKnob* oldKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(AlgomorphLarge::AUX_KNOBS + activeKnob));
     oldKnob->hide();
-    oldKnob->sibling->hide();
+    // oldKnob->sibling->hide();
     DLXSmallLightKnob* newKnob = dynamic_cast<DLXSmallLightKnob*>(getParam(AlgomorphLarge::AUX_KNOBS + mode));
     newKnob->show();
-    newKnob->sibling->show();
+    // newKnob->sibling->show();
     activeKnob = mode;
 }
 

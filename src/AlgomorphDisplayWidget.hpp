@@ -10,6 +10,7 @@ struct AlgomorphDisplayWidget : FramebufferWidget {
         int morphScene = 1;
         float morph = 0.f;
         bool firstRun = true;
+        std::string fontPath = "";
         std::shared_ptr<Font> font;
         float textBounds[4];
 
