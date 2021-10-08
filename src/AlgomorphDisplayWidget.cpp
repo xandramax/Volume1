@@ -259,17 +259,15 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) 
 
     font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
 
-    module->displayUpdateRequested.push(true);
-
     //Origin must be updated
     xOrigin = box.size.x / 2.f;
     yOrigin = box.size.y / 2.f;
 
     for (int i = 0; i < 3; i++) {
         if (!module->displayAlgoName[i].empty()) {
-            algoName[i] = module->displayAlgoName[i].shift();
-            if (algoName[i] != -1)
-                graphs[i] = alGraph(module->graphAddressTranslation[(int)algoName[i].to_ullong()]);
+            translatedAlgoName[i] = module->graphAddressTranslation[module->displayAlgoName[i].shift().to_ullong()];
+            if (translatedAlgoName[i] != -1)
+                graphs[i] = alGraph(translatedAlgoName[i]);
             else {
                 graphs[i] = alGraph(1979);
                 graphs[i].mystery = true;
