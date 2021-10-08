@@ -4,7 +4,7 @@
 
 AlgomorphDisplayWidget::AlgoDrawWidget::AlgoDrawWidget(Algomorph* module) {
     this->module = module;
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/MiriamLibre-Regular.ttf"));
+    fontPath = "res/MiriamLibre-Regular.ttf";
 }
 
 void AlgomorphDisplayWidget::AlgoDrawWidget::drawNodes(NVGcontext* ctx, alGraph source, alGraph destination, float morph) {
@@ -256,6 +256,8 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::reticulateArrow(NVGcontext* ctx, Ar
 
 void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
     if (!module) return;
+
+    font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
 
     module->displayUpdateRequested.push(true);
 

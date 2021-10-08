@@ -35,15 +35,8 @@ struct AlgomorphSmall : Algomorph {
         ENUMS(OPERATOR_LIGHTS, 12),             // 3 colors per light
         ENUMS(CARRIER_INDICATORS, 12),          // 3 colors per light
         ENUMS(MODULATOR_LIGHTS, 12),            // 3 colors per light
-        EDIT_LIGHT,
-        MORPH_KNOB_LIGHT,
-        MORPH_ATTEN_KNOB_LIGHT,
-        GLOWING_INK,
-        ONE_LIGHT,
-        TWO_LIGHT,
-        THREE_LIGHT,
-        SCREEN_BUTTON_LIGHT,
         ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
+        EDIT_LIGHT,
         NUM_LIGHTS
     };
 
@@ -72,9 +65,9 @@ struct AlgomorphSmall : Algomorph {
 
 /// Glowing Ink
 
-struct AlgomorphSmallGlowingInk : SvgLight {
+struct AlgomorphSmallGlowingInk : SvgWidget {
 	AlgomorphSmallGlowingInk() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall_GlowingInk.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall_GlowingInk.svg")));
 	}
 };
 
