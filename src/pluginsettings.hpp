@@ -1,14 +1,14 @@
 #pragma once
 #include "AuxSources.hpp"
 
-struct FMDelexandraSettings {
+struct DelexandraVol1Settings {
 	bool glowingInkDefault = false;
 	bool vuLightsDefault = true;
 	//NUM_AUX_INPUTS = 5
 	bool allowMultipleModes[5] = {false};
 	bool auxInputDefaults[5][AuxInputModes::NUM_MODES] = {{false}};
 
-	FMDelexandraSettings();
+	DelexandraVol1Settings();
 	void initDefaults();
 	void saveToJson();
 	void readFromJson();

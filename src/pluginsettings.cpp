@@ -3,13 +3,13 @@
 #include "AuxSources.hpp"
 
 
-FMDelexandraSettings pluginSettings;
+DelexandraVol1Settings pluginSettings;
 
-FMDelexandraSettings::FMDelexandraSettings() {
+DelexandraVol1Settings::DelexandraVol1Settings() {
     initDefaults();
 }
 
-void FMDelexandraSettings::initDefaults() {
+void DelexandraVol1Settings::initDefaults() {
     // Initialize to Defaults
     auxInputDefaults[0][AuxInputModes::RESET] = true;
     auxInputDefaults[1][AuxInputModes::CLOCK] = true;
@@ -18,7 +18,7 @@ void FMDelexandraSettings::initDefaults() {
     auxInputDefaults[4][AuxInputModes::MORPH] = true;
 }
 
-void FMDelexandraSettings::saveToJson() {
+void DelexandraVol1Settings::saveToJson() {
     json_t* settingsJ = json_object();
 
     json_object_set_new(settingsJ, "glowingInkDefault", json_boolean(glowingInkDefault));
@@ -43,7 +43,7 @@ void FMDelexandraSettings::saveToJson() {
         json_object_set_new(settingsJ, (std::string("Aux Input ") + std::to_string(auxIndex) + " Default Modes").c_str(), auxDefaultsJ);
     }
 
-    std::string settingsFilename = rack::asset::user("FM-Delexandra.json");
+    std::string settingsFilename = rack::asset::user("DelexandraVol1.json");
     FILE* file = fopen(settingsFilename.c_str(), "w");
     if (file) {
         json_dumpf(settingsJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
@@ -52,8 +52,8 @@ void FMDelexandraSettings::saveToJson() {
     json_decref(settingsJ);
 }
 
-void FMDelexandraSettings::readFromJson() {
-    std::string settingsFilename = rack::asset::user("FM-Delexandra.json");
+void DelexandraVol1Settings::readFromJson() {
+    std::string settingsFilename = rack::asset::user("DelexandraVol1.json");
     FILE* file = fopen(settingsFilename.c_str(), "r");
     if (!file) {
         initDefaults();
