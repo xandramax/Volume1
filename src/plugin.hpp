@@ -8,7 +8,7 @@ using namespace rack;
 
 extern Plugin* pluginInstance;
 
-extern FMDelexanderSettings pluginSettings;
+extern DelexanderVol1Settings pluginSettings;
 
 extern Model* modelAlgomorphLarge;
 extern Model* modelAlgomorphSmall;
