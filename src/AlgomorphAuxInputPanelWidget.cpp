@@ -7,8 +7,9 @@ AlgomorphAuxInputPanelWidget::AlgoDrawWidget::AlgoDrawWidget(AlgomorphLarge* mod
 }
 
 void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
     if (!module) return;
+
+    font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
 
     for (int i = 0; i < 5; i++) {
         int activeModes = module->auxInput[i]->activeModes;
@@ -50,7 +51,7 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& 
             float yOffset = -35.f;//(textBounds[3] - textBounds[1]) / 3.25f;
             nvgText(args.vg, LABEL_BOUNDS[i].x + xOffset, LABEL_BOUNDS[i].y + yOffset, id, id + s.length());
         }
-    }        
+    }    
 }
 
 AlgomorphAuxInputPanelWidget::AlgomorphAuxInputPanelWidget(AlgomorphLarge* module) {
@@ -67,3 +68,10 @@ void AlgomorphAuxInputPanelWidget::step() {
     }
     FramebufferWidget::step();
 }
+
+// void AlgomorphAuxInputPanelWidget::draw(const Widget::DrawArgs& args) {
+//     // Rack 2 beta light
+//     nvgGlobalTint(args.vg, color::WHITE);
+
+//     FramebufferWidget::draw(args);
+// }

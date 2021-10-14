@@ -1,8 +1,8 @@
 #pragma once
 #include <rack.hpp>
+#include <bitset>
 #include "pluginsettings.hpp"
 #include "GraphData.hpp"
-#include <bitset>
 
 using namespace rack;
 
@@ -609,8 +609,29 @@ struct SetClickFilterAction : history::ModuleAction {
 	}
 };
 
+template <class MODULE>
+struct RandomizeCurrentAlgorithmItem : MenuItem {
+	MODULE* module;
 
-/// Params
+	void onAction(const event::Action &e) override {
+		module->randomizeAlgorithm(module->configMode ? module->configScene : module->centerMorphScene[0]);
+		module->graphDirty = true;
+	}
+};
+
+template <class MODULE>
+struct RandomizeAllAlgorithmsItem : MenuItem {
+	MODULE* module;
+
+	void onAction(const event::Action &e) override {
+		for (int scene = 0; scene < 3; scene++)
+			module->randomizeAlgorithm(scene);
+		module->graphDirty = true;
+	}
+};
+
+
+// Component Library
 
 struct DLXPortPoly : SvgPort {
 	DLXPortPoly() {
@@ -638,25 +659,15 @@ struct DLXPurpleButton : rack::app::SvgSwitch {
 
 	DLXPurpleButton() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_0c.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_1c.svg")));
-	}
-};
-
-struct DLXTL1105B : rack::app::SvgSwitch {
-	int state = 0;
-
-	DLXTL1105B() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PurpleButton_0_bottom.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PurpleButton_1_bottom.svg")));
 	}
 };
 
 
 /// Lights
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TDlxPurpleLight : TBase {
 	TDlxPurpleLight() {
 		this->addBaseColor(DLXLightPurple);
@@ -664,7 +675,7 @@ struct TDlxPurpleLight : TBase {
 };
 typedef TDlxPurpleLight<> DLXPurpleLight;
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TDlxRedLight : TBase {
 	TDlxRedLight() {
 		this->addBaseColor(DLXRed);
@@ -672,7 +683,7 @@ struct TDlxRedLight : TBase {
 };
 typedef TDlxRedLight<> DLXRedLight;
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TDlxYellowLight : TBase {
 	TDlxYellowLight() {
 		this->addBaseColor(DLXYellow);
@@ -680,7 +691,7 @@ struct TDlxYellowLight : TBase {
 };
 typedef TDlxYellowLight<> DLXYellowLight;
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TDlxMultiLight : TBase {
 	TDlxMultiLight() {
 		this->addBaseColor(DLXLightPurple);
@@ -690,7 +701,7 @@ struct TDlxMultiLight : TBase {
 };
 typedef TDlxMultiLight<> DLXMultiLight;
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TDlxScreenMultiLight : TBase {
 	TDlxScreenMultiLight() {
 		this->addBaseColor(DLXDarkPurple);
@@ -729,27 +740,6 @@ struct Line {
 };
 
 template <class MODULE>
-struct RandomizeCurrentAlgorithmItem : MenuItem {
-	MODULE* module;
-
-	void onAction(const event::Action &e) override {
-		module->randomizeAlgorithm(module->configMode ? module->configScene : module->centerMorphScene[0]);
-		module->graphDirty = true;
-	}
-};
-
-template <class MODULE>
-struct RandomizeAllAlgorithmsItem : MenuItem {
-	MODULE* module;
-
-	void onAction(const event::Action &e) override {
-		for (int scene = 0; scene < 3; scene++)
-			module->randomizeAlgorithm(scene);
-		module->graphDirty = true;
-	}
-};
-
-template <class MODULE>
 struct ConnectionBgWidget : OpaqueWidget {
 	MODULE* module;
 	std::vector<Line> lines;
@@ -762,8 +752,8 @@ struct ConnectionBgWidget : OpaqueWidget {
 		}
 	}
 
-	void draw(const widget::Widget::DrawArgs& args) override {
-        //Colors from GrayModuleLightWidget
+	void draw(const Widget::DrawArgs& args) override {
+        //Colors from rack::GrayModuleLightWidget
 		for (Line line : lines) {
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, line.left.x - box.pos.x, line.left.y - box.pos.y);
@@ -777,6 +767,8 @@ struct ConnectionBgWidget : OpaqueWidget {
 			nvgStrokeColor(args.vg, nvgRGBA(0, 0, 0, 0x60));
 			nvgStroke(args.vg);
         }
+
+		OpaqueWidget::draw(args);
     }
 
 	void onButton(const event::Button& e) override {
@@ -794,11 +786,11 @@ struct ConnectionBgWidget : OpaqueWidget {
 	}
 };
 
-template < typename TBase = GrayModuleLightWidget >
+template < typename TBase = rack::GrayModuleLightWidget >
 struct TBacklight : TBase {
-	void drawBackground(const widget::Widget::DrawArgs& args) override {};
+	void drawBackground(const Widget::DrawArgs& args) override {};
 
-    void drawLight(const widget::Widget::DrawArgs& args) override {
+    void drawLight(const Widget::DrawArgs& args) override {
 		nvgBeginPath(args.vg);
 		nvgRoundedRect(args.vg, 0.f, 0.f, this->box.size.x, this->box.size.y, 3.675f);
 		if (this->color.a > 0.0) {
@@ -807,143 +799,10 @@ struct TBacklight : TBase {
 		}
 	}
 
-	// void drawHalo(const widget::Widget::DrawArgs& args) override {
-	// 	float xradius = 56.537f, yradius = 46.638f;
-	// 	float oxradius = xradius * 3.65f, oyradius = yradius * 3.65f;
-
-	// 	nvgBeginPath(args.vg);
-	// 	nvgRect(args.vg, xradius - oxradius, yradius - oyradius, 2.f * oxradius, 2.f * oyradius);
-		
-	// 	NVGpaint p;
-	// 	float rx = (xradius + oxradius)*0.5f;
-	// 	float ry = (yradius + oyradius)*0.5f;
-	// 	float fx = (oxradius - xradius);
-	// 	NVG_NOTUSED(args.vg);
-	// 	memset(&p, 0, sizeof(p));
-	// 	nvgTransformIdentity(p.xform);
-	// 	p.xform[4] = xradius;
-	// 	p.xform[5] = yradius;
-	// 	p.extent[0] = rx;
-	// 	p.extent[1] = ry;
-	// 	p.radius = rx;
-	// 	p.feather = std::max(1.0f, fx);
-	// 	p.innerColor = color::mult(this->color, 0.07);
-	// 	p.outerColor = nvgRGB(0, 0, 0);
-		
-	// 	nvgFillPaint(args.vg, p);
-	// 	nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-	// 	nvgFill(args.vg);
-	// }
-
-	void drawHalo(const widget::Widget::DrawArgs& args) override {
-		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
-		if (args.fb)
-			return;
-
-		const float halo = settings::haloBrightness;
-		if (halo == 0.f)
-			return;
-
-		// If light is off, rendering the halo gives no effect.
-		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
-			return;
-
-		math::Vec c = this->box.size.div(2);
-		float xradius = 56.537f, yradius = 46.638f;
-		float oxradius = xradius * 3.65f, oyradius = yradius * 3.65f;
-
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, c.x - oxradius, c.y - oyradius, 2 * oxradius, 2 * oyradius);
-
-		NVGcolor icol = color::mult(this->color, halo);
-		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, xradius, oxradius, icol, ocol);
-		nvgFillPaint(args.vg, paint);
-		nvgFill(args.vg);
-	}
-};
-typedef TBacklight<> Backlight;
-
-template <typename TBase = DLXScreenMultiLight>
-TBacklight<TBase>* createBacklight(Vec pos, Vec size, engine::Module* module, int firstLightId) {
-	TBacklight<TBase>* o = new TBacklight<TBase>();
-	o->box.pos = pos;
-	o->box.size = size;
-	o->module = module;
-	o->firstLightId = firstLightId;
-	return o;
-}
-
-template <typename TBase = GrayModuleLightWidget>
-struct TLineLight : TBase {
-	bool flipped = false;
-
-	TLineLight(Vec a, Vec b) {
-		flipped = a.y > b.y;
-
-		this->box.size = Vec(b.x - a.x, std::fabs(b.y - a.y));
-		float angle = std::atan2(this->box.size.y, this->box.size.x);
-		float radius = 8.462 + 1.7;		//ringLight radius + strokeWidth
-		Vec start, end;
-		if (flipped) {
-			start = Vec(a.x + radius * std::cos(angle), a.y - radius * std::sin(angle));
-			end = Vec(b.x - radius * std::cos(angle),  b.y + radius * std::sin(angle));
-		}
-		else {
-			start = Vec(a.x + radius * std::cos(angle), a.y + radius * std::sin(angle));
-			end = Vec(b.x - radius * std::cos(angle),  b.y - radius * std::sin(angle));
-		}
-		this->box.pos = start;
-		if (flipped)
-			this->box.pos.y = end.y;
-		this->box.size = Vec(end.x - start.x, std::fabs(end.y - start.y));
-	}
-
-	void drawBackground(const widget::Widget::DrawArgs& args) override {
+	void drawHalo(const Widget::DrawArgs& args) override {
 		return;
-	};
+		// TODO: Design backlight halo
 
-	void drawLight(const widget::Widget::DrawArgs& args) override {
-		nvgBeginPath(args.vg);
-		if (flipped) {
-			nvgMoveTo(args.vg, 0.f, this->box.size.y);
-			nvgLineTo(args.vg, this->box.size.x, 0.f);
-		}
-		else {
-			nvgMoveTo(args.vg, 0.f, 0.f);
-			nvgLineTo(args.vg, this->box.size.x, this->box.size.y);
-		}
-		nvgStrokeWidth(args.vg, .975f);
-		// Foreground
-		if (this->color.a > 0.0) {
-			nvgStrokeColor(args.vg, this->color);
-			nvgStroke(args.vg);
-		}
-	}
-
-	// void drawHalo(const widget::Widget::DrawArgs& args) override {
-	// 	float radius = std::min(this->box.size.x, this->box.size.y) / 2.0;
-	// 	float oradius = 3.0 * radius;
-
-	// 	nvgBeginPath(args.vg);
-	// 	if (flipped)
-	// 		nvgRect(args.vg, radius - oradius, radius - oradius - this->box.size.y, 2 * oradius, 2 * oradius);
-	// 	else
-	// 		nvgRect(args.vg, radius - oradius, radius - oradius, 2 * oradius, 2 * oradius);
-
-	// 	NVGpaint paint;
-	// 	NVGcolor icol = color::mult(this->color, 0.07);
-	// 	NVGcolor ocol = nvgRGB(0, 0, 0);
-	// 	if (flipped)
-	// 		paint = nvgRadialGradient(args.vg, radius, radius - this->box.size.y, radius, oradius, icol, ocol);
-	// 	else
-	// 		paint = nvgRadialGradient(args.vg, radius, radius, radius, oradius, icol, ocol);
-	// 	nvgFillPaint(args.vg, paint);
-	// 	nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-	// 	nvgFill(args.vg);
-	// }
-
-	void drawHalo(const widget::Widget::DrawArgs& args) override {
 		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
 		if (args.fb)
 			return;
@@ -961,15 +820,112 @@ struct TLineLight : TBase {
 		float oradius = radius + std::min(radius * 4.f, 15.f);
 
 		nvgBeginPath(args.vg);
-		if (flipped)
-			nvgRect(args.vg, radius - oradius, radius - oradius - this->box.size.y, 2 * oradius, 2 * oradius);
-		else
-			nvgRect(args.vg, radius - oradius, radius - oradius, 2 * oradius, 2 * oradius);
+		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * oradius, 2 * oradius);
 
 		NVGcolor icol = color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
 		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
 		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+	}
+};
+typedef TBacklight<> Backlight;
+
+template <typename TBase = DLXScreenMultiLight>
+TBacklight<TBase>* createBacklight(Vec pos, Vec size, engine::Module* module, int firstLightId) {
+	TBacklight<TBase>* o = new TBacklight<TBase>();
+	o->box.pos = pos;
+	o->box.size = size;
+	o->module = module;
+	o->firstLightId = firstLightId;
+	return o;
+}
+
+template <typename TBase = rack::GrayModuleLightWidget>
+struct TLineLight : TBase {
+	bool flipped = false;
+	float angle = 0.f;
+	float length = 0.f;
+	const float RING_RADIUS = 8.462f + 1.7f;	//ringLight radius + ringLight strokeWidth
+	const float STROKE_WIDTH = .975f;
+
+	TLineLight(Vec a, Vec b) {
+		flipped = a.y > b.y;
+		
+		length = sqrtf(powf(b.x - a.x, 2) + powf(b.y - a.y, 2)) + STROKE_WIDTH * 2.f;
+
+		this->box.size = Vec(b.x - a.x, std::fabs(b.y - a.y));
+		float angle = std::atan2(this->box.size.y, this->box.size.x);
+		Vec start, end;
+		if (flipped) {
+			start = Vec(a.x + RING_RADIUS * std::cos(angle), a.y - RING_RADIUS * std::sin(angle));
+			end = Vec(b.x - RING_RADIUS * std::cos(angle),  b.y + RING_RADIUS * std::sin(angle));
+		}
+		else {
+			start = Vec(a.x + RING_RADIUS * std::cos(angle), a.y + RING_RADIUS * std::sin(angle));
+			end = Vec(b.x - RING_RADIUS * std::cos(angle),  b.y - RING_RADIUS * std::sin(angle));
+		}
+		this->box.pos = start;
+		if (flipped)
+			this->box.pos.y = end.y;
+		this->box.size = Vec(end.x - start.x, std::fabs(end.y - start.y));
+	}
+
+	void drawBackground(const Widget::DrawArgs& args) override {
+		return;
+	};
+
+	void drawLight(const Widget::DrawArgs& args) override {
+		nvgBeginPath(args.vg);
+		if (flipped) {
+			nvgMoveTo(args.vg, 0.f, this->box.size.y);
+			nvgLineTo(args.vg, this->box.size.x, 0.f);
+		}
+		else {
+			nvgMoveTo(args.vg, 0.f, 0.f);
+			nvgLineTo(args.vg, this->box.size.x, this->box.size.y);
+		}
+		nvgStrokeWidth(args.vg, STROKE_WIDTH);
+		// Foreground
+		if (this->color.a > 0.0) {
+			nvgStrokeColor(args.vg, this->color);
+			nvgStroke(args.vg);
+		}
+	}
+
+	void drawHalo(const Widget::DrawArgs& args) override {
+		return;
+		// TODO: Design line light halo
+
+		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		if (args.fb)
+			return;
+
+		const float halo = settings::haloBrightness;
+		if (halo == 0.f)
+			return;
+
+		// If light is off, rendering the halo gives no effect.
+		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
+			return;
+
+		math::Vec c = this->box.size.div(2);
+		float radius = std::min(this->box.size.x, this->box.size.y) / 4.0f;
+		float oradius = radius + std::min(radius * 4.f, 15.f);
+
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, c.x - (length * 0.5f), c.y, length, oradius);
+
+		// if (flipped)
+		// 	nvgRotate(args.vg, angle);
+		// else
+		// 	nvgRotate(args.vg, -angle);
+
+		// NVGcolor icol = color::mult(this->color, halo);
+		// NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
+		// NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
+		// nvgFillPaint(args.vg, paint);
+		nvgFillColor(args.vg, SCHEME_BLACK);
 		nvgFill(args.vg);
 	}
 };
@@ -983,7 +939,7 @@ TLineLight<TBase>* createLineLight(Vec a, Vec b, engine::Module* module, int fir
 	return o;
 }
 
-template <typename TBase = GrayModuleLightWidget>
+template <typename TBase = rack::GrayModuleLightWidget>
 struct TRingLight : TBase {
 	float radius = 1.f;
 	float strokeSize = 0.f;
@@ -992,7 +948,7 @@ struct TRingLight : TBase {
 		strokeSize = s;
 	}
 	
-	void drawBackground(const widget::Widget::DrawArgs& args) override {
+	void drawBackground(const Widget::DrawArgs& args) override {
 		// Adapted from LightWidget::drawBackground, with no fill
 		nvgBeginPath(args.vg);
 		nvgCircle(args.vg, radius, radius, radius);
@@ -1012,7 +968,7 @@ struct TRingLight : TBase {
 		}
 	}
 
-	void drawLight(const widget::Widget::DrawArgs& args) override {
+	void drawLight(const Widget::DrawArgs& args) override {
 		// Adapted from LightWidget::drawLight, with no fill
 		// Foreground
 		if (this->color.a > 0.0) {
@@ -1023,6 +979,36 @@ struct TRingLight : TBase {
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
+	}
+
+	void drawHalo(const Widget::DrawArgs& args) override {
+		return;
+		// TODO: Design ring light halo
+
+		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		if (args.fb)
+			return;
+
+		const float halo = settings::haloBrightness;
+		if (halo == 0.f)
+			return;
+
+		// If light is off, rendering the halo gives no effect.
+		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
+			return;
+
+		math::Vec c = this->box.size.div(2);
+		// We already have a radius as a member variable of the widget.
+		float oradius = radius + std::min(radius * 4.f, 90.f);
+
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, c.x - oradius, c.y - oradius, 4 * oradius, 4 * oradius);
+
+		NVGcolor icol = color::mult(this->color, halo);
+		NVGcolor ocol = nvgRGBA(255, 255, 255, 255);
+		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
 	}
 };
 typedef TRingLight<> RingLight;
@@ -1071,28 +1057,28 @@ struct DLXRingIndicator : DLXMultiLight {
 		strokeSize = s;
 	}
 
-	void draw(const DrawArgs& args) override {
+	void drawLight(const Widget::DrawArgs& args) override {
 		if (!module)
 			return;
-		angle = dynamic_cast<MODULE*>(module)->rotor.angle;
-		math::Vec center = Vec(radius, radius);
-		nvgTransformIdentity(transform);
-		float t[6];
-		nvgTransformTranslate(t, center.x, center.y);
-		nvgTransformPremultiply(transform, t);
-		nvgTransformRotate(t, angle);
-		nvgTransformPremultiply(transform, t);
-		nvgTransformTranslate(t, center.neg().x, center.neg().y);
-		nvgTransformPremultiply(transform, t);
-		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
 
-		nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, 2.6f, 2.6f, strokeSize);
-		nvgFillColor(args.vg, this->color);
-		nvgFill(args.vg);
+		if (this->color.a > 0.0) {
+			angle = dynamic_cast<MODULE*>(module)->rotor.angle;
+			math::Vec center = Vec(radius, radius);
+			nvgTransformIdentity(transform);
+			float t[6];
+			nvgTransformTranslate(t, center.x, center.y);
+			nvgTransformPremultiply(transform, t);
+			nvgTransformRotate(t, angle);
+			nvgTransformPremultiply(transform, t);
+			nvgTransformTranslate(t, center.neg().x, center.neg().y);
+			nvgTransformPremultiply(transform, t);
+			nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
 
-		Widget::draw(args);
+			nvgBeginPath(args.vg);
+			nvgCircle(args.vg, 2.6f, 2.6f, strokeSize);
+			nvgFillColor(args.vg, this->color);
+			nvgFill(args.vg);
+		}
 	}
 };
 
@@ -1113,7 +1099,15 @@ DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, float r, engine::
     return o;
 }
 
-struct DLXPencilButtonLight : SvgSwitch {
+struct DLXSwitchLight : SvgSwitch {
+	void draw(const DrawArgs& args) override {
+		nvgGlobalTint(args.vg, color::WHITE);
+
+		ParamWidget::draw(args);
+	}
+};
+
+struct DLXPencilButtonLight : DLXSwitchLight {
 	int state = 0;
 
 	DLXPencilButtonLight() {
@@ -1133,7 +1127,7 @@ struct DLXScreenButtonLight : SvgSwitch {
 	}
 };
 
-struct DLX1ButtonLight : SvgSwitch {
+struct DLX1ButtonLight : DLXSwitchLight {
 	int state = 0;
 
 	DLX1ButtonLight() {
@@ -1143,7 +1137,7 @@ struct DLX1ButtonLight : SvgSwitch {
 	}
 };
 
-struct DLX2ButtonLight : SvgSwitch {
+struct DLX2ButtonLight : DLXSwitchLight {
 	int state = 0;
 
 	DLX2ButtonLight() {
@@ -1153,7 +1147,7 @@ struct DLX2ButtonLight : SvgSwitch {
 	}
 };
 
-struct DLX3ButtonLight : SvgSwitch {
+struct DLX3ButtonLight : DLXSwitchLight {
 	int state = 0;
 
 	DLX3ButtonLight() {

@@ -101,7 +101,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
             nodeFillColor.a = crossfade(nodeAlpha[0], nodeAlpha[1], morph);
             nodeStrokeColor.a = crossfade(nodeAlpha[0], nodeAlpha[1], morph);
             textColor.a = crossfade(textAlpha[0], textAlpha[1], morph);
-            
+
             nvgCircle(ctx,  crossfade(nodeX[0], nodeX[1], morph),
                             crossfade(nodeY[0], nodeY[1], morph),
                             radius);
@@ -130,7 +130,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
 void AlgomorphDisplayWidget::AlgoDrawWidget::drawEdges(NVGcontext* ctx, alGraph source, alGraph destination, float morph) {
     if (source >= destination)
         renderEdges(ctx, source, destination, morph, false);
-    else 
+    else
         renderEdges(ctx, destination, source, morph, true);
 }
 
@@ -274,8 +274,8 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) 
             }
         }
     }
-    
-    if (!module->displayScene.empty()) {   
+
+    if (!module->displayScene.empty()) {
         scene = module->displayScene.shift();
         if (scene != -1) {
             if (!module->displayMorphScene.empty())
@@ -395,7 +395,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) 
     else {
         // Draw edges AND arrows
         drawEdges(args.vg, graphs[scene], graphs[morphScene], morph);
-    }                
+    }
 }
 
 AlgomorphDisplayWidget::AlgomorphDisplayWidget(Algomorph* module) {
@@ -411,4 +411,11 @@ void AlgomorphDisplayWidget::step() {
         module->graphDirty = false;
     }
     FramebufferWidget::step();
+}
+
+void AlgomorphDisplayWidget::draw(const DrawArgs& args) {
+    // Rack 2 Beta Light
+    nvgGlobalTint(args.vg, color::WHITE);
+
+    FramebufferWidget::draw(args);
 }

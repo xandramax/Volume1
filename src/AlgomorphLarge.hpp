@@ -109,18 +109,23 @@ struct AlgomorphLarge : Algomorph {
     void dataFromJson(json_t* rootJ) override;
 };
 
-/// Glowing Ink
+// /// Glowing Ink
 
-struct AlgomorphLargeGlowingInk : SvgLight {
-	AlgomorphLargeGlowingInk() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_GlowingInk.svg")));
-	}
-};
+// struct AlgomorphLargeGlowingInk : SvgLight {
+// 	AlgomorphLargeGlowingInk() {
+// 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_GlowingInk.svg")));
+// 	}
+
+//     void draw(const DrawArgs& args) override {
+//         nvgAlpha(args.vg, 0.f);
+//         SvgLight::draw(args);
+//     }
+// };
 
 /// Panel Widget
 
 struct AlgomorphLargeWidget : AlgomorphWidget {
-    AlgomorphLargeGlowingInk* ink;
+    // AlgomorphLargeGlowingInk* ink;
 
     std::vector<Vec> SceneButtonCenters =   {   {mm2px(63.709), mm2px(18.341)},
                                                 {mm2px(63.709), mm2px(26.519)},

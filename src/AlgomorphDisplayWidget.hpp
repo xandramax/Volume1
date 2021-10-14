@@ -49,4 +49,5 @@ struct AlgomorphDisplayWidget : FramebufferWidget {
 
     AlgomorphDisplayWidget(Algomorph* module);
     void step() override;
+    void draw(const DrawArgs& args) override;
 };
