@@ -797,10 +797,11 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     INDICATOR_BRIGHTNESS
                     : 0.f, args.sampleTime * lightDivider.getDivision());
             }
-            for (int i = 0; i < 3; i++) {
-                //Set purple component to off
-                lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-            }
+            // Duplicate??
+            // for (int i = 0; i < 3; i++) {
+            //     //Set purple component to off
+            //     lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+            // }
             //Set op/mod lights
             for (int i = 0; i < 4; i++) {
                 if (horizontalMarks[configScene].test(i)) {
@@ -1448,7 +1449,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_object_set_new(rootJ, "Wildcard Modulator Summing Enabled", json_boolean(wildModIsSummed));
     json_object_set_new(rootJ, "Reset on Run", json_boolean(resetOnRun));
     json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
-    json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
+    // json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
     
     json_t* lastSetModesJ = json_array();
@@ -1571,9 +1572,9 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (clickFilterEnabled)
         this->clickFilterEnabled = json_boolean_value(clickFilterEnabled);
 
-    auto glowingInk = json_object_get(rootJ, "Glowing Ink");
-    if (glowingInk)
-        this->glowingInk = json_boolean_value(glowingInk);
+    // auto glowingInk = json_object_get(rootJ, "Glowing Ink");
+    // if (glowingInk)
+    //     this->glowingInk = json_boolean_value(glowingInk);
 
     auto vuLights = json_object_get(rootJ, "VU Lights");
     if (vuLights)
@@ -2203,13 +2204,13 @@ void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(Algo
     vuLightsItem->module = module;
     menu->addChild(vuLightsItem);
     
-    GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
-    glowingInkItem->module = module;
-    menu->addChild(glowingInkItem);
+    // GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
+    // glowingInkItem->module = module;
+    // menu->addChild(glowingInkItem);
 }
 
 void AlgomorphLargeWidget::SaveVisualSettingsItem::onAction(const event::Action& e) {
-    pluginSettings.glowingInkDefault = module->glowingInk;
+    // pluginSettings.glowingInkDefault = module->glowingInk;
     pluginSettings.vuLightsDefault = module->vuLights;
     pluginSettings.saveToJson();
 }
@@ -2225,10 +2226,10 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
         addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
-        ink = createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
-        if (!module->glowingInk)
-            ink->hide();
-        addChildBottom(ink);
+        // ink = createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
+        // if (!module->glowingInk)
+        //     ink->hide();
+        // addChild(ink);
 
         AlgomorphDisplayWidget* screenWidget = new AlgomorphDisplayWidget(module);
         screenWidget->box.pos = mm2px(Vec(16.411, 11.631));
@@ -2248,17 +2249,17 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 0, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 0, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
         addChild(createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 3, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 3, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
         addChild(createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, AlgomorphLarge::SCENE_LIGHTS + 6, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], 8.862, module, AlgomorphLarge::SCENE_INDICATORS + 6, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
         addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.778, 17.065)), module, AlgomorphLarge::AUX_INPUTS + 0));
@@ -2410,7 +2411,8 @@ void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
     saveAuxInputSettingsItem->module = module;
     menu->addChild(saveAuxInputSettingsItem);
     
-    SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    // SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->vuLights == pluginSettings.vuLightsDefault));
     saveVisualSettingsItem->module = module;
     menu->addChild(saveVisualSettingsItem);
 
@@ -2437,7 +2439,7 @@ void AlgomorphLargeWidget::setKnobMode(int mode) {
 void AlgomorphLargeWidget::step() {
     if (module) {
         AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(module);
-        ink->visible = m->glowingInk == 1;
+        // ink->visible = m->glowingInk == 1;
         if (activeKnob != m->knobMode)
             setKnobMode(m->knobMode);
     }

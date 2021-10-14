@@ -28,4 +28,5 @@ struct AlgomorphAuxInputPanelWidget : FramebufferWidget {
 
     AlgomorphAuxInputPanelWidget(AlgomorphLarge* module);
     void step() override;
+    // void draw(const Widget::DrawArgs& args) override;    
 };
