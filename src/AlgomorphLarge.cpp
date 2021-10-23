@@ -7,6 +7,7 @@
 
 AlgomorphLarge::AlgomorphLarge() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::MORPH_ATTEN, -1.f, 1.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
     configParam(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH_ATTEN, -2.f, 2.f, 1.f, AuxKnobModeLabels[AuxKnobModes::MORPH_ATTEN], "%", 0, 100);
@@ -24,10 +25,32 @@ AlgomorphLarge::AlgomorphLarge() {
     for (int i = 0; i < 4; i++) {
         configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
         configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
+        // configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
+        // configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
     }
     for (int i = 0; i < 3; i++) {
-        configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
+        configButton(SCENE_BUTTONS + i, "Scene " + std::to_string(i + 1));
     }
+    configButton(EDIT_BUTTON, "Edit");
+    configButton(SCREEN_BUTTON, "Screen");
+
+    configInput(OPERATOR_INPUTS + 0, "Operator 1");
+    configInput(OPERATOR_INPUTS + 1, "Operator 2");
+    configInput(OPERATOR_INPUTS + 2, "Operator 3");
+    configInput(OPERATOR_INPUTS + 3, "Operator 4");
+    configInput(AUX_INPUTS + 0, "AUX 1");
+    configInput(AUX_INPUTS + 1, "AUX 2");
+    configInput(AUX_INPUTS + 2, "AUX 3");
+    configInput(AUX_INPUTS + 3, "AUX 4");
+    configInput(AUX_INPUTS + 4, "AUX 5");
+
+    configOutput(MODULATOR_OUTPUTS + 0, "Modulator 1");
+    configOutput(MODULATOR_OUTPUTS + 1, "Modulator 2");
+    configOutput(MODULATOR_OUTPUTS + 2, "Modulator 3");
+    configOutput(MODULATOR_OUTPUTS + 3, "Modulator 4");
+    configOutput(CARRIER_SUM_OUTPUT, "Carrier Sum");
+    configOutput(MODULATOR_SUM_OUTPUT, "Modulator Sum");
+    configOutput(PHASE_OUTPUT, "Phase");
 
     runClickFilter.setRiseFall(400.f, 400.f);
     
