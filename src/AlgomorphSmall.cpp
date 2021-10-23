@@ -8,12 +8,28 @@ AlgomorphSmall::AlgomorphSmall() {
     configParam(MORPH_KNOB, -1.f, 1.f, 0.f, "Morph", " millimorphs", 0, 1000);
     configParam(MORPH_ATTEN_KNOB, -3.f, 3.f, 0.f, "Morph CV Triple Ampliverter", "%", 0, 100);
     for (int i = 0; i < 4; i++) {
-        configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
-        configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
+        configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
+        configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
     }
     for (int i = 0; i < 3; i++) {
-        configParam(SCENE_BUTTONS + i, 0.f, 1.f, 0.f);
+        configButton(SCENE_BUTTONS + i, "Scene " + std::to_string(i + 1));
     }
+    configButton(EDIT_BUTTON, "Edit");
+    configButton(SCREEN_BUTTON, "Screen");
+
+    configInput(WILDCARD_INPUT, "Wildcard Modulation");
+    configInput(OPERATOR_INPUTS + 0, "Operator 1");
+    configInput(OPERATOR_INPUTS + 1, "Operator 2");
+    configInput(OPERATOR_INPUTS + 2, "Operator 3");
+    configInput(OPERATOR_INPUTS + 3, "Operator 4");
+    configInput(MORPH_INPUTS + 0, "Morph CV A");
+    configInput(MORPH_INPUTS + 1, "Morph CV B");
+
+    configOutput(MODULATOR_OUTPUTS + 0, "Modulator 1");
+    configOutput(MODULATOR_OUTPUTS + 1, "Modulator 2");
+    configOutput(MODULATOR_OUTPUTS + 2, "Modulator 3");
+    configOutput(MODULATOR_OUTPUTS + 3, "Modulator 4");
+    configOutput(CARRIER_SUM_OUTPUT, "Carrier Sum");
     
     onReset();
 }
