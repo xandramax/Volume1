@@ -1861,11 +1861,11 @@ Menu* AlgomorphLargeWidget::AllowMultipleModesMenuItem::createChildMenu() {
 }
 
 void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, ui::Menu* menu) {
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Aqua", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Fira", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Sol",  &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Cura", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 3, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[3]->allowMultipleModes)));
-    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "Vida", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 4, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[4]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 1", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 2", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 3", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 4", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 3, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[3]->allowMultipleModes)));
+    menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 5", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 4, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[4]->allowMultipleModes)));
 }
 
 /// Wildcard Input Menu
