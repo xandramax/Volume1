@@ -41,7 +41,7 @@ struct AlgomorphDisplayWidget : FramebufferWidget {
         void renderEdges(NVGcontext* ctx, alGraph mostEdges, alGraph leastEdges, float morph, bool flipped);
         void reticulateEdge(NVGcontext* ctx, Edge mostCurved, Edge leastCurved, float morph, bool flipped);
         void reticulateArrow(NVGcontext* ctx, Arrow mostGregarious, Arrow leastGregarious, float morph, bool flipped);
-        void draw(const Widget::DrawArgs& args) override;
+        void drawLayer(const Widget::DrawArgs& args, int layer) override;
     };
 
     Algomorph* module;

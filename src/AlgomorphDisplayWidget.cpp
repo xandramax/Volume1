@@ -254,148 +254,152 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::reticulateArrow(NVGcontext* ctx, Ar
     }
 }
 
-void AlgomorphDisplayWidget::AlgoDrawWidget::draw(const Widget::DrawArgs& args) {
+void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& args, int layer) {
     if (!module) return;
 
-    font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
+    if (layer == 1) {
+        font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
 
-    //Origin must be updated
-    xOrigin = box.size.x / 2.f;
-    yOrigin = box.size.y / 2.f;
+        //Origin must be updated
+        xOrigin = box.size.x / 2.f;
+        yOrigin = box.size.y / 2.f;
 
-    for (int i = 0; i < 3; i++) {
-        if (!module->displayAlgoName[i].empty()) {
-            translatedAlgoName[i] = module->graphAddressTranslation[module->displayAlgoName[i].shift().to_ullong()];
-            if (translatedAlgoName[i] != -1)
-                graphs[i] = alGraph(translatedAlgoName[i]);
-            else {
-                graphs[i] = alGraph(1979);
-                graphs[i].mystery = true;
-            }
-        }
-    }
-
-    if (!module->displayScene.empty()) {
-        scene = module->displayScene.shift();
-        if (scene != -1) {
-            if (!module->displayMorphScene.empty())
-                morphScene = module->displayMorphScene.shift();
-            if (!module->displayMorph.empty())
-                morph = module->displayMorph.shift();
-        }
-    }
-    nvgBeginPath(args.vg);
-    nvgRoundedRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y, 3.675f);
-    nvgStrokeWidth(args.vg, borderStroke);
-    nvgStroke(args.vg);
-
-    if (module->configMode) {   //Display state without morph
-        if (graphs[scene].numNodes > 0) {
-            // Draw nodes
-            nvgBeginPath(args.vg);
-            for (int i = 0; i < 4; i++) {
-                if (graphs[scene].nodes[i].id != 404)
-                    nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
-            }
-            nvgFillColor(args.vg, nodeFillColor);
-            nvgFill(args.vg);
-            nvgStrokeColor(args.vg, nodeStrokeColor);
-            nvgStrokeWidth(args.vg, nodeStroke);
-            nvgStroke(args.vg);
-
-            // Draw numbers
-            nvgBeginPath(args.vg);
-            nvgFontSize(args.vg, 11.f);
-            nvgFontFaceId(args.vg, font->handle);
-            nvgFillColor(args.vg, textColor);
-            for (int i = 0; i < 4; i++) {
-                if (graphs[scene].nodes[i].id != 404) {
-                    std::string s = std::to_string(i + 1);
-                    char const *id = s.c_str();
-                    nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
-                    float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                    float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
-                    nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
+        for (int i = 0; i < 3; i++) {
+            if (!module->displayAlgoName[i].empty()) {
+                translatedAlgoName[i] = module->graphAddressTranslation[module->displayAlgoName[i].shift().to_ullong()];
+                if (translatedAlgoName[i] != -1)
+                    graphs[i] = alGraph(translatedAlgoName[i]);
+                else {
+                    graphs[i] = alGraph(1979);
+                    graphs[i].mystery = true;
                 }
             }
         }
-    }
-    else {
-        // Draw nodes and numbers
-        nvgBeginPath(args.vg);
-        drawNodes(args.vg, graphs[scene], graphs[morphScene], morph);
-    }
 
-    // Draw question mark
-    if (module->configMode) {
-        if (graphs[scene].mystery) {
-            nvgBeginPath(args.vg);
-            nvgFontSize(args.vg, 92.f);
-            nvgFontFaceId(args.vg, font->handle);
-            textColor = TEXT_COLOR;
-            nvgFillColor(args.vg, textColor);
-            std::string s = "?";
-            char const *id = s.c_str();
-            nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
-            float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-            float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
-            nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
-        }
-    }
-    else {
-        if (graphs[scene].mystery || graphs[morphScene].mystery) {
-            nvgBeginPath(args.vg);
-            nvgFontSize(args.vg, 92.f);
-            nvgFontFaceId(args.vg, font->handle);
-            if (graphs[scene].mystery && graphs[morphScene].mystery)
-                textColor = TEXT_COLOR;
-            else if (graphs[scene].mystery)
-                textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
-            else
-                textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
-            nvgFillColor(args.vg, textColor);
-            std::string s = "?";
-            char const *id = s.c_str();
-            nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
-            float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-            float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
-            nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
-        }
-    }
-
-    // Draw edges +/ arrows
-    if (module->configMode) {
-        // Draw edges
-        nvgBeginPath(args.vg);
-        for (int i = 0; i < graphs[scene].numEdges; i++) {
-            Edge edge = graphs[scene].edges[i];
-            nvgMoveTo(args.vg, edge.moveCoords.x, edge.moveCoords.y);
-            for (int j = 0; j < edge.curveLength; j++) {
-                nvgBezierTo(args.vg, edge.curve[j][0].x, edge.curve[j][0].y, edge.curve[j][1].x, edge.curve[j][1].y, edge.curve[j][2].x, edge.curve[j][2].y);
+        if (!module->displayScene.empty()) {
+            scene = module->displayScene.shift();
+            if (scene != -1) {
+                if (!module->displayMorphScene.empty())
+                    morphScene = module->displayMorphScene.shift();
+                if (!module->displayMorph.empty())
+                    morph = module->displayMorph.shift();
             }
         }
-        edgeColor = EDGE_COLOR;
-        nvgStrokeColor(args.vg, edgeColor);
-        nvgStrokeWidth(args.vg, edgeStroke);
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, box.getTopLeft().x, box.getTopLeft().y, box.size.x, box.size.y, 3.675f);
+        nvgStrokeWidth(args.vg, borderStroke);
         nvgStroke(args.vg);
-        // Draw arrows
-        for (int i = 0; i < graphs[scene].numEdges; i++) {
+
+        if (module->configMode) {   //Display state without morph
+            if (graphs[scene].numNodes > 0) {
+                // Draw nodes
+                nvgBeginPath(args.vg);
+                for (int i = 0; i < 4; i++) {
+                    if (graphs[scene].nodes[i].id != 404)
+                        nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
+                }
+                nvgFillColor(args.vg, nodeFillColor);
+                nvgFill(args.vg);
+                nvgStrokeColor(args.vg, nodeStrokeColor);
+                nvgStrokeWidth(args.vg, nodeStroke);
+                nvgStroke(args.vg);
+
+                // Draw numbers
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 11.f);
+                nvgFontFaceId(args.vg, font->handle);
+                nvgFillColor(args.vg, textColor);
+                for (int i = 0; i < 4; i++) {
+                    if (graphs[scene].nodes[i].id != 404) {
+                        std::string s = std::to_string(i + 1);
+                        char const *id = s.c_str();
+                        nvgTextBounds(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, id, id + 1, textBounds);
+                        float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                        float yOffset = (textBounds[3] - textBounds[1]) / 3.25f;
+                        nvgText(args.vg, graphs[scene].nodes[i].coords.x - xOffset, graphs[scene].nodes[i].coords.y + yOffset, id, id + 1);
+                    }
+                }
+            }
+        }
+        else {
+            // Draw nodes and numbers
             nvgBeginPath(args.vg);
-            nvgMoveTo(args.vg, graphs[scene].arrows[i].moveCoords.x, graphs[scene].arrows[i].moveCoords.y);
-            for (int j = 0; j < 9; j++)
-                nvgLineTo(args.vg, graphs[scene].arrows[i].lines[j].x, graphs[scene].arrows[i].lines[j].y);
+            drawNodes(args.vg, graphs[scene], graphs[morphScene], morph);
+        }
+
+        // Draw question mark
+        if (module->configMode) {
+            if (graphs[scene].mystery) {
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 92.f);
+                nvgFontFaceId(args.vg, font->handle);
+                textColor = TEXT_COLOR;
+                nvgFillColor(args.vg, textColor);
+                std::string s = "?";
+                char const *id = s.c_str();
+                nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
+                nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
+            }
+        }
+        else {
+            if (graphs[scene].mystery || graphs[morphScene].mystery) {
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 92.f);
+                nvgFontFaceId(args.vg, font->handle);
+                if (graphs[scene].mystery && graphs[morphScene].mystery)
+                    textColor = TEXT_COLOR;
+                else if (graphs[scene].mystery)
+                    textColor.a = crossfade(TEXT_COLOR.a, 0x00, morph);
+                else
+                    textColor.a = crossfade(0x00, TEXT_COLOR.a, morph);
+                nvgFillColor(args.vg, textColor);
+                std::string s = "?";
+                char const *id = s.c_str();
+                nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
+                nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
+            }
+        }
+
+        // Draw edges +/ arrows
+        if (module->configMode) {
+            // Draw edges
+            nvgBeginPath(args.vg);
+            for (int i = 0; i < graphs[scene].numEdges; i++) {
+                Edge edge = graphs[scene].edges[i];
+                nvgMoveTo(args.vg, edge.moveCoords.x, edge.moveCoords.y);
+                for (int j = 0; j < edge.curveLength; j++) {
+                    nvgBezierTo(args.vg, edge.curve[j][0].x, edge.curve[j][0].y, edge.curve[j][1].x, edge.curve[j][1].y, edge.curve[j][2].x, edge.curve[j][2].y);
+                }
+            }
             edgeColor = EDGE_COLOR;
-            nvgFillColor(args.vg, edgeColor);
-            nvgFill(args.vg);
             nvgStrokeColor(args.vg, edgeColor);
-            nvgStrokeWidth(args.vg, arrowStroke1);
+            nvgStrokeWidth(args.vg, edgeStroke);
             nvgStroke(args.vg);
+            // Draw arrows
+            for (int i = 0; i < graphs[scene].numEdges; i++) {
+                nvgBeginPath(args.vg);
+                nvgMoveTo(args.vg, graphs[scene].arrows[i].moveCoords.x, graphs[scene].arrows[i].moveCoords.y);
+                for (int j = 0; j < 9; j++)
+                    nvgLineTo(args.vg, graphs[scene].arrows[i].lines[j].x, graphs[scene].arrows[i].lines[j].y);
+                edgeColor = EDGE_COLOR;
+                nvgFillColor(args.vg, edgeColor);
+                nvgFill(args.vg);
+                nvgStrokeColor(args.vg, edgeColor);
+                nvgStrokeWidth(args.vg, arrowStroke1);
+                nvgStroke(args.vg);
+            }
+        }
+        else {
+            // Draw edges AND arrows
+            drawEdges(args.vg, graphs[scene], graphs[morphScene], morph);
         }
     }
-    else {
-        // Draw edges AND arrows
-        drawEdges(args.vg, graphs[scene], graphs[morphScene], morph);
-    }
+
+    LightWidget::drawLayer(args, layer);
 }
 
 AlgomorphDisplayWidget::AlgomorphDisplayWidget(Algomorph* module) {
