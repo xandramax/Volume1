@@ -963,22 +963,20 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         //Purple lights
                         lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(getOutputBrightness(MODULATOR_OUTPUTS + i), args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
-                        lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+                        lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(horizontalMarks[configScene].test(configOp) ?
+                            blinkStatus
+                            : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     else {
                         //Purple lights
-                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(configOp > -1 ?
-                            !horizontalMarks[configScene].test(configOp) ?
-                                getOutputBrightness(MODULATOR_OUTPUTS + i)
-                                : blinkStatus ?
-                                    0.f
-                                    : getOutputBrightness(MODULATOR_OUTPUTS + i)
+                        lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(horizontalMarks[configScene].test(configOp) ?
+                            blinkStatus ?
+                                0.f
+                                : getOutputBrightness(MODULATOR_OUTPUTS + i)
                             : getOutputBrightness(MODULATOR_OUTPUTS + i), args.sampleTime * lightDivider.getDivision());
                         //Yellow lights
-                        lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
-                            !horizontalMarks[configScene].test(configOp) ?
-                                0.f
-                                : blinkStatus
+                        lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(horizontalMarks[configScene].test(configOp) ?
+                            blinkStatus
                             : 0.f, args.sampleTime * lightDivider.getDivision());
                     }
                 }
