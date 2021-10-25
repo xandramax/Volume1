@@ -1295,37 +1295,37 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
         addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
         addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
 
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.915, 48.976)), module, AlgomorphSmall::WILDCARD_INPUT));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.415, 52.477)), module, AlgomorphSmall::WILDCARD_INPUT));
 
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(6.187, 108.284)), module, AlgomorphSmall::MORPH_INPUTS + 0));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(37.512, 108.284)), module, AlgomorphSmall::MORPH_INPUTS + 1));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(9.687, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 0));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(41.012, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 1));
 
         // DLXMediumKnobLight* morphKnobLight = createParam<DLXMediumKnobLight>(mm2px(Vec(20.619, 107.004)), module, AlgomorphSmall::MORPH_KNOB);
-        addParam(createParam<DLXMediumLightKnob>(mm2px(Vec(20.619, 107.004)), module, AlgomorphSmall::MORPH_KNOB));
+        addParam(createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_KNOB));
         // addParam(morphKnobLight);
 
-        // DLXMediumKnobLight* morphAttenKnobLight = createParam<DLXMediumKnobLight>(mm2px(Vec(20.619, 107.004)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
-        DLXMediumLightKnob* morphAttenLightKnob = createParam<DLXMediumLightKnob>(mm2px(Vec(20.619, 107.004)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
+        // DLXMediumKnobLight* morphAttenKnobLight = createParam<DLXMediumKnobLight>(mm2px(Vec(20.619, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
+        DLXMediumLightKnob* morphAttenLightKnob = createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
         // morphAttenKnobLight->hide();
         morphAttenLightKnob->hide();
         addParam(morphAttenLightKnob);
         // addParam(morphAttenKnobLight);
 
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(39.885, 48.976)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
+        addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), 8.862, module, AlgomorphSmall::EDIT_LIGHT, .4));
         addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
         addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269 + 0.07, 101.489 - 0.297)), module, AlgomorphSmall::EDIT_BUTTON));
 
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.784, 63.202)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.784, 73.223)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.784, 83.244)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
-        addInput(createInput<DLXPortPoly>(mm2px(Vec(3.784, 93.265)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.703)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.723)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 86.845)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
+        addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 96.765)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
 
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(39.885, 63.202)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(39.885, 73.223)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(39.885, 83.244)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
-        addOutput(createOutput<DLXPortPolyOut>(mm2px(Vec(39.885, 93.265)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
+        addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 66.703)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
+        addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 76.723)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
+        addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 86.845)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
+        addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 96.765)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
 
         ConnectionBgWidget<AlgomorphSmall>* connectionBgWidget = new ConnectionBgWidget<AlgomorphSmall>(OpButtonCenters, ModButtonCenters, module);
         connectionBgWidget->box.pos = OpButtonCenters[3];

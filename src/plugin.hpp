@@ -633,34 +633,25 @@ struct RandomizeAllAlgorithmsItem : MenuItem {
 
 // Component Library
 
-struct DLXPortPoly : SvgPort {
-	DLXPortPoly() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXPort16.svg")));
-		// shadow->opacity = 0.f;
+struct DLXPJ301MPort : PJ301MPort {
+	void draw(const DrawArgs &args) override {
+		PJ301MPort::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
 
-struct DLXPortPolyOut : SvgPort {
-	DLXPortPolyOut() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXPort16b.svg")));
-		// shadow->opacity = 0.f;
-	}
-};
-
-struct DLXPortG : SvgPort {
-	DLXPortG() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXPortG.svg")));
-		// shadow->opacity = 0.f;
-	}
-};
-
-struct DLXPurpleButton : rack::app::SvgSwitch {
-	int state = 0;
-
-	DLXPurpleButton() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PurpleButton_0_bottom.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PurpleButton_1_bottom.svg")));
+struct DLXPurpleButton : TL1105 {
+	void draw(const DrawArgs &args) override {
+		TL1105::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
 
@@ -1175,20 +1166,35 @@ struct DLXSmallKnobLight : RoundKnob {
 	}
 };
 
-struct DLXLargeLightKnob : RoundKnob {
-	DLXLargeLightKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large.svg")));
+struct DLXLargeLightKnob : RoundHugeBlackKnob {	
+	void draw(const DrawArgs &args) override {
+		RoundHugeBlackKnob::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
 
-struct DLXMediumLightKnob : RoundKnob {
-	DLXMediumLightKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_medium.svg")));
+struct DLXMediumLightKnob : RoundLargeBlackKnob {
+	void draw(const DrawArgs &args) override {
+		RoundLargeBlackKnob::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
 
-struct DLXSmallLightKnob : RoundKnob {
-	DLXSmallLightKnob() {
-		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB.svg")));
+struct DLXSmallLightKnob : RoundSmallBlackKnob {	
+	void draw(const DrawArgs &args) override {
+		RoundSmallBlackKnob::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
