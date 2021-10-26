@@ -637,7 +637,7 @@ struct DLXPJ301MPort : PJ301MPort {
 	void draw(const DrawArgs &args) override {
 		PJ301MPort::draw(args);
 		nvgBeginPath(args.vg);
-		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_SRC_COLOR, NVG_ONE);
 		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
 		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
 		nvgFill(args.vg);
