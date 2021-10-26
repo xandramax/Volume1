@@ -1040,6 +1040,11 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                 }
             }
+            //Set screen button ring light if pressed
+            //Purple lights
+            lights[SCREEN_BUTTON_RING_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
+            //Yellow lights
+            lights[SCREEN_BUTTON_RING_LIGHT + 1].setSmoothBrightness(params[SCREEN_BUTTON].getValue(), args.sampleTime * lightDivider.getDivision());
         } 
         else {
             //Set backlight
@@ -1140,6 +1145,11 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     lights[H_CONNECTION_LIGHTS + i * 3 + 2].setSmoothBrightness(horizontalMorphBrightness * DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                 }
             }
+            //Set screen button ring light if pressed
+            //Purple lights
+            lights[SCREEN_BUTTON_RING_LIGHT].setSmoothBrightness(params[SCREEN_BUTTON].getValue(), args.sampleTime * lightDivider.getDivision());
+            //Yellow lights
+            lights[SCREEN_BUTTON_RING_LIGHT + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
         }
     }
 
