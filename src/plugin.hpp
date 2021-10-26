@@ -946,14 +946,14 @@ struct TRingLight : TBase {
 
 		// Background
 		if (this->bgColor.a > 0.0) {
-			nvgStrokeWidth(args.vg, 1.2 + strokeSize);
+			nvgStrokeWidth(args.vg, 1.55);
 			nvgStrokeColor(args.vg, this->bgColor);
 			nvgStroke(args.vg);
 		}
 
 		// Border
 		if (this->borderColor.a > 0.0) {
-			nvgStrokeWidth(args.vg, 0.5);
+			nvgStrokeWidth(args.vg, 0.5825);
 			nvgStrokeColor(args.vg, this->borderColor);
 			nvgStroke(args.vg);
 		}
@@ -961,12 +961,10 @@ struct TRingLight : TBase {
 
 	void drawLight(const Widget::DrawArgs& args) override {
 		// Adapted from LightWidget::drawLight, with no fill
-		// Foreground
 		if (this->color.a > 0.0) {
 			nvgBeginPath(args.vg);
 			nvgCircle(args.vg, radius, radius, radius);
-
-			nvgStrokeWidth(args.vg, 1.3 + strokeSize);
+			nvgStrokeWidth(args.vg, 0.75);
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
