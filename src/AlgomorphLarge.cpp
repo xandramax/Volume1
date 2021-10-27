@@ -23,10 +23,8 @@ AlgomorphLarge::AlgomorphLarge() {
     configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " limits", 0, 0);
     configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
     for (int i = 0; i < 4; i++) {
-        configParam(OPERATOR_BUTTONS + i, 0.f, 1.f, 0.f);
-        configParam(MODULATOR_BUTTONS + i, 0.f, 1.f, 0.f);
-        // configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
-        // configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
+        configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
+        configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
     }
     for (int i = 0; i < 3; i++) {
         configButton(SCENE_BUTTONS + i, "Scene " + std::to_string(i + 1));
