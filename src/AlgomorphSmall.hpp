@@ -35,8 +35,15 @@ struct AlgomorphSmall : Algomorph {
         ENUMS(OPERATOR_LIGHTS, 12),             // 3 colors per light
         ENUMS(CARRIER_INDICATORS, 12),          // 3 colors per light
         ENUMS(MODULATOR_LIGHTS, 12),            // 3 colors per light
-        ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         EDIT_LIGHT,
+        MORPH_KNOB_LIGHT,
+        MORPH_ATTEN_KNOB_LIGHT,
+        GLOWING_INK,
+        ONE_LIGHT,
+        TWO_LIGHT,
+        THREE_LIGHT,
+        SCREEN_BUTTON_LIGHT,
+        ENUMS(SCREEN_BUTTON_RING_LIGHT, 3),     // 3 colors
         NUM_LIGHTS
     };
 
