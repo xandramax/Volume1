@@ -1,65 +1,58 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   version="1.0"
+   id="svg12484"
+   x="0px"
+   y="0px"
+   width="15.36px"
+   height="15.35774px"
+   viewBox="0 0 15.36 15.35774"
+   enable-background="new 0 0 15.36 15.35774"
+   xml:space="preserve"
+   sodipodi:docname="DLX_2b_light_0.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="1.5405823mm"
-   height="2.88556mm"
-   viewBox="0 0 1.5405823 2.8855601"
-   version="1.1"
-   id="svg7926"
-   inkscape:version="1.0rc1 (09960d6f05, 2020-04-09)"
-   sodipodi:docname="DLX_2b_light_0.svg">
-  <defs
-     id="defs7920" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="15.839192"
-     inkscape:cx="26.100372"
-     inkscape:cy="21.721522"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     inkscape:document-rotation="0"
-     showgrid="false"
-     inkscape:window-width="1858"
-     inkscape:window-height="1058"
-     inkscape:window-x="54"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
-  <metadata
-     id="metadata7923">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(250.23458,29.342015)">
-    <g
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.88056px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';letter-spacing:0px;word-spacing:0px;display:inline;fill:#cccccc;fill-opacity:1;stroke-width:0.264583"
-       id="text1570"
-       aria-label="2">
-      <path
-         id="path10825"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:1;stroke-width:0.264583"
-         d="m -250.09488,-26.456455 h 1.25342 c 0.0233,0 0.0427,-0.0194 0.0427,-0.04657 v -0.201789 c 0,-0.02716 -0.0194,-0.04657 -0.0427,-0.04657 h -1.09044 v -0.201789 c 0,-0.364773 0.17851,-0.411339 0.64805,-0.714023 0.35314,-0.232834 0.58985,-0.434623 0.58985,-0.838201 0,-0.422981 -0.2988,-0.69462 -0.76835,-0.69462 -0.23672,0 -0.48507,0.07373 -0.69074,0.20567 -0.0233,0.01164 -0.0349,0.03492 -0.0349,0.05821 0,0.01164 0.004,0.02328 0.0117,0.03493 l 0.0815,0.13582 c 0.0116,0.0194 0.0272,0.03104 0.0427,0.03104 0.0117,0 0.0233,-0.0039 0.0349,-0.01164 0.1591,-0.09313 0.34537,-0.162983 0.53164,-0.162983 0.28328,0 0.48118,0.159103 0.48118,0.434623 0,0.228953 -0.14746,0.380294 -0.37641,0.516114 -0.65193,0.388056 -0.85372,0.496712 -0.85372,1.03611 v 0.333728 c 0,0.06985 0.0621,0.131939 0.1397,0.131939 z" />
-    </g>
-  </g>
-</svg>
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs24" />
+<sodipodi:namedview
+   bordercolor="#666666"
+   borderopacity="1.0"
+   fit-margin-bottom="0"
+   fit-margin-left="0"
+   fit-margin-right="0"
+   fit-margin-top="0"
+   id="base"
+   inkscape:current-layer="svg12484"
+   inkscape:cx="9.765625"
+   inkscape:cy="6.3839286"
+   inkscape:document-units="mm"
+   inkscape:pageopacity="0.0"
+   inkscape:pageshadow="2"
+   inkscape:window-height="882"
+   inkscape:window-maximized="0"
+   inkscape:window-width="1600"
+   inkscape:window-x="0"
+   inkscape:window-y="18"
+   inkscape:zoom="44.8"
+   pagecolor="#ffffff"
+   showgrid="false"
+   units="mm"
+   inkscape:pagecheckerboard="0">
+	</sodipodi:namedview>
+
+<g
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.88056px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';letter-spacing:0px;word-spacing:0px;display:inline;fill:#cccccc;fill-opacity:1;stroke-width:0.264583"
+   id="text1564"
+   aria-label="1"
+   transform="matrix(3.0992126,0,0,3.0992126,494.99427,365.52458)"><g
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.88056px;line-height:1.25;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';letter-spacing:0px;word-spacing:0px;display:inline;fill:#b8b8b8;fill-opacity:1;stroke-width:0.264583"
+     id="text1570"
+     aria-label="2"
+     transform="matrix(3.7795276,0,0,3.7795276,785.80572,-10.613505)"><path
+       id="path11396"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Miriam Libre';-inkscape-font-specification:'Miriam Libre';fill:#cccccc;fill-opacity:1;stroke-width:0.0683141"
+       d="m -249.67649,-27.38735 h 0.32363 c 0.006,0 0.011,-0.005 0.011,-0.01203 v -0.0521 c 0,-0.0071 -0.005,-0.01203 -0.011,-0.01203 h -0.28155 v -0.0521 c 0,-0.09418 0.0461,-0.106207 0.16732,-0.184358 0.0912,-0.06012 0.1523,-0.112217 0.1523,-0.216419 0,-0.109211 -0.0772,-0.179347 -0.19838,-0.179347 -0.0611,0 -0.12525,0.01904 -0.17835,0.0531 -0.006,0.003 -0.009,0.009 -0.009,0.01503 0,0.003 0.001,0.006 0.003,0.009 l 0.0211,0.03506 c 0.003,0.005 0.007,0.008 0.011,0.008 0.003,0 0.006,-0.001 0.009,-0.003 0.0411,-0.02404 0.0891,-0.04209 0.13727,-0.04209 0.0731,0 0.12423,0.04108 0.12423,0.112218 0,0.05912 -0.0381,0.09819 -0.0972,0.133257 -0.16833,0.100199 -0.22043,0.128249 -0.22043,0.267519 v 0.08616 c 0,0.01803 0.016,0.03407 0.0361,0.03407 z" /></g></g></svg>

@@ -35,6 +35,7 @@ static constexpr float FIVE_D_THREE = 5.f / 3.f;
 static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
 static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
 static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
+static constexpr float SVG_LIGHT_ALPHA = 5.f/9.f;
 
 /// Algorithm Display Graph Data
 
@@ -1088,17 +1089,52 @@ DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, float r, engine::
     return o;
 }
 
-struct DLXSwitchLight : SvgSwitch {
+struct DLXSvgFakeLight : SvgWidget {
 	void draw(const DrawArgs& args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
+		// Do not call SvgWidget::draw, as it will draw on the wrong layer
+		Widget::draw(args);
+	}
 
-		ParamWidget::draw(args);
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {	
+			//From SvgWidget::draw()
+			if (!svg)
+				return;
+
+			// Scale from max brightness to min brightness = SVG_LIGHT_ALPHA, as rack brightness is reduced from one to zero
+			nvgAlpha(args.vg, (1-SVG_LIGHT_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_ALPHA);
+			nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+			// nvgAlpha(args.vg, 0.f);
+			window::svgDraw(args.vg, svg->handle);
+		}
+
+		SvgWidget::drawLayer(args, layer);
 	}
 };
 
-struct DLXPencilButtonLight : DLXSwitchLight {
-	int state = 0;
 
+struct DLXSvgSwitchLight : SvgSwitch {
+	//Subclassing SvgSwitch here even though it comes with baggage (sw = SvgWidget, shadow),
+	//as it would be a PITA to reimplement SvgSwitch::addFrame() and SvgSwitch::onChange().
+	DLXSvgSwitchLight() {
+		SvgSwitch();
+
+		//We are repurposing the SvgSwitch's sw to hold our SvgFakeLight.
+		//So we remove it from the scene (fb), request deletion of the previous widget,
+		//assign our FakeLight to the sw, and add it back to the scene.
+		this->fb->removeChild(this->sw);
+		this->sw->requestDelete();
+
+		this->sw = new DLXSvgFakeLight;
+		this->fb->addChild(this->sw);
+
+		//We don't want a shadow, because we're visually masquerading as part of the switch below.
+		this->fb->removeChild(this->shadow);
+		this->shadow->requestDelete();
+	}
+};
+
+struct DLXPencilButtonLight : DLXSvgSwitchLight {
 	DLXPencilButtonLight() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
@@ -1106,9 +1142,7 @@ struct DLXPencilButtonLight : DLXSwitchLight {
 	}
 };
 
-struct DLXScreenButtonLight : SvgSwitch {
-	int state = 0;
-
+struct DLXScreenButtonLight : DLXSvgSwitchLight {
 	DLXScreenButtonLight() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
@@ -1116,9 +1150,7 @@ struct DLXScreenButtonLight : SvgSwitch {
 	}
 };
 
-struct DLX1ButtonLight : DLXSwitchLight {
-	int state = 0;
-
+struct DLX1ButtonLight : DLXSvgSwitchLight {
 	DLX1ButtonLight() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
@@ -1126,9 +1158,7 @@ struct DLX1ButtonLight : DLXSwitchLight {
 	}
 };
 
-struct DLX2ButtonLight : DLXSwitchLight {
-	int state = 0;
-
+struct DLX2ButtonLight : DLXSvgSwitchLight {
 	DLX2ButtonLight() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
@@ -1136,9 +1166,7 @@ struct DLX2ButtonLight : DLXSwitchLight {
 	}
 };
 
-struct DLX3ButtonLight : DLXSwitchLight {
-	int state = 0;
-
+struct DLX3ButtonLight : DLXSvgSwitchLight {
 	DLX3ButtonLight() {
 		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));

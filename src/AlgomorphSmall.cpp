@@ -1323,7 +1323,7 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), 8.752, module, AlgomorphSmall::EDIT_LIGHT));
         addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
-        addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269 + 0.07, 101.489 - 0.297)), module, AlgomorphSmall::EDIT_BUTTON));
+        addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
 
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.703)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.723)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));

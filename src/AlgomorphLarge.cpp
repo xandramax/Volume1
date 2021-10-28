@@ -2321,7 +2321,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
         addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(35.428, 91.561)), 8.752, module, AlgomorphLarge::EDIT_LIGHT));
         addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
-        addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428 + 0.07, 91.561 - 0.297)), module, AlgomorphLarge::EDIT_BUTTON));
+        addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
 
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 82.137)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 92.157)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
