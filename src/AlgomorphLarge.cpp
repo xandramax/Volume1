@@ -22,6 +22,13 @@ AlgomorphLarge::AlgomorphLarge() {
     configParam(AUX_KNOBS + AuxKnobModes::UNI_MORPH, 0.f, 3.f, 0.f, AuxKnobModeLabels[AuxKnobModes::UNI_MORPH], " millimorphs", 0, 1000);
     configParam(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH, -INFINITY, INFINITY, 0.f, AuxKnobModeLabels[AuxKnobModes::ENDLESS_MORPH], " limits", 0, 0);
     configParam(AUX_KNOBS + AuxKnobModes::CLICK_FILTER, 0.004, 2.004f, 1.f, AuxKnobModeLabels[AuxKnobModes::CLICK_FILTER], "x", 0, 1);
+
+    getParamQuantity(AUX_KNOBS + AuxKnobModes::MORPH)->randomizeEnabled = false;
+    getParamQuantity(AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH)->randomizeEnabled = false;
+    getParamQuantity(AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH)->randomizeEnabled = false;
+    getParamQuantity(AUX_KNOBS + AuxKnobModes::UNI_MORPH)->randomizeEnabled = false;
+    getParamQuantity(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH)->randomizeEnabled = false;
+    
     for (int i = 0; i < 4; i++) {
         configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
         configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
@@ -2301,9 +2308,6 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
         for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
             DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + i);
-            // TODO Use v2 method for setting non-randomizable knobs
-            // if (i == AuxKnobModes::MORPH || i == AuxKnobModes::DOUBLE_MORPH || i == AuxKnobModes::TRIPLE_MORPH || i == AuxKnobModes::UNI_MORPH || i == AuxKnobModes::ENDLESS_MORPH)
-            //     auxKlParam->randomizable = false;
             if (i != module->knobMode) {
                 auxKlParam->hide();
             }
