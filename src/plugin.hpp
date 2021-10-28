@@ -35,7 +35,7 @@ static constexpr float FIVE_D_THREE = 5.f / 3.f;
 static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
 static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
 static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
-static constexpr float SVG_LIGHT_ALPHA = 5.f/9.f;
+static constexpr float SVG_LIGHT_MIN_ALPHA = 5.f/9.f;
 
 /// Algorithm Display Graph Data
 
@@ -1101,10 +1101,8 @@ struct DLXSvgFakeLight : SvgWidget {
 			if (!svg)
 				return;
 
-			// Scale from max brightness to min brightness = SVG_LIGHT_ALPHA, as rack brightness is reduced from one to zero
-			nvgAlpha(args.vg, (1-SVG_LIGHT_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_ALPHA);
-			nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
-			// nvgAlpha(args.vg, 0.f);
+			// Scale from max brightness to min brightness, as rack brightness is reduced from one to zero
+			nvgAlpha(args.vg, (1.f - SVG_LIGHT_MIN_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_MIN_ALPHA);
 			window::svgDraw(args.vg, svg->handle);
 		}
 
@@ -1174,27 +1172,56 @@ struct DLX3ButtonLight : DLXSvgSwitchLight {
 	}
 };
 
-struct DLXLargeKnobLight : RoundKnob {
+struct DLXLargeKnobLight : DLXSvgFakeLight {
 	DLXLargeKnobLight() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_large_light.svg")));
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob.svg")));
 	}
 };
 
-struct DLXMediumKnobLight : RoundKnob {
+struct DLXMediumKnobLight : DLXSvgFakeLight {
 	DLXMediumKnobLight() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_medium_light.svg")));
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundLargeBlackKnob.svg")));
 	}
 };
 
-struct DLXSmallKnobLight : RoundKnob {
+struct DLXSmallKnobLight : DLXSvgFakeLight {
 	DLXSmallKnobLight() {
-		sw->setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLXKnobB_light.svg")));
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob.svg")));
 	}
 };
 
-struct DLXLargeLightKnob : RoundHugeBlackKnob {	
-	void draw(const DrawArgs &args) override {
-		RoundHugeBlackKnob::draw(args);
+template < typename DLXKnobLight >
+struct DLXLightKnob : SvgKnob {
+	// "sw" is used for the bg svg widget. light is the fg svg widget.
+	// This allows use of SvgKnob::setSvg() for the background svg.
+	DLXKnobLight* light;
+	widget::FramebufferWidget* bg_fb;
+
+	DLXLightKnob() {
+		SvgKnob();
+	
+		//From RoundKnob::RoundKnob()
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
+
+		bg_fb = new widget::FramebufferWidget;
+		addChildBottom(bg_fb);
+
+		this->tw->removeChild(this->sw);
+		bg_fb->addChild(this->sw);
+
+		light = new DLXKnobLight();
+		this->tw->addChild(light);
+	};
+
+	void setSvg(std::shared_ptr<window::Svg> svg) {
+		SvgKnob::setSvg(svg);
+		bg_fb->box.size = this->sw->box.size;
+		light->box.size = this->sw->box.size;
+	}
+
+	void draw(const Widget::DrawArgs& args) override {
+		SvgKnob::draw(args);
 		nvgBeginPath(args.vg);
 		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
 		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
@@ -1203,24 +1230,20 @@ struct DLXLargeLightKnob : RoundHugeBlackKnob {
 	}
 };
 
-struct DLXMediumLightKnob : RoundLargeBlackKnob {
-	void draw(const DrawArgs &args) override {
-		RoundLargeBlackKnob::draw(args);
-		nvgBeginPath(args.vg);
-		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
-		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
-		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
-		nvgFill(args.vg);
+struct DLXLargeLightKnob : DLXLightKnob<DLXLargeKnobLight> {
+	DLXLargeLightKnob() {
+		this->setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob-bg.svg")));
 	}
 };
 
-struct DLXSmallLightKnob : RoundSmallBlackKnob {	
-	void draw(const DrawArgs &args) override {
-		RoundSmallBlackKnob::draw(args);
-		nvgBeginPath(args.vg);
-		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
-		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f);
-		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
-		nvgFill(args.vg);
+struct DLXMediumLightKnob : DLXLightKnob<DLXMediumKnobLight> {
+	DLXMediumLightKnob() {
+		this->setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundLargeBlackKnob-bg.svg")));
+	}
+};
+
+struct DLXSmallLightKnob : DLXLightKnob<DLXSmallKnobLight> {
+	DLXSmallLightKnob() {
+		this->setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob-bg.svg")));
 	}
 };
