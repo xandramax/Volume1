@@ -1308,16 +1308,11 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(9.687, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 0));
         addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(41.012, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 1));
 
-        // DLXMediumKnobLight* morphKnobLight = createParam<DLXMediumKnobLight>(mm2px(Vec(20.619, 107.004)), module, AlgomorphSmall::MORPH_KNOB);
         addParam(createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_KNOB));
-        // addParam(morphKnobLight);
 
-        // DLXMediumKnobLight* morphAttenKnobLight = createParam<DLXMediumKnobLight>(mm2px(Vec(20.619, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
         DLXMediumLightKnob* morphAttenLightKnob = createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
-        // morphAttenKnobLight->hide();
         morphAttenLightKnob->hide();
         addParam(morphAttenLightKnob);
-        // addParam(morphAttenKnobLight);
 
         addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
 
