@@ -1110,6 +1110,45 @@ struct DLXSvgFakeLight : SvgWidget {
 	}
 };
 
+struct DLXLargeKnobLight : DLXSvgFakeLight {
+	DLXLargeKnobLight() {
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob.svg")));
+	}
+};
+
+struct DLXMediumKnobLight : DLXSvgFakeLight {
+	DLXMediumKnobLight() {
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundLargeBlackKnob.svg")));
+	}
+};
+
+struct DLXSmallKnobLight : DLXSvgFakeLight {
+	DLXSmallKnobLight() {
+		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob.svg")));
+	}
+};
+
+template <typename THoleMask>
+struct DLXDonutLargeKnobLight : DLXLargeKnobLight {
+	float hole_radius = 0.f;
+
+	DLXDonutLargeKnobLight() {
+		//Create knob to extract radius
+		THoleMask* mask = new THoleMask();
+		hole_radius = mask->fb->box.size.x / 2.f;
+		mask->requestDelete();
+	}
+
+	void drawLayer(const DrawArgs& args, int layer) override {
+		DLXLargeKnobLight::drawLayer(args, layer);
+
+		//Cut hole
+		nvgGlobalCompositeOperation(args.vg, NVG_DESTINATION_OUT);
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, hole_radius);
+		nvgFill(args.vg);
+	}
+};
 
 struct DLXSvgSwitchLight : SvgSwitch {
 	//Subclassing SvgSwitch here even though it comes with baggage (sw = SvgWidget, shadow),
@@ -1172,24 +1211,6 @@ struct DLX3ButtonLight : DLXSvgSwitchLight {
 	}
 };
 
-struct DLXLargeKnobLight : DLXSvgFakeLight {
-	DLXLargeKnobLight() {
-		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob.svg")));
-	}
-};
-
-struct DLXMediumKnobLight : DLXSvgFakeLight {
-	DLXMediumKnobLight() {
-		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundLargeBlackKnob.svg")));
-	}
-};
-
-struct DLXSmallKnobLight : DLXSvgFakeLight {
-	DLXSmallKnobLight() {
-		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob.svg")));
-	}
-};
-
 template < typename DLXKnobLight >
 struct DLXLightKnob : SvgKnob {
 	// "sw" is used for the bg svg widget. light is the fg svg widget.
@@ -1230,7 +1251,8 @@ struct DLXLightKnob : SvgKnob {
 	}
 };
 
-struct DLXLargeLightKnob : DLXLightKnob<DLXLargeKnobLight> {
+template <typename TKnobLight = DLXLargeKnobLight>
+struct DLXLargeLightKnob : DLXLightKnob<TKnobLight> {
 	DLXLargeLightKnob() {
 		this->setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob-bg.svg")));
 	}
