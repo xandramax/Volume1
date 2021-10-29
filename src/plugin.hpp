@@ -705,7 +705,7 @@ typedef TDlxMultiLight<> DLXScreenMultiLight;
 
 struct Line {
 	Vec left, right;
-	Vec pos, size;
+	Vec size;
 	bool flipped;
 	Line(Vec a, Vec b) {
 		flipped = a.y > b.y;
@@ -783,6 +783,11 @@ struct TBacklight : TBase {
 	void drawBackground(const Widget::DrawArgs& args) override {};
 
     void drawLight(const Widget::DrawArgs& args) override {
+		// Don't draw backlight if rendering in a framebuffer, e.g. screenshots or Module Browser
+		// From LightWidget::drawHalo()
+		if (args.fb)
+			return;
+
 		nvgBeginPath(args.vg);
 		nvgRoundedRect(args.vg, 0.f, 0.f, this->box.size.x, this->box.size.y, 3.675f);
 		if (this->color.a > 0.0) {
@@ -868,6 +873,11 @@ struct TLineLight : TBase {
 	};
 
 	void drawLight(const Widget::DrawArgs& args) override {
+		// Don't draw lineLight if rendering in a framebuffer, e.g. screenshots or Module Browser
+		// From LightWidget::drawHalo()
+		if (args.fb)
+			return;
+
 		nvgBeginPath(args.vg);
 		if (flipped) {
 			nvgMoveTo(args.vg, 0.f, this->box.size.y);
@@ -961,6 +971,11 @@ struct TRingLight : TBase {
 	}
 
 	void drawLight(const Widget::DrawArgs& args) override {
+		// Don't draw ringLight if rendering in a framebuffer, e.g. screenshots or Module Browser
+		// From LightWidget::drawHalo()
+		if (args.fb)
+			return;
+
 		// Adapted from LightWidget::drawLight, with no fill
 		if (this->color.a > 0.0) {
 			nvgBeginPath(args.vg);
