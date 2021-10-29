@@ -35,8 +35,8 @@ static const std::string AuxInputModeLabels[AuxInputModes::NUM_MODES] = {	"Morph
 																			"Click Filter Strength",
 																			"Double Morph",
 																			"Triple Morph",
-																			"Sum Output Attenuverter",
-																			"Mod Output Attenuverter",
+																			"Sum Attenuverter",
+																			"Modulator Attenuverter",
 																			"Clock",
 																			"Reverse Clock",
 																			"Reset",
@@ -72,6 +72,28 @@ static const std::string AuxInputModeShortLabels[AuxInputModes::NUM_MODES] = {	"
 																				"OP 4",
 																				"CV%x2",
 																				"CV%x3"	};
+
+//Order must match above
+static const std::string AuxInputModeDescriptions[AuxInputModes::NUM_MODES] = {	"CV input for modulating Morph state",
+																				"CV input for attenuating/inverting Morph modulation",
+																				"CV input for modulating the strength of the Click Filter",
+																				"2x CV input for modulating Morph state",
+																				"3x CV input for modulating Morph state",
+																				"CV input for attenuating/inverting the Carrier and Modulator Sum outputs",
+																				"CV input for attenuating/inverting the Modulator outputs",
+																				"Trigger input for jumping to the next scene",
+																				"Trigger input for jumping to the previous scene",
+																				"Trigger input for resetting to the default scene",
+																				"Trigger input to Stop or Run the module's clock inputs",
+																				"CV input for offsetting from the current scene",
+																				"Wildcard input, routed to all Modulator outputs",
+																				"Carrier input, routed to the Carrier Sum output",
+																				"Operator 1 input, routed to match Operator 1's destination",
+																				"Operator 2 input, routed to match Operator 2's destination",
+																				"Operator 3 input, routed to match Operator 3's destination",
+																				"Operator 4 input, routed to match Operator 4's destination",
+																				"2x CV input for attenuating/inverting Morph modulation",
+																				"3x CV input for attenuating/inverting Morph modulation" };
 
 struct AuxKnobModes : AuxSourceModes {
 	static const int SUM_GAIN = 			AuxSourceModes::NUM_MODES;
@@ -130,6 +152,10 @@ struct AuxInput {
     int activeModes = 0;
     int lastSetMode = 0;
 
+	std::string label = "";
+	std::string shortLabel = "";
+	std::string description = "";
+
     rack::dsp::SchmittTrigger runCVTrigger;
     rack::dsp::SchmittTrigger sceneAdvCVTrigger;
     rack::dsp::SchmittTrigger reverseSceneAdvCVTrigger;
@@ -147,4 +173,36 @@ struct AuxInput {
     void unsetAuxMode(int oldMode);
     void clearAuxModes();
     void updateVoltage();
+	void updateLabel();
 };
+
+template < typename MODULE >
+struct AuxInputInfo : rack::engine::PortInfo {
+	AuxInput<MODULE>* input;
+
+	std::string getName() override {
+		return this->input->label;
+	}
+
+	std::string getDescription() override {
+		return this->input->description;
+	}
+};
+
+//TODO move implementation to .cpp
+template < typename MODULE >
+AuxInputInfo<MODULE>* configAuxInput(int portId, AuxInput<MODULE>* input, MODULE* module) {
+	//From rack::engine::Module::configInput()
+	assert(portId < (int) module->inputs.size() && portId < (int) module->inputInfos.size());
+	if (module->inputInfos[portId])
+		delete module->inputInfos[portId];
+
+	AuxInputInfo<MODULE>* info = new AuxInputInfo<MODULE>();
+	info->module = module;
+	info->type = rack::engine::Port::INPUT;
+	info->portId = portId;
+	info->input = input;
+	info->name = "";
+	module->inputInfos[portId] = info;
+	return info;
+}; 
