@@ -39,28 +39,23 @@ AlgomorphLarge::AlgomorphLarge() {
     configButton(EDIT_BUTTON, "Edit");
     configButton(SCREEN_BUTTON, "Screen");
 
-    configInput(OPERATOR_INPUTS + 0, "Operator 1");
-    configInput(OPERATOR_INPUTS + 1, "Operator 2");
-    configInput(OPERATOR_INPUTS + 2, "Operator 3");
-    configInput(OPERATOR_INPUTS + 3, "Operator 4");
-    configInput(AUX_INPUTS + 0, "AUX 1");
-    configInput(AUX_INPUTS + 1, "AUX 2");
-    configInput(AUX_INPUTS + 2, "AUX 3");
-    configInput(AUX_INPUTS + 3, "AUX 4");
-    configInput(AUX_INPUTS + 4, "AUX 5");
+    for (int i = 0; i < 4; i++)
+        configInput(OPERATOR_INPUTS + i, "Operator " + std::to_string(i + 1));
 
-    configOutput(MODULATOR_OUTPUTS + 0, "Modulator 1");
-    configOutput(MODULATOR_OUTPUTS + 1, "Modulator 2");
-    configOutput(MODULATOR_OUTPUTS + 2, "Modulator 3");
-    configOutput(MODULATOR_OUTPUTS + 3, "Modulator 4");
+    for (int i = 0; i < 4; i++)
+        configOutput(MODULATOR_OUTPUTS + i, "Modulator " + std::to_string(i + 1));
+
     configOutput(CARRIER_SUM_OUTPUT, "Carrier Sum");
     configOutput(MODULATOR_SUM_OUTPUT, "Modulator Sum");
     configOutput(PHASE_OUTPUT, "Phase");
 
-    runClickFilter.setRiseFall(400.f, 400.f);
-    
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
         auxInput[auxIndex] = new AuxInput<AlgomorphLarge>(auxIndex, this);
+    
+    for (int i = 0; i < NUM_AUX_INPUTS; i++)
+        configAuxInput<AlgomorphLarge>(AUX_INPUTS + i, auxInput[i], this);
+
+    runClickFilter.setRiseFall(400.f, 400.f);
 
     for (int i = 0; i < 4; i++) {
         auxInput[i]->shadowClickFilter[i].setRiseFall(DEF_CLICK_FILTER_SLEW, DEF_CLICK_FILTER_SLEW);
@@ -1753,6 +1748,8 @@ void AuxInput<MODULE>::setMode(int newMode) {
     lastSetMode = newMode;
     module->auxModeFlags[newMode] = true;
 
+    updateLabel();
+
     module->auxPanelDirty = true;
 }
 
@@ -1762,6 +1759,8 @@ void AuxInput<MODULE>::unsetAuxMode(int oldMode) {
         activeModes--;
         
         modeIsActive[oldMode] = false;
+
+        updateLabel();
     }
 
     module->auxPanelDirty = true;
@@ -1784,6 +1783,58 @@ void AuxInput<MODULE>::updateVoltage() {
             for (int c = 0; c < channels; c++)
                 voltage[mode][c] = module->inputs[MODULE::AUX_INPUTS + id].getPolyVoltage(c);
         }
+    }
+}
+
+template < typename MODULE >
+void AuxInput<MODULE>::updateLabel() {
+    int displayCode;
+
+    if (activeModes == 1)
+        displayCode = lastSetMode;
+    else if (activeModes == 0)
+        displayCode = -1;
+    else if (activeModes > 1) {
+        displayCode = -2;
+    }
+    else {
+        //Error
+        displayCode = -3;
+    }
+
+    //Update label
+    if (displayCode > -1) {
+        shortLabel = AuxInputModeShortLabels[displayCode];
+        label = AuxInputModeLabels[displayCode];
+        description = AuxInputModeDescriptions[displayCode];
+    }
+    else if (displayCode == -2) {
+        shortLabel = "MULTI";
+        label = "Multimode Input";
+        std::string description = "Multimode: ";
+        int count = 0;
+        for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
+            if (modeIsActive[i]) {
+                count++;
+                description += AuxInputModeLabels[i];
+            }
+            if (count < activeModes)
+                description += ", ";
+            else
+                break;
+        }
+    }
+    else if (displayCode == -1)
+    {
+        shortLabel = "NONE";
+        label = "Unassigned";
+        description = "No mode is assigned";
+    }
+    else
+    {
+        shortLabel = "ERROR";
+        label = "Error";
+        description = "I am error";
     }
 }
 

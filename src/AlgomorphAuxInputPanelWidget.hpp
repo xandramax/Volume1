@@ -9,7 +9,6 @@ struct AlgomorphAuxInputPanelWidget : FramebufferWidget {
                                         mm2px(Vec(4.291, 64.178)).minus(box.pos)    };
 
         AlgomorphLarge* module;
-        int auxInputModes[5] = {0};
         std::string fontPath = "";
         std::shared_ptr<Font> font;
         float textBounds[5] = {0.f};

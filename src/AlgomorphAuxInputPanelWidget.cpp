@@ -12,21 +12,6 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
     if (layer == 1) {
         font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
 
-        for (int i = 0; i < 5; i++) {
-            int activeModes = module->auxInput[i]->activeModes;
-            if (activeModes == 1)
-                auxInputModes[i] = module->auxInput[i]->lastSetMode;
-            else if (activeModes == 0)
-                auxInputModes[i] = -1;
-            else if (activeModes > 1) {
-                auxInputModes[i] = -2;
-            }
-            else {
-                //Error
-                auxInputModes[i] = -3;
-            }
-        }
-
         // Scale from max brightness to min brightness, as rack brightness is reduced from one to zero
         nvgAlpha(args.vg, (1.f - SVG_LIGHT_MIN_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_MIN_ALPHA);
         
@@ -39,22 +24,12 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
         nvgFillColor(args.vg, textColor);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
         for (int i = 0; i < 5; i++) {
-            if (auxInputModes[i] != -3) {
-                std::string s;
-                if (auxInputModes[i] > -1)
-                    s = AuxInputModeShortLabels[auxInputModes[i]];
-                else if (auxInputModes[i] == -2)
-                    s = "MULTI";
-                else if (auxInputModes[i] == -1)
-                    s = "NONE";
-                else
-                    s = "ERROR";
-                char const *id = s.c_str();
-                nvgTextBounds(args.vg, LABEL_BOUNDS[i].x, LABEL_BOUNDS[i].y, id, id + s.length(), textBounds);
-                float xOffset = 1.15f;//(textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = -35.f;//(textBounds[3] - textBounds[1]) / 3.25f;
-                nvgText(args.vg, LABEL_BOUNDS[i].x + xOffset, LABEL_BOUNDS[i].y + yOffset, id, id + s.length());
-            }
+            std::string label = module->auxInput[i]->shortLabel;
+            char const *id = label.c_str();
+            nvgTextBounds(args.vg, LABEL_BOUNDS[i].x, LABEL_BOUNDS[i].y, id, id + label.length(), textBounds);
+            float xOffset = 1.15f;//(textBounds[2] - textBounds[0]) / 2.f;
+            float yOffset = -35.f;//(textBounds[3] - textBounds[1]) / 3.25f;
+            nvgText(args.vg, LABEL_BOUNDS[i].x + xOffset, LABEL_BOUNDS[i].y + yOffset, id, id + label.length());
         }
     }
 
@@ -75,10 +50,3 @@ void AlgomorphAuxInputPanelWidget::step() {
     }
     FramebufferWidget::step();
 }
-
-// void AlgomorphAuxInputPanelWidget::draw(const Widget::DrawArgs& args) {
-//     // Rack 2 beta light
-//     nvgGlobalTint(args.vg, color::WHITE);
-
-//     FramebufferWidget::draw(args);
-// }
