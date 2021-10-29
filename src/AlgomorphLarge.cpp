@@ -30,14 +30,14 @@ AlgomorphLarge::AlgomorphLarge() {
     getParamQuantity(AUX_KNOBS + AuxKnobModes::ENDLESS_MORPH)->randomizeEnabled = false;
     
     for (int i = 0; i < 4; i++) {
-        configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1));
-        configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1));
+        configButton(OPERATOR_BUTTONS + i, "Operator " + std::to_string(i + 1) + " button");
+        configButton(MODULATOR_BUTTONS + i, "Modulator " + std::to_string(i + 1) + " button");
     }
     for (int i = 0; i < 3; i++) {
-        configButton(SCENE_BUTTONS + i, "Scene " + std::to_string(i + 1));
+        configButton(SCENE_BUTTONS + i, "Scene " + std::to_string(i + 1) + " button");
     }
-    configButton(EDIT_BUTTON, "Edit");
-    configButton(SCREEN_BUTTON, "Screen");
+    configButton(EDIT_BUTTON, "Edit button");
+    configButton(SCREEN_BUTTON, "Screen button (out of service)");
 
     for (int i = 0; i < 4; i++)
         configInput(OPERATOR_INPUTS + i, "Operator " + std::to_string(i + 1));
