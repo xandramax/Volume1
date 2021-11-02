@@ -33,9 +33,15 @@ static constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 static constexpr float FIVE_D_TWO = 5.f / 2.f;
 static constexpr float FIVE_D_THREE = 5.f / 3.f;
 static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
-static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
-static constexpr float DEF_RED_BRIGHTNESS = 0.6375f;
+static constexpr float DEF_RED_BRIGHTNESS = 0.6475f;
+static constexpr float INDICATOR_BRIGHTNESS = 1.f;
 static constexpr float SVG_LIGHT_MIN_ALPHA = 2.f/3.f;
+static constexpr float RING_RADIUS = 8.752f;
+static constexpr float RING_LIGHT_STROKEWIDTH = 0.75f;
+static constexpr float RING_BG_STROKEWIDTH = 1.55f;
+static constexpr float RING_BORDER_STROKEWIDTH = 0.5825f;
+static constexpr float RING_STROKEWIDTH = RING_LIGHT_STROKEWIDTH + RING_BG_STROKEWIDTH + RING_BORDER_STROKEWIDTH;
+static constexpr float LINE_LIGHT_STROKEWIDTH = .975f;
 
 /// Algorithm Display Graph Data
 
@@ -719,14 +725,13 @@ struct Line {
 			startAngle = std::atan2(size.x, size.y);
 			endAngle = std::atan2(size.y, size.x);
 		}
-		float radius = 8.462 + 1.7;		//ringLight radius + strokeWidth
 		if (flipped) {
-			left = Vec(radius * std::cos(startAngle) + a.x, radius * std::sin(startAngle) + a.y);
-			right = Vec(b.x - radius * std::cos(startAngle),  b.y - radius * std::sin(startAngle));
+			left = Vec(RING_RADIUS * std::cos(startAngle) + a.x, RING_RADIUS * std::sin(startAngle) + a.y);
+			right = Vec(b.x - RING_RADIUS * std::cos(startAngle),  b.y - RING_RADIUS * std::sin(startAngle));
 		}
 		else {
-			left = Vec(radius * std::cos(endAngle) + a.x, radius * std::sin(endAngle) + a.y);
-			right = Vec(b.x - radius * std::cos(endAngle),  b.y - radius * std::sin(endAngle));
+			left = Vec(RING_RADIUS * std::cos(endAngle) + a.x, RING_RADIUS * std::sin(endAngle) + a.y);
+			right = Vec(b.x - RING_RADIUS * std::cos(endAngle),  b.y - RING_RADIUS * std::sin(endAngle));
 		}
 	}
 };
@@ -844,8 +849,6 @@ struct TLineLight : TBase {
 	bool flipped = false;
 	float angle = 0.f;
 	float length = 0.f;
-	const float RING_RADIUS = 8.462f + 1.7f;	//ringLight radius + ringLight strokeWidth
-	const float STROKE_WIDTH = .975f;
 
 	TLineLight(Vec a, Vec b) {
 		flipped = a.y > b.y;
@@ -876,7 +879,7 @@ struct TLineLight : TBase {
 			end = Vec(this->box.size.x, this->box.size.y);
 		}
 		
-		length = sqrtf(powf(end.x - start.x, 2) + powf(end.y - start.y, 2)) + STROKE_WIDTH * 2.f;
+		length = sqrtf(powf(end.x - start.x, 2) + powf(end.y - start.y, 2)) + LINE_LIGHT_STROKEWIDTH * 2.f;
 	}
 
 	void drawBackground(const Widget::DrawArgs& args) override {
@@ -895,7 +898,7 @@ struct TLineLight : TBase {
 
 		// Foreground
 		if (this->color.a > 0.0) {
-			nvgStrokeWidth(args.vg, STROKE_WIDTH);
+			nvgStrokeWidth(args.vg, LINE_LIGHT_STROKEWIDTH);
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
@@ -915,8 +918,8 @@ struct TLineLight : TBase {
 		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
 			return;
 
-		float radius = STROKE_WIDTH;
-		float oradius = radius * 4.f;
+		float radius = LINE_LIGHT_STROKEWIDTH;
+		float oradius = radius * 5.f;
 		float x = start.x - oradius - radius;
 		float y = start.y - oradius - radius * 0.5f;
 		float w = length + oradius * 2.f;
@@ -952,28 +955,27 @@ TLineLight<TBase>* createLineLight(Vec a, Vec b, engine::Module* module, int fir
 
 template <typename TBase = rack::GrayModuleLightWidget>
 struct TRingLight : TBase {
-	float radius = 1.f;
-	float strokeSize = 0.f;
-	TRingLight(float r, float s = 0) {
-		radius = r;
-		strokeSize = s;
+	float radius = 0.f;
+
+	TRingLight(float r) {
+		this->radius = r;
 	}
 	
 	void drawBackground(const Widget::DrawArgs& args) override {
 		// Adapted from LightWidget::drawBackground, with no fill
 		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, radius, radius, radius);
+		nvgCircle(args.vg, this->radius, this->radius, this->radius);
 
 		// Background
 		if (this->bgColor.a > 0.0) {
-			nvgStrokeWidth(args.vg, 1.55);
+			nvgStrokeWidth(args.vg, RING_BG_STROKEWIDTH);
 			nvgStrokeColor(args.vg, this->bgColor);
 			nvgStroke(args.vg);
 		}
 
 		// Border
 		if (this->borderColor.a > 0.0) {
-			nvgStrokeWidth(args.vg, 0.5825);
+			nvgStrokeWidth(args.vg, RING_BORDER_STROKEWIDTH);
 			nvgStrokeColor(args.vg, this->borderColor);
 			nvgStroke(args.vg);
 		}
@@ -988,17 +990,14 @@ struct TRingLight : TBase {
 		// Adapted from LightWidget::drawLight, with no fill
 		if (this->color.a > 0.0) {
 			nvgBeginPath(args.vg);
-			nvgCircle(args.vg, radius, radius, radius);
-			nvgStrokeWidth(args.vg, 0.75);
+			nvgCircle(args.vg, this->radius, this->radius, this->radius);
+			nvgStrokeWidth(args.vg, RING_LIGHT_STROKEWIDTH);
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
 	}
 
 	void drawHalo(const Widget::DrawArgs& args) override {
-		return;
-		// TODO: Design ring light halo
-
 		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
 		if (args.fb)
 			return;
@@ -1012,15 +1011,26 @@ struct TRingLight : TBase {
 			return;
 
 		math::Vec c = this->box.size.div(2);
-		// We already have a radius as a member variable of the widget.
-		float oradius = radius + std::min(radius * 4.f, 90.f);
 
+		// Outer halo
+		float iradius = RING_LIGHT_STROKEWIDTH + this->radius;
+		float oradius = RING_LIGHT_STROKEWIDTH * 9.125f + this->radius;
 		nvgBeginPath(args.vg);
-		nvgRect(args.vg, c.x - oradius, c.y - oradius, 4 * oradius, 4 * oradius);
-
+		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * (oradius), 2 * (oradius));
+		nvgPathWinding(args.vg, NVG_HOLE);
+		nvgCircle(args.vg, c.x, c.y, this->radius);
 		NVGcolor icol = color::mult(this->color, halo);
-		NVGcolor ocol = nvgRGBA(255, 255, 255, 255);
-		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
+		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
+		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+
+		// Inner halo
+		iradius = -RING_LIGHT_STROKEWIDTH * 9.125f + this->radius;
+		oradius = this->radius;
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, c.x, c.y, this->radius);
+		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, ocol, icol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
@@ -1028,12 +1038,10 @@ struct TRingLight : TBase {
 typedef TRingLight<> RingLight;
 
 template <typename TBase = DLXPurpleLight>
-TRingLight<TBase>* createRingLight(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
+TRingLight<TBase>* createRingLight(Vec pos, engine::Module* module, int firstLightId, float r = RING_RADIUS) {
 	TRingLight<TBase>* o;
-	if (s == 0)
-		o = new TRingLight<TBase>(r);
-	else
-		o = new TRingLight<TBase>(r, s);
+	o = new TRingLight<TBase>(r);
+	o->box.size = Vec(r * 2, r * 2);
 	o->box.pos = pos;
 	o->module = module;
 	o->firstLightId = firstLightId;
@@ -1041,8 +1049,8 @@ TRingLight<TBase>* createRingLight(Vec pos, float r, engine::Module* module, int
 }
 
 template <typename TBase = DLXPurpleLight>
-TRingLight<TBase>* createRingLightCentered(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-	TRingLight<TBase>* o = createRingLight<TBase>(pos, r, module, firstLightId, s);
+TRingLight<TBase>* createRingLightCentered(Vec pos, engine::Module* module, int firstLightId, float r = RING_RADIUS) {
+	TRingLight<TBase>* o = createRingLight<TBase>(pos, module, firstLightId, r);
 	o->box.pos.x -= r;
 	o->box.pos.y -= r;
 	return o;
@@ -1063,12 +1071,22 @@ template < typename MODULE >
 struct DLXRingIndicator : DLXMultiLight {
 	float angle = 0.f;
 	float transform[6];
-	float radius = 1.f;
-	float strokeSize = 0.f;
+	float radius = 0.f;
 	
-	DLXRingIndicator(float r, float s = 1.3) {
-		radius = r;
-		strokeSize = s;
+	DLXRingIndicator(float r) {
+		this->radius = r;
+	}
+
+	void drawBackground(const Widget::DrawArgs& args) override {
+		if (!module)
+			return;
+
+		rotate(args);
+
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, this->radius, this->radius, RING_BG_STROKEWIDTH);
+		nvgFillColor(args.vg, bgColor);
+		nvgFill(args.vg);
 	}
 
 	void drawLight(const Widget::DrawArgs& args) override {
@@ -1076,29 +1094,39 @@ struct DLXRingIndicator : DLXMultiLight {
 			return;
 
 		if (this->color.a > 0.0) {
-			angle = dynamic_cast<MODULE*>(module)->rotor.angle;
-			math::Vec center = Vec(radius, radius);
-			nvgTransformIdentity(transform);
-			float t[6];
-			nvgTransformTranslate(t, center.x, center.y);
-			nvgTransformPremultiply(transform, t);
-			nvgTransformRotate(t, angle);
-			nvgTransformPremultiply(transform, t);
-			nvgTransformTranslate(t, center.neg().x, center.neg().y);
-			nvgTransformPremultiply(transform, t);
-			nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
-
 			nvgBeginPath(args.vg);
-			nvgCircle(args.vg, 2.6f, 2.6f, strokeSize);
-			nvgFillColor(args.vg, this->color);
+			nvgCircle(args.vg, this->radius, this->radius, RING_LIGHT_STROKEWIDTH);
+			nvgFillColor(args.vg, SCHEME_WHITE);
 			nvgFill(args.vg);
 		}
+	}
+
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {
+			rotate(args);
+		}
+
+		DLXMultiLight::drawLayer(args, layer);
+	}
+
+	inline void rotate(const DrawArgs& args) {
+		angle = dynamic_cast<MODULE*>(module)->rotor.angle;
+		math::Vec center = Vec(radius, radius);
+		nvgTransformIdentity(transform);
+		float t[6];
+		nvgTransformTranslate(t, center.x, center.y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformRotate(t, angle);
+		nvgTransformPremultiply(transform, t);
+		nvgTransformTranslate(t, center.neg().x, center.neg().y);
+		nvgTransformPremultiply(transform, t);
+		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
 	}
 };
 
 template < typename MODULE >
-DLXRingIndicator<MODULE>* createRingIndicator(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-    DLXRingIndicator<MODULE>* o = new DLXRingIndicator<MODULE>(r, s);
+DLXRingIndicator<MODULE>* createRingIndicator(Vec pos, engine::Module* module, int firstLightId, float r = RING_RADIUS) {
+    DLXRingIndicator<MODULE>* o = new DLXRingIndicator<MODULE>(r);
     o->box.pos = pos;
     o->module = module;
     o->firstLightId = firstLightId;
@@ -1106,8 +1134,8 @@ DLXRingIndicator<MODULE>* createRingIndicator(Vec pos, float r, engine::Module* 
 }
 
 template < typename MODULE >
-DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, float r, engine::Module* module, int firstLightId, float s = 0) {
-    DLXRingIndicator<MODULE>* o = createRingIndicator<MODULE>(pos, r, module, firstLightId, s);
+DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, engine::Module* module, int firstLightId, float r = RING_RADIUS) {
+    DLXRingIndicator<MODULE>* o = createRingIndicator<MODULE>(pos, module, firstLightId, r);
     o->box.pos.x -= r;
     o->box.pos.y -= r;
     return o;
