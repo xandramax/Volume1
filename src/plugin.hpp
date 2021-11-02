@@ -33,9 +33,9 @@ static constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 static constexpr float FIVE_D_TWO = 5.f / 2.f;
 static constexpr float FIVE_D_THREE = 5.f / 3.f;
 static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
-static constexpr float DEF_RED_BRIGHTNESS = 0.4975f;
 static constexpr float INDICATOR_BRIGHTNESS = 0.325f;
-static constexpr float SVG_LIGHT_MIN_ALPHA = 5.f/9.f;
+static constexpr float DEF_RED_BRIGHTNESS = 0.6375f;
+static constexpr float SVG_LIGHT_MIN_ALPHA = 2.f/3.f;
 
 /// Algorithm Display Graph Data
 
@@ -840,6 +840,7 @@ TBacklight<TBase>* createBacklight(Vec pos, Vec size, engine::Module* module, in
 
 template <typename TBase = rack::GrayModuleLightWidget>
 struct TLineLight : TBase {
+	Vec start, end;
 	bool flipped = false;
 	float angle = 0.f;
 	float length = 0.f;
@@ -848,12 +849,9 @@ struct TLineLight : TBase {
 
 	TLineLight(Vec a, Vec b) {
 		flipped = a.y > b.y;
-		
-		length = sqrtf(powf(b.x - a.x, 2) + powf(b.y - a.y, 2)) + STROKE_WIDTH * 2.f;
 
 		this->box.size = Vec(b.x - a.x, std::fabs(b.y - a.y));
-		float angle = std::atan2(this->box.size.y, this->box.size.x);
-		Vec start, end;
+		angle = std::atan2(this->box.size.y, this->box.size.x);
 		if (flipped) {
 			start = Vec(a.x + RING_RADIUS * std::cos(angle), a.y - RING_RADIUS * std::sin(angle));
 			end = Vec(b.x - RING_RADIUS * std::cos(angle),  b.y + RING_RADIUS * std::sin(angle));
@@ -862,10 +860,23 @@ struct TLineLight : TBase {
 			start = Vec(a.x + RING_RADIUS * std::cos(angle), a.y + RING_RADIUS * std::sin(angle));
 			end = Vec(b.x - RING_RADIUS * std::cos(angle),  b.y - RING_RADIUS * std::sin(angle));
 		}
+		
 		this->box.pos = start;
 		if (flipped)
 			this->box.pos.y = end.y;
 		this->box.size = Vec(end.x - start.x, std::fabs(end.y - start.y));
+
+		//Convert to relative coordinates
+		if (flipped) {
+			start = Vec(0.f, this->box.size.y);
+			end = Vec(this->box.size.x, 0.f);
+		}
+		else {
+			start = Vec(0.f, 0.f);
+			end = Vec(this->box.size.x, this->box.size.y);
+		}
+		
+		length = sqrtf(powf(end.x - start.x, 2) + powf(end.y - start.y, 2)) + STROKE_WIDTH * 2.f;
 	}
 
 	void drawBackground(const Widget::DrawArgs& args) override {
@@ -879,27 +890,20 @@ struct TLineLight : TBase {
 			return;
 
 		nvgBeginPath(args.vg);
-		if (flipped) {
-			nvgMoveTo(args.vg, 0.f, this->box.size.y);
-			nvgLineTo(args.vg, this->box.size.x, 0.f);
-		}
-		else {
-			nvgMoveTo(args.vg, 0.f, 0.f);
-			nvgLineTo(args.vg, this->box.size.x, this->box.size.y);
-		}
-		nvgStrokeWidth(args.vg, STROKE_WIDTH);
+		nvgMoveTo(args.vg, start.x, start.y);
+		nvgLineTo(args.vg, end.x, end.y);
+
 		// Foreground
 		if (this->color.a > 0.0) {
+			nvgStrokeWidth(args.vg, STROKE_WIDTH);
 			nvgStrokeColor(args.vg, this->color);
 			nvgStroke(args.vg);
 		}
 	}
 
 	void drawHalo(const Widget::DrawArgs& args) override {
-		return;
-		// TODO: Design line light halo
-
 		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		// From LightWidget::drawHalo()
 		if (args.fb)
 			return;
 
@@ -911,23 +915,28 @@ struct TLineLight : TBase {
 		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
 			return;
 
-		math::Vec c = this->box.size.div(2);
-		float radius = std::min(this->box.size.x, this->box.size.y) / 4.0f;
-		float oradius = radius + std::min(radius * 4.f, 15.f);
+		float radius = STROKE_WIDTH;
+		float oradius = radius * 4.f;
+		float x = start.x - oradius - radius;
+		float y = start.y - oradius - radius * 0.5f;
+		float w = length + oradius * 2.f;
+		float h = radius + oradius * 2.f;
 
 		nvgBeginPath(args.vg);
-		nvgRect(args.vg, c.x - (length * 0.5f), c.y, length, oradius);
+		if (flipped) {
+			nvgTranslate(args.vg, 0.f, this->box.size.y);
+			nvgRotate(args.vg, -angle);
+			nvgTranslate(args.vg, 0.f, -this->box.size.y);
+			// angle += .003f;	// Weeee!
+		}
+		else
+			nvgRotate(args.vg, angle);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, h);
 
-		// if (flipped)
-		// 	nvgRotate(args.vg, angle);
-		// else
-		// 	nvgRotate(args.vg, -angle);
-
-		// NVGcolor icol = color::mult(this->color, halo);
-		// NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		// NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
-		// nvgFillPaint(args.vg, paint);
-		nvgFillColor(args.vg, SCHEME_BLACK);
+		NVGcolor icol = color::mult(this->color, halo);
+		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, h * 0.5f, h, icol, ocol);
+		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
 };
@@ -1150,7 +1159,7 @@ struct DLXDonutLargeKnobLight : DLXLargeKnobLight {
 	DLXDonutLargeKnobLight() {
 		//Create knob to extract radius
 		THoleMask* mask = new THoleMask();
-		hole_radius = mask->fb->box.size.x / 2.f;
+		hole_radius = mask->sw->box.size.x / 2.f;
 		mask->requestDelete();
 	}
 
