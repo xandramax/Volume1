@@ -1283,22 +1283,22 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     //Place backlight _above_ in scene in order for brightness to affect screenWidget
     addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(6.252, 11.631)), mm2px(Vec(38.295, 31.590)), module, AlgomorphSmall::DISPLAY_BACKLIGHT));
 
-    addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(25.269, 61.936)), 8.752, module, AlgomorphSmall::SCREEN_BUTTON_RING_LIGHT));
+    addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON_RING_LIGHT));
     addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
     addChild(createParamCentered<DLXScreenButtonLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
 
-    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.752, module, AlgomorphSmall::SCENE_LIGHTS + 0));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], 8.752, module, AlgomorphSmall::SCENE_INDICATORS + 0));
+    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_LIGHTS + 0));
+    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_INDICATORS + 0));
     addParam(createParamCentered<TL1105>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
     addChild(createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
 
-    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.752, module, AlgomorphSmall::SCENE_LIGHTS + 3));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], 8.752, module, AlgomorphSmall::SCENE_INDICATORS + 3));
+    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_LIGHTS + 3));
+    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_INDICATORS + 3));
     addParam(createParamCentered<TL1105>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
     addChild(createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
 
-    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.752, module, AlgomorphSmall::SCENE_LIGHTS + 6));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], 8.752, module, AlgomorphSmall::SCENE_INDICATORS + 6));
+    addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_LIGHTS + 6));
+    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_INDICATORS + 6));
     addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
     addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
 
@@ -1315,7 +1315,7 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
 
     addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
 
-    addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), 8.752, module, AlgomorphSmall::EDIT_LIGHT));
+    addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_LIGHT));
     addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
     addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
 
@@ -1371,20 +1371,20 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[1], module, AlgomorphSmall::CONNECTION_LIGHTS + 30));
     addChild(createLineLight<DLXMultiLight>(OpButtonCenters[3], ModButtonCenters[0], module, AlgomorphSmall::CONNECTION_LIGHTS + 27));
     
-    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], 8.752, module, AlgomorphSmall::OPERATOR_LIGHTS + 9));
-    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], 8.752, module, AlgomorphSmall::OPERATOR_LIGHTS + 6));
-    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], 8.752, module, AlgomorphSmall::OPERATOR_LIGHTS + 3));
-    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], 8.752, module, AlgomorphSmall::OPERATOR_LIGHTS + 0));
+    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[3], module, AlgomorphSmall::OPERATOR_LIGHTS + 9));
+    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[2], module, AlgomorphSmall::OPERATOR_LIGHTS + 6));
+    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], module, AlgomorphSmall::OPERATOR_LIGHTS + 3));
+    addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], module, AlgomorphSmall::OPERATOR_LIGHTS + 0));
 
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[3], 8.752, module, AlgomorphSmall::CARRIER_INDICATORS + 9));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[2], 8.752, module, AlgomorphSmall::CARRIER_INDICATORS + 6));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[1], 8.752, module, AlgomorphSmall::CARRIER_INDICATORS + 3));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[0], 8.752, module, AlgomorphSmall::CARRIER_INDICATORS + 0));
+    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[3], module, AlgomorphSmall::CARRIER_INDICATORS + 9));
+    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[2], module, AlgomorphSmall::CARRIER_INDICATORS + 6));
+    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[1], module, AlgomorphSmall::CARRIER_INDICATORS + 3));
+    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[0], module, AlgomorphSmall::CARRIER_INDICATORS + 0));
 
-    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], 8.752, module, AlgomorphSmall::MODULATOR_LIGHTS + 9));
-    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], 8.752, module, AlgomorphSmall::MODULATOR_LIGHTS + 6));
-    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], 8.752, module, AlgomorphSmall::MODULATOR_LIGHTS + 3));
-    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], 8.752, module, AlgomorphSmall::MODULATOR_LIGHTS + 0));
+    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], module, AlgomorphSmall::MODULATOR_LIGHTS + 9));
+    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], module, AlgomorphSmall::MODULATOR_LIGHTS + 6));
+    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], module, AlgomorphSmall::MODULATOR_LIGHTS + 3));
+    addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], module, AlgomorphSmall::MODULATOR_LIGHTS + 0));
 
     addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[3], module, AlgomorphSmall::OPERATOR_BUTTONS + 3));
     addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[2], module, AlgomorphSmall::OPERATOR_BUTTONS + 2));
