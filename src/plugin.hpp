@@ -1161,10 +1161,11 @@ struct DLXSvgFakeLight : SvgWidget {
 
 			// Scale from max brightness to min brightness, as rack brightness is reduced from one to zero
 			nvgAlpha(args.vg, (1.f - SVG_LIGHT_MIN_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_MIN_ALPHA);
+			
+			// From LightWidget::drawLayer()
+			// Use the formula `lightColor * (1 - dest) + dest` for blending
+			nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
 			window::svgDraw(args.vg, svg->handle);
-
-			// nvgBeginPath(args.vg);
-			// nvgClosePath(args.vg);
 			drawHalo(args);
 		}
 
