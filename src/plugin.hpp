@@ -816,8 +816,8 @@ struct TBacklight : TBase {
 
 		float ixradius = this->box.size.x / 8.f;
 		float iyradius = this->box.size.y / 8.f;
-		float oxradius = ixradius * 1.25f;
-		float oyradius = iyradius * 1.25f;
+		float oxradius = ixradius * 1.125f;
+		float oyradius = iyradius * 1.125f;
 		float x =  -oxradius;
 		float y = -oyradius;
 		float w = this->box.size.x + oxradius * 2.f;
@@ -828,7 +828,7 @@ struct TBacklight : TBase {
 
 		NVGcolor icol = color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, 3.675f, h, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h / 2.f, 3.675f, h, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
@@ -936,7 +936,7 @@ struct TLineLight : TBase {
 		}
 		else
 			nvgRotate(args.vg, angle);
-		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, h);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, h * 1.5f);
 
 		NVGcolor icol = color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
@@ -1149,6 +1149,10 @@ struct DLXSvgFakeLight : SvgWidget {
 		Widget::draw(args);
 	}
 
+	virtual void drawHalo(const DrawArgs& args) {
+		return;
+	};
+
 	void drawLayer(const DrawArgs& args, int layer) override {
 		if (layer == 1) {	
 			//From SvgWidget::draw()
@@ -1158,25 +1162,75 @@ struct DLXSvgFakeLight : SvgWidget {
 			// Scale from max brightness to min brightness, as rack brightness is reduced from one to zero
 			nvgAlpha(args.vg, (1.f - SVG_LIGHT_MIN_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_MIN_ALPHA);
 			window::svgDraw(args.vg, svg->handle);
+
+			// nvgBeginPath(args.vg);
+			// nvgClosePath(args.vg);
+			drawHalo(args);
 		}
 
 		SvgWidget::drawLayer(args, layer);
 	}
 };
 
-struct DLXLargeKnobLight : DLXSvgFakeLight {
+struct DLXKnobLight : DLXSvgFakeLight {
+	void drawHalo(const DrawArgs& args) override {
+		const float halo = settings::haloBrightness;
+		if (halo == 0.f)
+			return;
+
+		math::Vec c = this->box.size.div(2);
+
+		// Indicator halo
+		float radius = LINE_LIGHT_STROKEWIDTH * 1.5f;
+		float oradius = radius * 1.5f;
+		float x = c.x - oradius - radius * 0.5f;
+		float y = -oradius - radius;
+		float w = radius + oradius * 2.f;
+		float h = c.y + oradius * 2.f;
+		nvgBeginPath(args.vg);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, w * 1.5f);
+		NVGcolor icol = color::mult(SCHEME_LIGHT_GRAY, halo);
+		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+
+		// Outer halo
+		radius = c.x;
+		float iradius = RING_LIGHT_STROKEWIDTH + radius;
+		oradius = RING_LIGHT_STROKEWIDTH * 9.125f + radius;
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * (oradius), 2 * (oradius));
+		nvgPathWinding(args.vg, NVG_HOLE);
+		nvgCircle(args.vg, c.x, c.y, radius);
+		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+
+		// Inner halo
+		iradius = -RING_LIGHT_STROKEWIDTH * 11.f + radius;
+		oradius = radius;
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, c.x, c.y, radius);
+		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, ocol, icol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+	}
+};
+
+struct DLXLargeKnobLight : DLXKnobLight {
 	DLXLargeKnobLight() {
 		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundHugeBlackKnob.svg")));
 	}
 };
 
-struct DLXMediumKnobLight : DLXSvgFakeLight {
+struct DLXMediumKnobLight : DLXKnobLight {
 	DLXMediumKnobLight() {
 		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundLargeBlackKnob.svg")));
 	}
 };
 
-struct DLXSmallKnobLight : DLXSvgFakeLight {
+struct DLXSmallKnobLight : DLXKnobLight {
 	DLXSmallKnobLight() {
 		setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob.svg")));
 	}
