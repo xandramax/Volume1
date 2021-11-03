@@ -35,7 +35,7 @@ static constexpr float FIVE_D_THREE = 5.f / 3.f;
 static constexpr float CLOCK_IGNORE_DURATION = 0.001f;     // disable clock on powerup and reset for 1 ms (so that the first step plays)
 static constexpr float DEF_RED_BRIGHTNESS = 0.6475f;
 static constexpr float INDICATOR_BRIGHTNESS = 1.f;
-static constexpr float SVG_LIGHT_MIN_ALPHA = 2.f/3.f;
+static constexpr float SVG_LIGHT_MIN_ALPHA = 4.f/9.f;
 static constexpr float RING_RADIUS = 8.752f;
 static constexpr float RING_LIGHT_STROKEWIDTH = 0.75f;
 static constexpr float RING_BG_STROKEWIDTH = 1.55f;
@@ -1143,7 +1143,7 @@ DLXRingIndicator<MODULE>* createRingIndicatorCentered(Vec pos, engine::Module* m
     return o;
 }
 
-struct DLXSvgFakeLight : SvgWidget {
+struct DLXSvgLight : SvgWidget {
 	void draw(const DrawArgs& args) override {
 		// Do not call SvgWidget::draw, as it will draw on the wrong layer
 		Widget::draw(args);
@@ -1173,13 +1173,15 @@ struct DLXSvgFakeLight : SvgWidget {
 	}
 };
 
-struct DLXKnobLight : DLXSvgFakeLight {
+struct DLXKnobLight : DLXSvgLight {
 	void drawHalo(const DrawArgs& args) override {
 		const float halo = settings::haloBrightness;
 		if (halo == 0.f)
 			return;
 
 		math::Vec c = this->box.size.div(2);
+
+		nvgGlobalAlpha(args.vg, 1.f/3.f);
 
 		// Indicator halo
 		float radius = LINE_LIGHT_STROKEWIDTH * 1.5f;
@@ -1259,67 +1261,6 @@ struct DLXDonutLargeKnobLight : DLXLargeKnobLight {
 	}
 };
 
-struct DLXSvgSwitchLight : SvgSwitch {
-	//Subclassing SvgSwitch here even though it comes with baggage (sw = SvgWidget, shadow),
-	//as it would be a PITA to reimplement SvgSwitch::addFrame() and SvgSwitch::onChange().
-	DLXSvgSwitchLight() {
-		SvgSwitch();
-
-		//We are repurposing the SvgSwitch's sw to hold our SvgFakeLight.
-		//So we remove it from the scene (fb), request deletion of the previous widget,
-		//assign our FakeLight to the sw, and add it back to the scene.
-		this->fb->removeChild(this->sw);
-		this->sw->requestDelete();
-
-		this->sw = new DLXSvgFakeLight;
-		this->fb->addChild(this->sw);
-
-		//We don't want a shadow, because we're visually masquerading as part of the switch below.
-		this->fb->removeChild(this->shadow);
-		this->shadow->requestDelete();
-	}
-};
-
-struct DLXPencilButtonLight : DLXSvgSwitchLight {
-	DLXPencilButtonLight() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
-	}
-};
-
-struct DLXScreenButtonLight : DLXSvgSwitchLight {
-	DLXScreenButtonLight() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
-	}
-};
-
-struct DLX1ButtonLight : DLXSvgSwitchLight {
-	DLX1ButtonLight() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
-	}
-};
-
-struct DLX2ButtonLight : DLXSvgSwitchLight {
-	DLX2ButtonLight() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
-	}
-};
-
-struct DLX3ButtonLight : DLXSvgSwitchLight {
-	DLX3ButtonLight() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
-	}
-};
-
 template < typename DLXKnobLight >
 struct DLXLightKnob : SvgKnob {
 	// "sw" is used for the bg svg widget. light is the fg svg widget.
@@ -1376,5 +1317,123 @@ struct DLXMediumLightKnob : DLXLightKnob<DLXMediumKnobLight> {
 struct DLXSmallLightKnob : DLXLightKnob<DLXSmallKnobLight> {
 	DLXSmallLightKnob() {
 		this->setSvg(Svg::load(asset::system("res/ComponentLibrary/RoundSmallBlackKnob-bg.svg")));
+	}
+};
+
+struct DLXSvgBloomLight : DLXSvgLight {
+	std::shared_ptr<window::Svg> svgHalo;
+
+	void setHaloSvg(std::shared_ptr<window::Svg> svg) {
+		svgHalo = svg;
+	}
+
+	void drawHalo(const DrawArgs& args) override {
+		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		if (args.fb)
+			return;
+
+		const float halo = settings::haloBrightness;
+		if (halo == 0.f)
+			return;
+
+		nvgAlpha(args.vg, halo);
+		window::svgDraw(args.vg, svgHalo->handle);
+	}
+};
+
+struct DLXSvgSwitchBloomLight : SvgSwitch {
+	std::vector<std::shared_ptr<window::Svg>> haloFrames;
+	DLXSvgBloomLight* light;
+	
+	//Subclassing SvgSwitch here even though it comes with baggage (sw = SvgWidget, shadow),
+	//as it would be a PITA to reimplement SvgSwitch::addFrame() and SvgSwitch::onChange().
+	DLXSvgSwitchBloomLight() {
+		SvgSwitch();
+
+		//We are repurposing the SvgSwitch's sw to hold our SvgLight.
+		//So we remove it from the scene (fb), request deletion of the previous widget,
+		//assign our Light to the sw, and add it back to the scene.
+		this->fb->removeChild(this->sw);
+		this->sw->requestDelete();
+
+		this->sw = new DLXSvgBloomLight();
+		this->fb->addChild(this->sw);
+		this->light = reinterpret_cast<DLXSvgBloomLight*>(this->sw);
+
+		//We don't want a shadow, because we're visually masquerading as part of the switch below.
+		this->fb->removeChild(this->shadow);
+		this->shadow->requestDelete();
+	}
+
+	void addHaloFrame(std::shared_ptr<window::Svg> svg) {
+		// From SvgSwitch::addFrame()
+
+		haloFrames.push_back(svg);
+		// If this is our first frame, automatically set SVG and size
+		if (!this->light->svgHalo) {
+			this->light->setHaloSvg(svg);
+		}
+	}
+
+	void onChange(const ChangeEvent& e) override {
+		engine::ParamQuantity* pq = getParamQuantity();
+		if (!frames.empty() && !haloFrames.empty() && pq) {
+			int index = (int) std::round(pq->getValue() - pq->getMinValue());
+			index = math::clamp(index, 0, (int) frames.size() - 1);
+			light->setSvg(frames[index]);
+			light->setHaloSvg(haloFrames[index]);
+			fb->dirty = true;
+		}
+		ParamWidget::onChange(e);
+	}
+};
+
+struct DLXPencilButtonLight : DLXSvgSwitchBloomLight {
+	DLXPencilButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
+	}
+};
+
+struct DLXScreenButtonLight : DLXSvgSwitchBloomLight {
+	DLXScreenButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
+	}
+};
+
+struct DLX1ButtonLight : DLXSvgSwitchBloomLight {
+	DLX1ButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
+	}
+};
+
+struct DLX2ButtonLight : DLXSvgSwitchBloomLight {
+	DLX2ButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
+	}
+};
+
+struct DLX3ButtonLight : DLXSvgSwitchBloomLight {
+	DLX3ButtonLight() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
+		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
 	}
 };
