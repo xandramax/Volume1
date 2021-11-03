@@ -802,9 +802,6 @@ struct TBacklight : TBase {
 	}
 
 	void drawHalo(const Widget::DrawArgs& args) override {
-		return;
-		// TODO: Design backlight halo
-
 		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
 		if (args.fb)
 			return;
@@ -817,16 +814,21 @@ struct TBacklight : TBase {
 		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
 			return;
 
-		math::Vec c = this->box.size.div(2);
-		float radius = std::min(this->box.size.x, this->box.size.y) / 2.0;
-		float oradius = radius + std::min(radius * 4.f, 15.f);
+		float ixradius = this->box.size.x / 8.f;
+		float iyradius = this->box.size.y / 8.f;
+		float oxradius = ixradius * 1.25f;
+		float oyradius = iyradius * 1.25f;
+		float x =  -oxradius;
+		float y = -oyradius;
+		float w = this->box.size.x + oxradius * 2.f;
+		float h = this->box.size.y + oyradius * 2.f;
 
 		nvgBeginPath(args.vg);
-		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * oradius, 2 * oradius);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, 3.675f);
 
 		NVGcolor icol = color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, 3.675f, h, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
