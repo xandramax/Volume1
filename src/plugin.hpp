@@ -1104,7 +1104,7 @@ struct DLXRingIndicator : DLXMultiLight {
 	}
 
 	void drawLayer(const DrawArgs& args, int layer) override {
-		if (layer == 1) {
+		if (layer == 1 && module) {
 			rotate(args);
 		}
 
