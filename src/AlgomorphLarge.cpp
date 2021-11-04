@@ -2354,12 +2354,19 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 
     addParam(createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight<DLXSmallLightKnob>>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
 
-    for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
-        DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + i);
-        if (i != module->knobMode) {
-            auxKlParam->hide();
+    if (module) {
+        for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
+            DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + i);
+            if (i != module->knobMode) {
+                auxKlParam->hide();
+            }
+            addParam(auxKlParam);
         }
-        addParam(auxKlParam);
+    }
+    else {
+            DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + 0);
+            addParam(auxKlParam);
+        }
     }
 
     addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 49.946)), module, AlgomorphLarge::PHASE_OUTPUT));
