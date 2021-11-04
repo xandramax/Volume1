@@ -1406,6 +1406,10 @@ struct DLXSvgLight : SvgWidget {
 
 struct DLXKnobLight : DLXSvgLight {
 	void drawHalo(const DrawArgs& args) override {
+		// Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		if (args.fb)
+			return;
+
 		const float halo = settings::haloBrightness;
 		if (halo == 0.f)
 			return;
