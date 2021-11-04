@@ -173,6 +173,15 @@ void Algomorph::onRandomize() {
     graphDirty = true;
 }
 
+void Algomorph::initializeAlgorithm(int scene) {
+    algoName[scene].reset();
+    horizontalMarks[scene].reset();
+    opsDisabled[scene].reset();
+    forcedCarriers[scene].reset();
+    updateDisplayAlgo(scene);
+    graphDirty = true;
+}
+
 float Algomorph::routeHorizontal(float sampleTime, float inputVoltage, int op, int c) {
     float connectionA = horizontalMarks[centerMorphScene[c]].test(op) * (1.f - relativeMorphMagnitude[c]);
     float connectionB = horizontalMarks[forwardMorphScene[c]].test(op) * (relativeMorphMagnitude[c]);
