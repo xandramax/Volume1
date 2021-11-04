@@ -616,13 +616,219 @@ struct SetClickFilterAction : history::ModuleAction {
 	}
 };
 
+template < typename MODULE >
+struct RandomizeCurrentAlgorithmAction : history::ModuleAction {
+	int oldAlgoName, oldHorizontalMarks, oldOpsDisabled, oldForcedCarriers;
+	int newAlgoName, newHorizontalMarks, newOpsDisabled, newForcedCarriers;
+	int scene;
+
+	RandomizeCurrentAlgorithmAction() {
+		name = "Delexander Algomorph randomize current algorithm";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->algoName[scene] = oldAlgoName;
+		m->horizontalMarks[scene] = oldHorizontalMarks;
+		m->opsDisabled[scene] = oldOpsDisabled;
+		m->forcedCarriers[scene] = oldForcedCarriers;
+		m->updateDisplayAlgo(scene);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->algoName[scene] = newAlgoName;
+		m->horizontalMarks[scene] = newHorizontalMarks;
+		m->opsDisabled[scene] = newOpsDisabled;
+		m->forcedCarriers[scene] = newForcedCarriers;
+		m->updateDisplayAlgo(scene);
+	}
+};
+
+template < typename MODULE >
+struct RandomizeAllAlgorithmsAction : history::ModuleAction {
+	int oldAlgorithm[3], oldHorizontalMarks[3], oldOpsDisabled[3], oldForcedCarriers[3];
+	int newAlgorithm[3], newHorizontalMarks[3], newOpsDisabled[3], newForcedCarriers[3];
+
+	RandomizeAllAlgorithmsAction() {
+		name = "Delexander Algomorph randomize all algorithms";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int scene = 0; scene < 3; scene++) {
+			m->algoName[scene] = oldAlgorithm[scene];
+			m->horizontalMarks[scene] = oldHorizontalMarks[scene];
+			m->opsDisabled[scene] = oldOpsDisabled[scene];
+			m->forcedCarriers[scene] = oldForcedCarriers[scene];
+			m->updateDisplayAlgo(scene);
+		}
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int scene = 0; scene < 3; scene++) {
+			m->algoName[scene] = newAlgorithm[scene];
+			m->horizontalMarks[scene] = newHorizontalMarks[scene];
+			m->opsDisabled[scene] = newOpsDisabled[scene];
+			m->forcedCarriers[scene] = newForcedCarriers[scene];
+			m->updateDisplayAlgo(scene);
+		}
+	}
+};
+
+template < typename MODULE >
+struct InitializeCurrentAlgorithmAction : history::ModuleAction {
+	int oldAlgoName, oldHorizontalMarks, oldOpsDisabled, oldForcedCarriers, scene;
+
+	InitializeCurrentAlgorithmAction() {
+		name = "Delexander Algomorph initialize current algorithm";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->algoName[scene] = oldAlgoName;
+		m->horizontalMarks[scene] = oldHorizontalMarks;
+		m->opsDisabled[scene] = oldOpsDisabled;
+		m->forcedCarriers[scene] = oldForcedCarriers;
+		m->updateDisplayAlgo(scene);
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		m->algoName[scene].reset();
+		m->horizontalMarks[scene].reset();
+		m->opsDisabled[scene].reset();
+		m->forcedCarriers[scene].reset();
+		m->updateDisplayAlgo(scene);
+	}
+};
+
+template < typename MODULE >
+struct InitializeAllAlgorithmsAction : history::ModuleAction {
+	int oldAlgorithm[3], oldHorizontalMarks[3], oldOpsDisabled[3], oldForcedCarriers[3];
+
+	InitializeAllAlgorithmsAction() {
+		name = "Delexander Algomorph initialize all algorithms";
+	}
+
+	void undo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int i = 0; i < 3; i++) {
+			m->algoName[i] = oldAlgorithm[i];
+			m->horizontalMarks[i] = oldHorizontalMarks[i];
+			m->opsDisabled[i] = oldOpsDisabled[i];
+			m->forcedCarriers[i] = oldForcedCarriers[i];
+			m->updateDisplayAlgo(i);
+		}
+	}
+
+	void redo() override {
+		app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		MODULE* m = dynamic_cast<MODULE*>(mw->module);
+		assert(m);
+		for (int i = 0; i < 3; i++) {
+			m->algoName[i].reset();
+			m->horizontalMarks[i].reset();
+			m->opsDisabled[i].reset();
+			m->forcedCarriers[i].reset();
+			m->updateDisplayAlgo(i);
+		}
+	}
+};
+
+template <class MODULE>
+struct InitializeCurrentAlgorithmItem : MenuItem {
+	MODULE* module;
+
+	void onAction(const event::Action &e) override {
+		int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
+
+		// History
+		InitializeCurrentAlgorithmAction<MODULE>* h = new InitializeCurrentAlgorithmAction<MODULE>;
+		h->moduleId = module->id;
+		h->scene = scene;
+		h->oldAlgoName = module->algoName[scene].to_ullong();
+		h->oldHorizontalMarks = module->horizontalMarks[scene].to_ullong();
+		h->oldForcedCarriers = module->forcedCarriers[scene].to_ullong();
+		h->oldOpsDisabled = module->opsDisabled[scene].to_ullong();
+
+		module->initializeAlgorithm(scene);
+		module->graphDirty = true;
+
+		APP->history->push(h);
+	}
+};
+
+template <class MODULE>
+struct InitializeAllAlgorithmsItem : MenuItem {
+	MODULE* module;
+
+	void onAction(const event::Action &e) override {
+		// History
+		InitializeAllAlgorithmsAction<MODULE>* h = new InitializeAllAlgorithmsAction<MODULE>;
+		h->moduleId = module->id;
+		for (int scene = 0; scene < 3; scene++) {
+			h->oldAlgorithm[scene] = module->algoName[scene].to_ullong();
+			h->oldHorizontalMarks[scene] = module->horizontalMarks[scene].to_ullong();
+			h->oldForcedCarriers[scene] = module->forcedCarriers[scene].to_ullong();
+			h->oldOpsDisabled[scene] = module->opsDisabled[scene].to_ullong();
+			module->initializeAlgorithm(scene);
+		}
+
+		module->graphDirty = true;
+
+		APP->history->push(h);
+	}
+};
+
 template <class MODULE>
 struct RandomizeCurrentAlgorithmItem : MenuItem {
 	MODULE* module;
 
 	void onAction(const event::Action &e) override {
+		int scene = module->configMode ? module->configScene : module->centerMorphScene[0];
+
+		RandomizeCurrentAlgorithmAction<MODULE>* h = new RandomizeCurrentAlgorithmAction<MODULE>();
+		h->moduleId = module->id;
+		h->scene = scene;
+
+		h->oldAlgoName = module->algoName[scene].to_ullong();
+		h->oldHorizontalMarks = module->horizontalMarks[scene].to_ullong();
+		h->oldOpsDisabled = module->opsDisabled[scene].to_ullong();
+		h->oldForcedCarriers = module->forcedCarriers[scene].to_ullong();
+		
 		module->randomizeAlgorithm(module->configMode ? module->configScene : module->centerMorphScene[0]);
 		module->graphDirty = true;
+
+		h->newAlgoName = module->algoName[scene].to_ullong();
+		h->newHorizontalMarks = module->horizontalMarks[scene].to_ullong();
+		h->newOpsDisabled = module->opsDisabled[scene].to_ullong();
+		h->newForcedCarriers = module->forcedCarriers[scene].to_ullong();
+
+		APP->history->push(h);
 	}
 };
 
@@ -631,9 +837,29 @@ struct RandomizeAllAlgorithmsItem : MenuItem {
 	MODULE* module;
 
 	void onAction(const event::Action &e) override {
+		// History
+		RandomizeAllAlgorithmsAction<MODULE>* h = new RandomizeAllAlgorithmsAction<MODULE>();
+		h->moduleId = module->id;
+		for (int scene = 0; scene < 3; scene++) {
+			h->oldAlgorithm[scene] = module->algoName[scene].to_ullong();
+			h->oldHorizontalMarks[scene] = module->horizontalMarks[scene].to_ullong();
+			h->oldOpsDisabled[scene] = module->opsDisabled[scene].to_ullong();
+			h->oldForcedCarriers[scene] = module->forcedCarriers[scene].to_ullong();
+			module->randomizeAlgorithm(scene);
+		}
+
 		for (int scene = 0; scene < 3; scene++)
 			module->randomizeAlgorithm(scene);
 		module->graphDirty = true;
+
+		for (int scene = 0; scene < 3; scene++) {
+			h->newAlgorithm[scene] = module->algoName[scene].to_ullong();
+			h->newHorizontalMarks[scene] = module->horizontalMarks[scene].to_ullong();
+			h->newOpsDisabled[scene] = module->opsDisabled[scene].to_ullong();
+			h->newForcedCarriers[scene] = module->forcedCarriers[scene].to_ullong();
+		}
+
+		APP->history->push(h);
 	}
 };
 
@@ -777,9 +1003,14 @@ struct ConnectionBgWidget : OpaqueWidget {
 	}
 
 	void createContextMenu() {
+		std::string currentAlgo = std::to_string((module->configMode ? module->configScene : module->centerMorphScene[0]) + 1);
+
 		ui::Menu* menu = createMenu();
-		menu->addChild(construct<RandomizeCurrentAlgorithmItem<MODULE>>(&MenuItem::text, "Randomize Algorithm " +  std::to_string((module->configMode ? module->configScene : module->centerMorphScene[0]) + 1), &RandomizeCurrentAlgorithmItem<MODULE>::module, module));
+		menu->addChild(construct<RandomizeCurrentAlgorithmItem<MODULE>>(&MenuItem::text, "Randomize Algorithm " +  currentAlgo, &RandomizeCurrentAlgorithmItem<MODULE>::module, module));
+		menu->addChild(construct<InitializeCurrentAlgorithmItem<MODULE>>(&MenuItem::text, "Initialize Algorithm " + currentAlgo, &InitializeCurrentAlgorithmItem<MODULE>::module, module));
+		menu->addChild(new ui::MenuSeparator());
 		menu->addChild(construct<RandomizeAllAlgorithmsItem<MODULE>>(&MenuItem::text, "Randomize All Algorithms", &RandomizeAllAlgorithmsItem<MODULE>::module, module));
+		menu->addChild(construct<InitializeAllAlgorithmsItem<MODULE>>(&MenuItem::text, "Initialize All Algorithms", &InitializeAllAlgorithmsItem<MODULE>::module, module));
 	}
 };
 
