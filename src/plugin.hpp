@@ -976,27 +976,6 @@ struct Line {
 };
 
 template <class MODULE>
-struct RandomizeCurrentAlgorithmItem : MenuItem {
-	MODULE* module;
-
-	void onAction(const event::Action &e) override {
-		module->randomizeAlgorithm(module->configMode ? module->configScene : module->centerMorphScene[0]);
-		module->graphDirty = true;
-	}
-};
-
-template <class MODULE>
-struct RandomizeAllAlgorithmsItem : MenuItem {
-	MODULE* module;
-
-	void onAction(const event::Action &e) override {
-		for (int scene = 0; scene < 3; scene++)
-			module->randomizeAlgorithm(scene);
-		module->graphDirty = true;
-	}
-};
-
-template <class MODULE>
 struct ConnectionBgWidget : OpaqueWidget {
 	MODULE* module;
 	std::vector<Line> lines;
