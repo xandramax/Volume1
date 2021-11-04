@@ -496,7 +496,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             }
         }
 
-        //Check for config mode destination selection and forced operator designation
+        //Check for config mode destination selection and forced carrier designation
         if (configMode) {
             if (configOp > -1) {
                 if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
@@ -820,11 +820,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     INDICATOR_BRIGHTNESS
                     : 0.f, args.sampleTime * lightDivider.getDivision());
             }
-            // Duplicate??
-            // for (int i = 0; i < 3; i++) {
-            //     //Set purple component to off
-            //     lights[SCENE_LIGHTS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
-            // }
             //Set op/mod lights
             for (int i = 0; i < 4; i++) {
                 if (horizontalMarks[configScene].test(i)) {
@@ -1113,8 +1108,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             }
             else {
                 for (int i = 0; i < 4; i++) {
+                    brightness = getInputBrightness(OPERATOR_INPUTS + i);
                     for (int j = 0; j < 3; j++) {
-                        brightness = getOutputBrightness(MODULATOR_OUTPUTS + threeToFour[i][j]);
                         float morphBrightness = 0.f;
                         if (algoName[centerMorphScene[0]].test(i * 3 + j)) {
                             if (!horizontalMarks[centerMorphScene[0]].test(i))
