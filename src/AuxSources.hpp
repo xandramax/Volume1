@@ -123,7 +123,7 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Wildcard Mod Gain"};
 
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
-                                                                    1.f,
+                                                                    0.f,
                                                                     1.f,
                                                                     0.f,
                                                                     0.f,
