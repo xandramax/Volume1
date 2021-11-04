@@ -1265,17 +1265,17 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], 8.862, module, AlgomorphSmall::SCENE_LIGHTS + 0, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], 8.862, module, AlgomorphSmall::SCENE_INDICATORS + 0, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
         addChild(createSvgSwitchLightCentered<DLX1Light>(SceneButtonCenters[0], module, AlgomorphSmall::ONE_LIGHT, AlgomorphSmall::SCENE_BUTTONS + 0));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], 8.862, module, AlgomorphSmall::SCENE_LIGHTS + 3, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], 8.862, module, AlgomorphSmall::SCENE_INDICATORS + 3, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
         addChild(createSvgSwitchLightCentered<DLX2Light>(SceneButtonCenters[1], module, AlgomorphSmall::TWO_LIGHT, AlgomorphSmall::SCENE_BUTTONS + 1));
 
         addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], 8.862, module, AlgomorphSmall::SCENE_LIGHTS + 6, .75));
         addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], 8.862, module, AlgomorphSmall::SCENE_INDICATORS + 6, .75));
-        addParam(createParamCentered<DLXTL1105B>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
+        addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
         addChild(createSvgSwitchLightCentered<DLX3Light>(SceneButtonCenters[2], module, AlgomorphSmall::THREE_LIGHT, AlgomorphSmall::SCENE_BUTTONS + 2));
 
         addInput(createInput<DLXPortPoly>(mm2px(Vec(3.915, 48.976)), module, AlgomorphSmall::WILDCARD_INPUT));
