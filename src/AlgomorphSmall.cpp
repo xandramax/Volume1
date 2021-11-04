@@ -782,8 +782,8 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
             }
             else {
                 for (int i = 0; i < 4; i++) {
-                    brightness = getOutputBrightness(MODULATOR_OUTPUTS + i);
                     for (int j = 0; j < 3; j++) {
+                        brightness = getOutputBrightness(MODULATOR_OUTPUTS + threeToFour[i][j]);
                         float morphBrightness = 0.f;
                         if (algoName[centerMorphScene[0]].test(i * 3 + j)) {
                             if (!horizontalMarks[centerMorphScene[0]].test(i))
