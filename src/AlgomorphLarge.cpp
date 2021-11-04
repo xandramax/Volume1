@@ -2366,7 +2366,6 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     else {
             DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + 0);
             addParam(auxKlParam);
-        }
     }
 
     addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 49.946)), module, AlgomorphLarge::PHASE_OUTPUT));
