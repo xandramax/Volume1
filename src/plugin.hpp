@@ -880,23 +880,14 @@ struct DLXPortG : SvgPort {
 	}
 };
 
-struct DLXPurpleButton : rack::app::SvgSwitch {
-	int state = 0;
-
-	DLXPurpleButton() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_0c.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_Button_1c.svg")));
-	}
-};
-
-struct DLXTL1105B : rack::app::SvgSwitch {
-	int state = 0;
-
-	DLXTL1105B() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_TL1105B_1.svg")));
+struct DLXPurpleButton : TL1105 {
+	void draw(const Widget::DrawArgs& args) override {
+		TL1105::draw(args);
+		nvgBeginPath(args.vg);
+		nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+		nvgCircle(args.vg, this->box.size.x / 2.f, this->box.size.x / 2.f, this->box.size.x / 2.f);
+		nvgFillColor(args.vg, nvgRGB(0x0D, 0x00, 0x16));
+		nvgFill(args.vg);
 	}
 };
 
