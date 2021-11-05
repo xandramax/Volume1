@@ -1,8 +1,10 @@
-#include "plugin.hpp"
 #include "Algomorph.hpp"
-#include "AlgomorphDisplayWidget.hpp"
-#include "GraphStructure.hpp"
-#include <bitset>
+#include "AlgomorphHistory.hpp"
+#include <rack.hpp>
+using rack::random::uniform;
+using rack::event::Action;
+using rack::ui::Menu;
+
 
 Algomorph::Algomorph() {
     for (int i = 0; i < 4; i++) {
@@ -99,18 +101,18 @@ void Algomorph::randomizeAlgorithm(int scene) {
         if (modeB) {
             bool disabled = true;           //Initialize
             forcedCarriers[scene].set(op, false);   //Initialize
-            if (random::uniform() > .5f) {
+            if (uniform() > .5f) {
                 forcedCarriers[scene].set(op, true);
                 noCarrier = false;
                 disabled = false;
             }
-            if (random::uniform() > .5f) {
+            if (uniform() > .5f) {
                 horizontalMarks[scene].set(op, true);
                 //Do not set algoName, because the operator is not disabled
                 disabled = false;
             }
             for (int mod = 0; mod < 3; mod++) {
-                if (random::uniform() > .5f) {
+                if (uniform() > .5f) {
                     algoName[scene].set(op * 3 + mod, true);
                     disabled = false;
                 }
@@ -120,13 +122,13 @@ void Algomorph::randomizeAlgorithm(int scene) {
         }
         else {
             forcedCarriers[scene].set(op, false);   //Disable
-            if (random::uniform() > .5f) {  //If true, operator is a carrier
+            if (uniform() > .5f) {  //If true, operator is a carrier
                 noCarrier = false;
                 for (int mod = 0; mod < 3; mod++)
                     algoName[scene].set(op * 3 + mod, false);
             }
             else {
-                if (random::uniform() > .5) {   //If true, operator is disabled
+                if (uniform() > .5) {   //If true, operator is disabled
                     horizontalMarks[scene].set(op, true);
                     algoName[scene].set(12 + op, true);
                     for (int mod = 0; mod < 3; mod++ )
@@ -134,7 +136,7 @@ void Algomorph::randomizeAlgorithm(int scene) {
                 }
                 else {
                     for (int mod = 0; mod < 3; mod++) {
-                        if (random::uniform() > .5f)
+                        if (uniform() > .5f)
                             algoName[scene].set(op * 3 + mod, true);    
                     }
                 }
@@ -142,9 +144,9 @@ void Algomorph::randomizeAlgorithm(int scene) {
         }
     }
     if (noCarrier) {
-        int shortStraw = std::floor(random::uniform() * 4);
+        int shortStraw = std::floor(uniform() * 4);
         while (shortStraw == 4)
-            shortStraw = std::floor(random::uniform() * 4);
+            shortStraw = std::floor(uniform() * 4);
         if (modeB) {
             forcedCarriers[scene].set(shortStraw, true);
             algoName[scene].set(12 + shortStraw, false);
@@ -419,9 +421,9 @@ void Algomorph::toggleForcedCarrier(int scene, int op) {
 
 /// Menu Items
 
-void AlgomorphWidget::ToggleModeBItem::onAction(const event::Action &e) {
+void AlgomorphWidget::ToggleModeBItem::onAction(const Action &e) {
     // History
-    ToggleModeBAction<Algomorph>* h = new ToggleModeBAction<Algomorph>;
+    ToggleModeBAction* h = new ToggleModeBAction;
     h->moduleId = module->id;
 
     module->toggleModeB();
@@ -431,9 +433,9 @@ void AlgomorphWidget::ToggleModeBItem::onAction(const event::Action &e) {
     module->graphDirty = true;
 }
 
-void AlgomorphWidget::RingMorphItem::onAction(const event::Action &e) {
+void AlgomorphWidget::RingMorphItem::onAction(const Action &e) {
     // History
-    ToggleRingMorphAction<Algomorph>* h = new ToggleRingMorphAction<Algomorph>;
+    ToggleRingMorphAction* h = new ToggleRingMorphAction;
     h->moduleId = module->id;
 
     module->ringMorph ^= true;
@@ -441,9 +443,9 @@ void AlgomorphWidget::RingMorphItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphWidget::ExitConfigItem::onAction(const event::Action &e) {
+void AlgomorphWidget::ExitConfigItem::onAction(const Action &e) {
     // History
-    ToggleExitConfigOnConnectAction<Algomorph>* h = new ToggleExitConfigOnConnectAction<Algomorph>;
+    ToggleExitConfigOnConnectAction* h = new ToggleExitConfigOnConnectAction;
     h->moduleId = module->id;
 
     module->exitConfigOnConnect ^= true;
@@ -451,9 +453,9 @@ void AlgomorphWidget::ExitConfigItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphWidget::ClickFilterEnabledItem::onAction(const event::Action &e) {
+void AlgomorphWidget::ClickFilterEnabledItem::onAction(const Action &e) {
     // History
-    ToggleClickFilterAction<Algomorph>* h = new ToggleClickFilterAction<Algomorph>;
+    ToggleClickFilterAction* h = new ToggleClickFilterAction;
     h->moduleId = module->id;
 
     module->clickFilterEnabled ^= true;
@@ -461,9 +463,9 @@ void AlgomorphWidget::ClickFilterEnabledItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphWidget::VULightsItem::onAction(const event::Action &e) {
+void AlgomorphWidget::VULightsItem::onAction(const Action &e) {
     // History
-    ToggleVULightsAction<Algomorph>* h = new ToggleVULightsAction<Algomorph>;
+    ToggleVULightsAction* h = new ToggleVULightsAction;
     h->moduleId = module->id;
 
     module->vuLights ^= true;
@@ -471,9 +473,9 @@ void AlgomorphWidget::VULightsItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphWidget::GlowingInkItem::onAction(const event::Action &e) {
+void AlgomorphWidget::GlowingInkItem::onAction(const Action &e) {
     // History
-    ToggleGlowingInkAction<Algomorph>* h = new ToggleGlowingInkAction<Algomorph>;
+    ToggleGlowingInkAction* h = new ToggleGlowingInkAction;
     h->moduleId = module->id;
 
     module->glowingInk ^= true;
@@ -481,7 +483,7 @@ void AlgomorphWidget::GlowingInkItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphWidget::DebugItem::onAction(const event::Action &e) {
+void AlgomorphWidget::DebugItem::onAction(const Action &e) {
     module->debug ^= true;
 }
 
@@ -493,8 +495,8 @@ Menu* AlgomorphWidget::ClickFilterMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphWidget::ClickFilterMenuItem::createClickFilterMenu(Algomorph* module, ui::Menu* menu) {
-    ClickFilterEnabledItem *clickFilterEnabledItem = createMenuItem<ClickFilterEnabledItem>("Disable Click Filter", CHECKMARK(!module->clickFilterEnabled));
+void AlgomorphWidget::ClickFilterMenuItem::createClickFilterMenu(Algomorph* module, rack::ui::Menu* menu) {
+    ClickFilterEnabledItem *clickFilterEnabledItem = rack::createMenuItem<ClickFilterEnabledItem>("Disable Click Filter", CHECKMARK(!module->clickFilterEnabled));
     clickFilterEnabledItem->module = module;
     menu->addChild(clickFilterEnabledItem);
     ClickFilterSlider* clickFilterSlider = new ClickFilterSlider(module);
@@ -507,7 +509,7 @@ AlgomorphWidget::ClickFilterSlider::ClickFilterQuantity::ClickFilterQuantity(Alg
 }
 
 void AlgomorphWidget::ClickFilterSlider::ClickFilterQuantity::setValue(float value) {
-    v = clamp(value, 16.f, 7500.f);
+    v = rack::math::clamp(value, 16.f, 7500.f);
     module->clickFilterSlew = v;
 }
 
@@ -534,7 +536,7 @@ float AlgomorphWidget::ClickFilterSlider::ClickFilterQuantity::getDisplayValue()
 
 std::string AlgomorphWidget::ClickFilterSlider::ClickFilterQuantity::getDisplayValueString() {
     int i = int(getValue());
-    return string::f("%i", i);
+    return rack::string::f("%i", i);
 }
 
 void AlgomorphWidget::ClickFilterSlider::ClickFilterQuantity::setDisplayValue(float displayValue) {
@@ -558,20 +560,20 @@ AlgomorphWidget::ClickFilterSlider::~ClickFilterSlider() {
     delete quantity;
 }
 
-void AlgomorphWidget::ClickFilterSlider::onDragStart(const event::DragStart& e) {
+void AlgomorphWidget::ClickFilterSlider::onDragStart(const rack::event::DragStart& e) {
     if (quantity)
         oldValue = quantity->getValue();
 }
 
-void AlgomorphWidget::ClickFilterSlider::onDragMove(const event::DragMove& e) {
+void AlgomorphWidget::ClickFilterSlider::onDragMove(const rack::event::DragMove& e) {
     if (quantity)
         quantity->moveScaledValue(0.002f * e.mouseDelta.x);
 }
 
-void AlgomorphWidget::ClickFilterSlider::onDragEnd(const event::DragEnd& e) {
+void AlgomorphWidget::ClickFilterSlider::onDragEnd(const rack::event::DragEnd& e) {
     if (quantity) {
         // History
-        SetClickFilterAction<Algomorph>* h = new SetClickFilterAction<Algomorph>;
+        SetClickFilterAction* h = new SetClickFilterAction;
         h->moduleId = module->id;
         h->oldSlew = oldValue;
         h->newSlew = quantity->getValue();
@@ -588,10 +590,10 @@ Menu* AlgomorphWidget::AudioSettingsMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphWidget::AudioSettingsMenuItem::createAudioSettingsMenu(Algomorph* module, ui::Menu* menu) {
-    menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
+void AlgomorphWidget::AudioSettingsMenuItem::createAudioSettingsMenu(Algomorph* module, rack::ui::Menu* menu) {
+    menu->addChild(rack::construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
-    RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+    RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
     ringMorphItem->module = module;
     menu->addChild(ringMorphItem);
 }

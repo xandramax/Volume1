@@ -1,7 +1,9 @@
-#include "AlgomorphLarge.hpp"
 #include "AlgomorphAuxInputPanelWidget.hpp"
+#include "AlgomorphLarge.hpp"
+#include "plugin.hpp" // For rack::pluginInstance
 
-AlgomorphAuxInputPanelWidget::AlgoDrawWidget::AlgoDrawWidget(AlgomorphLarge* module) {
+
+AlgomorphAuxInputPanelWidget::AlgoDrawWidget::AlgoDrawWidget(rack::engine::Module* module) {
     this->module = module;
     fontPath = "res/MiriamLibre-Regular.ttf"; 
 }
@@ -10,7 +12,7 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
     if (!module) return;
 
     if (layer == 1) {
-        font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
+        font = APP->window->loadFont(rack::asset::plugin(pluginInstance, fontPath));
         
         // Draw labels
         nvgBeginPath(args.vg);
@@ -19,7 +21,7 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
         nvgFillColor(args.vg, textColor);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
         for (int i = 0; i < 5; i++) {
-            std::string label = module->auxInput[i]->shortLabel;
+            std::string label = reinterpret_cast<AlgomorphLarge*>(module)->auxInput[i]->shortLabel;
             char const *id = label.c_str();
             nvgTextBounds(args.vg, LABEL_BOUNDS[i].x, LABEL_BOUNDS[i].y, id, id + label.length(), textBounds);
             float xOffset = 1.15f;//(textBounds[2] - textBounds[0]) / 2.f;
@@ -31,17 +33,17 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
     TransparentWidget::drawLayer(args, layer);
 }
 
-AlgomorphAuxInputPanelWidget::AlgomorphAuxInputPanelWidget(AlgomorphLarge* module) {
+AlgomorphAuxInputPanelWidget::AlgomorphAuxInputPanelWidget(rack::engine::Module* module) {
     this->module = module;
     w = new AlgoDrawWidget(module);
     addChild(w);
 }
 
 void AlgomorphAuxInputPanelWidget::step() {
-    if (module && module->auxPanelDirty) {
+    if (module && reinterpret_cast<AlgomorphLarge*>(module)->auxPanelDirty) {
         FramebufferWidget::dirty = true;
         w->box.size = box.size;
-        module->auxPanelDirty = false;
+        reinterpret_cast<AlgomorphLarge*>(module)->auxPanelDirty = false;
     }
     FramebufferWidget::step();
 }

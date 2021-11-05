@@ -1,8 +1,8 @@
-#include "Algomorph.hpp"
-#include "GraphStructure.hpp"
+#pragma once
 
-struct AlgomorphDisplayWidget : FramebufferWidget {
-    struct AlgoDrawWidget : LightWidget {
+
+struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
+    struct AlgoDrawWidget : rack::app::LightWidget {
         Algomorph* module;
         alGraph graphs[3];
         int translatedAlgoName[3] = {0};
@@ -11,7 +11,7 @@ struct AlgomorphDisplayWidget : FramebufferWidget {
         float morph = 0.f;
         bool firstRun = true;
         std::string fontPath = "";
-        std::shared_ptr<Font> font;
+        std::shared_ptr<rack::window::Font> font;
         float textBounds[4];
 
         float xOrigin = box.size.x / 2.f;

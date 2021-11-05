@@ -1,7 +1,13 @@
 #pragma once
-#include "plugin.hpp"
+#include "Components.hpp" // For RingIndicatorRotor
+#include "plugin.hpp" // For constants
+#include <bitset>
+#include <rack.hpp>
+using rack::event::Action;
+using rack::ui::Menu;
 
-struct Algomorph : Module {
+
+struct Algomorph : rack::engine::Module {
     float morph[16] = {0.f};                                            // Range -1.f -> 1.f
     float relativeMorphMagnitude[16] = { morph[0] };                    // Range 0.f -> 1.f
     rack::dsp::RingBuffer<float, 4> displayMorph;
@@ -24,27 +30,27 @@ struct Algomorph : Module {
                                                                         // If a disabled operator is a mod destination, set it to enabled here
     std::bitset<16> tempDisplayAlgoName = 0;
 
-    dsp::ClockDivider cvDivider;
-    dsp::BooleanTrigger sceneButtonTrigger[3];
-    dsp::BooleanTrigger editTrigger;
-    dsp::BooleanTrigger operatorTrigger[4];
-    dsp::BooleanTrigger modulatorTrigger[4];
+    rack::dsp::ClockDivider cvDivider;
+    rack::dsp::BooleanTrigger sceneButtonTrigger[3];
+    rack::dsp::BooleanTrigger editTrigger;
+    rack::dsp::BooleanTrigger operatorTrigger[4];
+    rack::dsp::BooleanTrigger modulatorTrigger[4];
 
     // [noRing/ring][op][mod][channel]
-    dsp::SlewLimiter modClickFilters[4][4][16];
-    dsp::SlewLimiter modRingClickFilters[4][4][16];
+    rack::dsp::SlewLimiter modClickFilters[4][4][16];
+    rack::dsp::SlewLimiter modRingClickFilters[4][4][16];
     float modClickGain[4][4][16] = {{{0.f}}};
     float modRingClickGain[4][4][16] = {{{0.f}}};
 
     // [op][channel]
-    dsp::SlewLimiter sumClickFilters[4][16];
-    dsp::SlewLimiter sumRingClickFilters[4][16];
+    rack::dsp::SlewLimiter sumClickFilters[4][16];
+    rack::dsp::SlewLimiter sumRingClickFilters[4][16];
     float sumClickGain[4][16] = {{0.f}};
     float sumRingClickGain[4][16] = {{0.f}};
 
-    dsp::ClockDivider clickFilterDivider;
+    rack::dsp::ClockDivider clickFilterDivider;
 
-    dsp::ClockDivider lightDivider;
+    rack::dsp::ClockDivider lightDivider;
     float sceneBrightnesses[3][12][3] = {{{}}};
     float blinkTimer = BLINK_INTERVAL;
     bool blinkStatus = true;
@@ -109,51 +115,51 @@ struct Algomorph : Module {
     void toggleForcedCarrier(int scene, int op);
 };
 
-struct AlgomorphWidget : ModuleWidget {
+struct AlgomorphWidget : rack::app::ModuleWidget {
     // Menu items
-    struct AlgomorphMenuItem : MenuItem {
+    struct AlgomorphMenuItem : rack::ui::MenuItem {
         Algomorph* module;
     };
     struct ToggleModeBItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct RingMorphItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct ExitConfigItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct ClickFilterEnabledItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct VULightsItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct GlowingInkItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct DebugItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct SaveVisualSettingsItem : AlgomorphMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
 
     // Sub-menus
     struct AudioSettingsMenuItem : AlgomorphMenuItem {
-        void createAudioSettingsMenu(Algomorph* module, ui::Menu* menu);
+        void createAudioSettingsMenu(Algomorph* module, Menu* menu);
         Menu* createChildMenu() override;
     };
     struct ClickFilterMenuItem : AlgomorphMenuItem {
-        void createClickFilterMenu(Algomorph* module, ui::Menu* menu);
+        void createClickFilterMenu(Algomorph* module, Menu* menu);
         Menu* createChildMenu() override;
     };
 
-    struct ClickFilterSlider : ui::Slider {
+    struct ClickFilterSlider : rack::ui::Slider {
         float oldValue = DEF_CLICK_FILTER_SLEW;
         Algomorph* module;
 
-        struct ClickFilterQuantity : Quantity {
+        struct ClickFilterQuantity : rack::Quantity {
             Algomorph* module;
             float v = -1.f;
 
@@ -172,8 +178,8 @@ struct AlgomorphWidget : ModuleWidget {
 
         ClickFilterSlider(Algomorph* m);
         ~ClickFilterSlider();
-        void onDragStart(const event::DragStart& e) override;
-        void onDragMove(const event::DragMove& e) override;
-        void onDragEnd(const event::DragEnd& e) override;
+        void onDragStart(const rack::event::DragStart& e) override;
+        void onDragMove(const rack::event::DragMove& e) override;
+        void onDragEnd(const rack::event::DragEnd& e) override;
     };
 };

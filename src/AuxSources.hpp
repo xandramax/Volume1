@@ -1,7 +1,8 @@
 #pragma once
-#include "rack.hpp"
+#include <rack.hpp>
 
-/// Auxiliary input and knob
+
+// AuxInput and AuxKnob modes:
 
 struct AuxSourceModes {
 	static const int MORPH = 0;
@@ -11,6 +12,8 @@ struct AuxSourceModes {
 	static const int TRIPLE_MORPH = 4;
 	static const int NUM_MODES = 5;
 };
+
+// AuxInput-only modes:
 
 struct AuxInputModes : AuxSourceModes {
 	static const int SUM_ATTEN = 		AuxSourceModes::NUM_MODES;
@@ -95,6 +98,8 @@ static const std::string AuxInputModeDescriptions[AuxInputModes::NUM_MODES] = {	
 																				"2x CV input for attenuating/inverting Morph modulation",
 																				"3x CV input for attenuating/inverting Morph modulation" };
 
+// AuxKnob-only modes:
+
 struct AuxKnobModes : AuxSourceModes {
 	static const int SUM_GAIN = 			AuxSourceModes::NUM_MODES;
 	static const int MOD_GAIN = 			AuxSourceModes::NUM_MODES + 1;
@@ -122,6 +127,7 @@ static const std::string AuxKnobModeLabels[AuxKnobModes::NUM_MODES] = {		"Morph"
 																			"Morph CV Triple Ampliverter",
 																			"Wildcard Mod Gain"};
 
+//Order must match above
 static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
                                                                     0.f,
                                                                     1.f,
@@ -137,9 +143,10 @@ static constexpr float DEF_KNOB_VALUES[AuxKnobModes::NUM_MODES] = {	0.f,
 																	1.f	};
 
 
-template < typename MODULE >
+// AuxInput Structure
+
 struct AuxInput {
-    MODULE* module;
+    rack::engine::Module* module;
     int id = -1;
     bool connected = false;
     int channels = 0;
@@ -167,7 +174,7 @@ struct AuxInput {
     rack::dsp::SlewLimiter wildcardSumClickFilter[16];
     float wildcardSumClickGain = 0.f;
 
-    AuxInput(int id, MODULE* module);
+    AuxInput(int id, rack::engine::Module* module);
     void resetVoltages();
     void setMode(int newMode);
     void unsetAuxMode(int oldMode);
@@ -176,33 +183,13 @@ struct AuxInput {
 	void updateLabel();
 };
 
-template < typename MODULE >
+// Dynamic port tooltips
+
 struct AuxInputInfo : rack::engine::PortInfo {
-	AuxInput<MODULE>* input;
+	AuxInput* input;
 
-	std::string getName() override {
-		return this->input->label;
-	}
-
-	std::string getDescription() override {
-		return this->input->description;
-	}
+	std::string getName() override;
+	std::string getDescription() override;
 };
 
-//TODO move implementation to .cpp
-template < typename MODULE >
-AuxInputInfo<MODULE>* configAuxInput(int portId, AuxInput<MODULE>* input, MODULE* module) {
-	//From rack::engine::Module::configInput()
-	assert(portId < (int) module->inputs.size() && portId < (int) module->inputInfos.size());
-	if (module->inputInfos[portId])
-		delete module->inputInfos[portId];
-
-	AuxInputInfo<MODULE>* info = new AuxInputInfo<MODULE>();
-	info->module = module;
-	info->type = rack::engine::Port::INPUT;
-	info->portId = portId;
-	info->input = input;
-	info->name = "";
-	module->inputInfos[portId] = info;
-	return info;
-}; 
+AuxInputInfo* configAuxInput(int portId, AuxInput* input, rack::engine::Module* module);

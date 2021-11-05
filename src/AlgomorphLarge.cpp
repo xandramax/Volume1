@@ -1,9 +1,20 @@
-#include "plugin.hpp"
 #include "AlgomorphLarge.hpp"
+#include "AlgomorphHistory.hpp"
 #include "AlgomorphDisplayWidget.hpp"
 #include "AlgomorphAuxInputPanelWidget.hpp"
-#include "AuxSources.hpp"
-#include <bitset>
+#include "ConnectionBgWidget.hpp"
+#include "Components.hpp"
+#include "plugin.hpp" // For constants
+#include <rack.hpp>
+using rack::math::crossfade;
+using rack::event::Action;
+using rack::ModuleWidget;
+using rack::ui::Menu;
+using rack::ui::MenuLabel;
+using rack::ui::MenuSeparator;
+using rack::construct;
+using rack::RACK_GRID_WIDTH;
+
 
 AlgomorphLarge::AlgomorphLarge() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -50,10 +61,10 @@ AlgomorphLarge::AlgomorphLarge() {
     configOutput(PHASE_OUTPUT, "Phase");
 
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-        auxInput[auxIndex] = new AuxInput<AlgomorphLarge>(auxIndex, this);
+        auxInput[auxIndex] = new AuxInput(auxIndex, this);
     
     for (int i = 0; i < NUM_AUX_INPUTS; i++)
-        configAuxInput<AlgomorphLarge>(AUX_INPUTS + i, auxInput[i], this);
+        configAuxInput(AUX_INPUTS + i, auxInput[i], this);
 
     runClickFilter.setRiseFall(400.f, 400.f);
 
@@ -205,7 +216,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     if (baseScene != i) {
                         //Switch scene
                         // History
-                        AlgorithmSceneChangeAction<Algomorph>* h = new AlgorithmSceneChangeAction<Algomorph>;
+                        AlgorithmSceneChangeAction* h = new AlgorithmSceneChangeAction;
                         h->moduleId = this->id;
                         h->oldScene = baseScene;
                         h->newScene = i;
@@ -274,7 +285,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         phaseOut[0] = -1 + (phaseOut[0] - 1.f);
     while (phaseOut[0] < -1.f)
         phaseOut[0] = 1.f + (phaseOut[0] + 1.f);
-    phaseOut[0] = rescale(phaseOut[0], -1.f, 1.f, phaseMin, phaseMax);
+    phaseOut[0] = rack::math::rescale(phaseOut[0], -1.f, 1.f, phaseMin, phaseMax);
     if (morph[0] != newMorph0) {
         morph[0] = newMorph0;
         graphDirty = true;
@@ -300,7 +311,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             phaseOut[c] = -1 + (phaseOut[c] - 1.f);
         while (phaseOut[c] < -1.f)
             phaseOut[c] = 1.f + (phaseOut[c] + 1.f);
-        phaseOut[c] = rescale(phaseOut[c], -1.f, 1.f, phaseMin, phaseMax);
+        phaseOut[c] = rack::math::rescale(phaseOut[c], -1.f, 1.f, phaseMin, phaseMax);
     }
 
     // Update relative morph magnitude and scenes
@@ -501,7 +512,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             if (configOp > -1) {
                 if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
                     // History
-                    AlgorithmHorizontalChangeAction<Algomorph>* h = new AlgorithmHorizontalChangeAction<Algomorph>;
+                    AlgorithmHorizontalChangeAction* h = new AlgorithmHorizontalChangeAction;
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = configOp;
@@ -521,7 +532,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     for (int mod = 0; mod < 3; mod++) {
                         if (modulatorTrigger[threeToFour[configOp][mod]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][mod]].getValue() > 0.f)) {
                             // History
-                            AlgorithmDiagonalChangeAction<Algomorph>* h = new AlgorithmDiagonalChangeAction<Algomorph>;
+                            AlgorithmDiagonalChangeAction* h = new AlgorithmDiagonalChangeAction;
                             h->moduleId = this->id;
                             h->scene = configScene;
                             h->op = configOp;
@@ -546,7 +557,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 for (int i = 0; i < 4; i++) {
                     if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
                         // History
-                        AlgorithmForcedCarrierChangeAction<Algomorph>* h = new AlgorithmForcedCarrierChangeAction<Algomorph>;
+                        AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
                         h->moduleId = this->id;
                         h->scene = configScene;
                         h->op = i;
@@ -575,7 +586,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     configMode = true;
                     
                     // History
-                    AlgorithmForcedCarrierChangeAction<Algomorph>* h = new AlgorithmForcedCarrierChangeAction<Algomorph>;
+                    AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = i;
@@ -1224,7 +1235,7 @@ void AlgomorphLarge::scaleAuxSumAttenCV(int channels) {
     for (int c = 0; c < channels; c++) {
         scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] = 1.f;
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-            scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] *= clamp(auxInput[auxIndex]->voltage[AuxInputModes::SUM_ATTEN][c] / 5.f, -1.f, 1.f);
+            scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c] *= rack::math::clamp(auxInput[auxIndex]->voltage[AuxInputModes::SUM_ATTEN][c] / 5.f, -1.f, 1.f);
     }
 }
 
@@ -1232,7 +1243,7 @@ void AlgomorphLarge::scaleAuxModAttenCV(int channels) {
     for (int c = 0; c < channels; c++) {
         scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] = 1.f;
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-            scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] *= clamp(auxInput[auxIndex]->voltage[AuxInputModes::MOD_ATTEN][c] / 5.f, -1.f, 1.f);
+            scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c] *= rack::math::clamp(auxInput[auxIndex]->voltage[AuxInputModes::MOD_ATTEN][c] / 5.f, -1.f, 1.f);
     }    
 }
 
@@ -1241,7 +1252,7 @@ void AlgomorphLarge::scaleAuxClickFilterCV(int channels) {
         //+/-5V = 0V-2V
         scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c] = 1.f;
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-            scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c] *= (clamp(auxInput[auxIndex]->voltage[AuxInputModes::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
+            scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c] *= (rack::math::clamp(auxInput[auxIndex]->voltage[AuxInputModes::CLICK_FILTER][c] / 5.f, -1.f, 1.f) + 1.001f);
     }    
 }
 
@@ -1708,130 +1719,6 @@ float AlgomorphLarge::getOutputBrightness(int portID) {
         return 1.f;
 }
 
-///// Aux Input
-
-template < typename MODULE >
-AuxInput<MODULE>::AuxInput(int id, MODULE* module) {
-    this->id = id;
-    this->module = module;
-    defVoltage[AuxInputModes::MOD_ATTEN] = 5.f;
-    defVoltage[AuxInputModes::SUM_ATTEN] = 5.f;
-    defVoltage[AuxInputModes::MORPH_ATTEN] = 5.f;
-    defVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN] = FIVE_D_TWO;
-    defVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN] = FIVE_D_THREE;
-    resetVoltages();
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::resetVoltages() {
-    for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
-        for (int j = 0; j < 16; j++) {
-            voltage[i][j] = defVoltage[i];
-        }
-    }
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::setMode(int newMode) {
-    activeModes++;
-
-    if (activeModes > 1 && !allowMultipleModes) {
-        module->unsetAuxMode(id, lastSetMode);
-    }
-
-    modeIsActive[newMode] = true;
-    lastSetMode = newMode;
-    module->auxModeFlags[newMode] = true;
-
-    updateLabel();
-
-    module->auxPanelDirty = true;
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::unsetAuxMode(int oldMode) {
-    if (modeIsActive[oldMode]) {
-        activeModes--;
-        
-        modeIsActive[oldMode] = false;
-
-        updateLabel();
-    }
-
-    module->auxPanelDirty = true;
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::clearAuxModes() {
-    for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++)
-        module->unsetAuxMode(id, mode);
-
-    activeModes = 0;
-
-    module->auxPanelDirty = true;
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::updateVoltage() {
-    for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++) {
-        if (modeIsActive[mode]) {
-            for (int c = 0; c < channels; c++)
-                voltage[mode][c] = module->inputs[MODULE::AUX_INPUTS + id].getPolyVoltage(c);
-        }
-    }
-}
-
-template < typename MODULE >
-void AuxInput<MODULE>::updateLabel() {
-    int displayCode;
-
-    if (activeModes == 1)
-        displayCode = lastSetMode;
-    else if (activeModes == 0)
-        displayCode = -1;
-    else if (activeModes > 1) {
-        displayCode = -2;
-    }
-    else {
-        //Error
-        displayCode = -3;
-    }
-
-    //Update label
-    if (displayCode > -1) {
-        shortLabel = AuxInputModeShortLabels[displayCode];
-        label = AuxInputModeLabels[displayCode];
-        description = AuxInputModeDescriptions[displayCode];
-    }
-    else if (displayCode == -2) {
-        shortLabel = "MULTI";
-        label = "Multimode Input";
-        std::string description = "Multimode: ";
-        int count = 0;
-        for (int i = 0; i < AuxInputModes::NUM_MODES; i++) {
-            if (modeIsActive[i]) {
-                count++;
-                description += AuxInputModeLabels[i];
-            }
-            if (count < activeModes)
-                description += ", ";
-            else
-                break;
-        }
-    }
-    else if (displayCode == -1)
-    {
-        shortLabel = "NONE";
-        label = "Unassigned";
-        description = "No mode is assigned";
-    }
-    else
-    {
-        shortLabel = "ERROR";
-        label = "Error";
-        description = "I am error";
-    }
-}
 
 ///// Panel Widget
 
@@ -1842,7 +1729,7 @@ AlgomorphLargeWidget::DisallowMultipleModesAction::DisallowMultipleModesAction()
 }
 
 void AlgomorphLargeWidget::DisallowMultipleModesAction::undo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -1859,7 +1746,7 @@ void AlgomorphLargeWidget::DisallowMultipleModesAction::undo() {
 }
 
 void AlgomorphLargeWidget::DisallowMultipleModesAction::redo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -1877,7 +1764,7 @@ void AlgomorphLargeWidget::DisallowMultipleModesAction::redo() {
     m->auxInput[auxIndex]->allowMultipleModes = false;
 }
 
-void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const Action &e) {
     if (module->auxInput[auxIndex]->allowMultipleModes) {
         // History
         DisallowMultipleModesAction* h = new DisallowMultipleModesAction;
@@ -1903,7 +1790,7 @@ void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const event::Action 
     }
     else {
         // History
-        AllowMultipleModesAction<AlgomorphLarge>* h = new AllowMultipleModesAction<AlgomorphLarge>;
+        AllowMultipleModesAction* h = new AllowMultipleModesAction;
         h->moduleId = module->id;
         h->auxIndex = auxIndex;
 
@@ -1919,7 +1806,7 @@ Menu* AlgomorphLargeWidget::AllowMultipleModesMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, ui::Menu* menu) {
+void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, Menu* menu) {
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 1", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 2", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 3", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
@@ -1935,7 +1822,7 @@ Menu* AlgomorphLargeWidget::WildcardInputMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
     for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::WILDCARD_SUM; i++)
         menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
 }
@@ -1948,14 +1835,14 @@ Menu* AlgomorphLargeWidget::ShadowInputMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
     for (int i = AuxInputModes::SHADOW; i <= AuxInputModes::SHADOW + 3; i++)
         menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
 }
 
-void AlgomorphLargeWidget::ResetOnRunItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::ResetOnRunItem::onAction(const Action &e) {
     // History
-    ToggleResetOnRunAction<AlgomorphLarge>* h = new ToggleResetOnRunAction<AlgomorphLarge>;
+    ToggleResetOnRunAction* h = new ToggleResetOnRunAction;
     h->moduleId = module->id;
 
     module->resetOnRun ^= true;
@@ -1963,9 +1850,9 @@ void AlgomorphLargeWidget::ResetOnRunItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphLargeWidget::RunSilencerItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::RunSilencerItem::onAction(const Action &e) {
     // History
-    ToggleRunSilencerAction<AlgomorphLarge>* h = new ToggleRunSilencerAction<AlgomorphLarge>;
+    ToggleRunSilencerAction* h = new ToggleRunSilencerAction;
     h->moduleId = module->id;
 
     module->runSilencer ^= true;
@@ -1973,10 +1860,10 @@ void AlgomorphLargeWidget::RunSilencerItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphLargeWidget::AuxModeItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
     if (module->auxInput[auxIndex]->modeIsActive[mode]) {
         // History
-        AuxInputUnsetAction<AlgomorphLarge>* h = new AuxInputUnsetAction<AlgomorphLarge>;
+        AuxInputUnsetAction* h = new AuxInputUnsetAction;
         h->moduleId = module->id;
         h->auxIndex = auxIndex;
         h->mode = mode;
@@ -1992,7 +1879,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const event::Action &e) {
     else {
         if (module->auxInput[auxIndex]->allowMultipleModes) {
             // History
-            AuxInputSetAction<AlgomorphLarge>* h = new AuxInputSetAction<AlgomorphLarge>;
+            AuxInputSetAction* h = new AuxInputSetAction;
             h->moduleId = module->id;
             h->auxIndex = auxIndex;
             h->mode = mode;
@@ -2004,7 +1891,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const event::Action &e) {
         }
         else {
             // History
-            AuxInputSwitchAction<AlgomorphLarge>* h = new AuxInputSwitchAction<AlgomorphLarge>;
+            AuxInputSwitchAction* h = new AuxInputSwitchAction;
             h->moduleId = module->id;
             h->auxIndex = auxIndex;
             h->oldMode = module->auxInput[auxIndex]->lastSetMode;
@@ -2028,7 +1915,7 @@ Menu* AlgomorphLargeWidget::AuxInputModeMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio Input"));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_MOD], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_MOD]), &AuxModeItem::mode, AuxInputModes::WILDCARD_MOD));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_SUM], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_SUM]), &AuxModeItem::mode, AuxInputModes::WILDCARD_SUM));
@@ -2056,7 +1943,7 @@ void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(Algomorp
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::CLICK_FILTER], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::CLICK_FILTER]), &AuxModeItem::mode, AuxInputModes::CLICK_FILTER));
 }
 
-void AlgomorphLargeWidget::SaveAuxInputSettingsItem::onAction(const event::Action& e) {
+void AlgomorphLargeWidget::SaveAuxInputSettingsItem::onAction(const Action& e) {
     for (int auxIndex = 0; auxIndex < module->NUM_AUX_INPUTS; auxIndex++){
         pluginSettings.allowMultipleModes[auxIndex] = module->auxInput[auxIndex]->allowMultipleModes;
         for (int mode = 0; mode < AuxInputModes::NUM_MODES; mode++)
@@ -2065,9 +1952,9 @@ void AlgomorphLargeWidget::SaveAuxInputSettingsItem::onAction(const event::Actio
     pluginSettings.saveToJson();
 }
 
-void AlgomorphLargeWidget::ResetSceneItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::ResetSceneItem::onAction(const Action &e) {
     // History
-    ResetSceneAction<AlgomorphLarge>* h = new ResetSceneAction<AlgomorphLarge>;
+    ResetSceneAction* h = new ResetSceneAction;
     h->moduleId = module->id;
     h->oldResetScene = module->resetScene;
     h->newResetScene = scene;
@@ -2083,7 +1970,7 @@ Menu* AlgomorphLargeWidget::ResetSceneMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::ResetSceneMenuItem::createResetSceneMenu(AlgomorphLarge* module, ui::Menu* menu) {
+void AlgomorphLargeWidget::ResetSceneMenuItem::createResetSceneMenu(AlgomorphLarge* module, Menu* menu) {
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "3", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 2), &ResetSceneItem::scene, 2));
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "2", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 1), &ResetSceneItem::scene, 1));
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "1", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 0), &ResetSceneItem::scene, 0));
@@ -2095,9 +1982,9 @@ Menu* AlgomorphLargeWidget::AudioSettingsMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::WildModSumItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::WildModSumItem::onAction(const Action &e) {
     // History
-    ToggleWildModSumAction<AlgomorphLarge>* h = new ToggleWildModSumAction<AlgomorphLarge>;
+    ToggleWildModSumAction* h = new ToggleWildModSumAction;
     h->moduleId = module->id;
 
     module->wildModIsSummed ^= true;
@@ -2105,25 +1992,25 @@ void AlgomorphLargeWidget::WildModSumItem::onAction(const event::Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(AlgomorphLarge* module, ui::Menu* menu) {
+void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(AlgomorphLarge* module, Menu* menu) {
     menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
-    RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+    RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
     ringMorphItem->module = module;
     menu->addChild(ringMorphItem);
 
-    RunSilencerItem *runSilencerItem = createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
+    RunSilencerItem *runSilencerItem = rack::createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
     runSilencerItem->module = module;
     menu->addChild(runSilencerItem);
 
-    WildModSumItem *wildModSumItem = createMenuItem<WildModSumItem>("Add Wildcard Mod to Mod Sum", CHECKMARK(module->wildModIsSummed));
+    WildModSumItem *wildModSumItem = rack::createMenuItem<WildModSumItem>("Add Wildcard Mod to Mod Sum", CHECKMARK(module->wildModIsSummed));
     wildModSumItem->module = module;
     menu->addChild(wildModSumItem);
 }
 
-void AlgomorphLargeWidget::CCWScenesItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::CCWScenesItem::onAction(const Action &e) {
     // History
-    ToggleCCWSceneSelectionAction<AlgomorphLarge>* h = new ToggleCCWSceneSelectionAction<AlgomorphLarge>;
+    ToggleCCWSceneSelectionAction* h = new ToggleCCWSceneSelectionAction;
     h->moduleId = module->id;
 
     module->ccwSceneSelection ^= true;
@@ -2137,27 +2024,27 @@ Menu* AlgomorphLargeWidget::InteractionSettingsMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSettingsMenu(AlgomorphLarge* module, ui::Menu* menu) {
+void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSettingsMenu(AlgomorphLarge* module, Menu* menu) {
     menu->addChild(construct<AllowMultipleModesMenuItem>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[0]->allowMultipleModes ? "AUX 1" : "") + std::string(module->auxInput[1]->allowMultipleModes ? " AUX 2" : "") + std::string(module->auxInput[2]->allowMultipleModes ? " AUX 3" : "") + std::string(module->auxInput[3]->allowMultipleModes ? " AUX 4" : "") + std::string(module->auxInput[4]->allowMultipleModes ? " AUX 5" : "") + ((!module->auxInput[0]->allowMultipleModes && !module->auxInput[1]->allowMultipleModes && !module->auxInput[2]->allowMultipleModes && !module->auxInput[3]->allowMultipleModes && !module->auxInput[4]->allowMultipleModes) ? "None" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem::module, module));
 
     menu->addChild(construct<ResetSceneMenuItem>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem::module, module));
     
-    CCWScenesItem *ccwScenesItem = createMenuItem<CCWScenesItem>("Reverse clock sequence", CHECKMARK(!module->ccwSceneSelection));
+    CCWScenesItem *ccwScenesItem = rack::createMenuItem<CCWScenesItem>("Reverse clock sequence", CHECKMARK(!module->ccwSceneSelection));
     ccwScenesItem->module = module;
     menu->addChild(ccwScenesItem);
             
-    ResetOnRunItem *resetOnRunItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+    ResetOnRunItem *resetOnRunItem = rack::createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
     resetOnRunItem->module = module;
     menu->addChild(resetOnRunItem);
 
-    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
+    ExitConfigItem *exitConfigItem = rack::createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
     exitConfigItem->module = module;
     menu->addChild(exitConfigItem);
 }
 
-void AlgomorphLargeWidget::KnobModeItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::KnobModeItem::onAction(const Action &e) {
     // History
-    KnobModeAction<AlgomorphLarge>* h = new KnobModeAction<AlgomorphLarge>;
+    KnobModeAction* h = new KnobModeAction;
     h->moduleId = module->id;
     h->oldKnobMode = module->knobMode;
     h->newKnobMode = mode;
@@ -2174,7 +2061,7 @@ AlgomorphLargeWidget::ResetKnobsAction::ResetKnobsAction() {
 }
 
 void AlgomorphLargeWidget::ResetKnobsAction::undo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2183,7 +2070,7 @@ void AlgomorphLargeWidget::ResetKnobsAction::undo() {
 }
 
 void AlgomorphLargeWidget::ResetKnobsAction::redo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2191,7 +2078,7 @@ void AlgomorphLargeWidget::ResetKnobsAction::redo() {
         m->params[AlgomorphLarge::AUX_KNOBS + i].setValue(DEF_KNOB_VALUES[i]);
 }
 
-void AlgomorphLargeWidget::ResetKnobsItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::ResetKnobsItem::onAction(const Action &e) {
     // History
     ResetKnobsAction* h = new ResetKnobsAction;
     h->moduleId = module->id;
@@ -2209,7 +2096,7 @@ AlgomorphLargeWidget::TogglePhaseOutRangeAction::TogglePhaseOutRangeAction() {
 }
 
 void AlgomorphLargeWidget::TogglePhaseOutRangeAction::undo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2224,7 +2111,7 @@ void AlgomorphLargeWidget::TogglePhaseOutRangeAction::undo() {
 }
 
 void AlgomorphLargeWidget::TogglePhaseOutRangeAction::redo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2238,7 +2125,7 @@ void AlgomorphLargeWidget::TogglePhaseOutRangeAction::redo() {
     }
 }
 
-void AlgomorphLargeWidget::PhaseOutRangeItem::onAction(const event::Action &e) {
+void AlgomorphLargeWidget::PhaseOutRangeItem::onAction(const Action &e) {
     // History
     TogglePhaseOutRangeAction* h = new TogglePhaseOutRangeAction;
     h->moduleId = module->id;
@@ -2281,17 +2168,17 @@ Menu* AlgomorphLargeWidget::VisualSettingsMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(AlgomorphLarge* module, ui::Menu* menu) {  
-    VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(AlgomorphLarge* module, Menu* menu) {  
+    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
     vuLightsItem->module = module;
     menu->addChild(vuLightsItem);
     
-    // GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
+    // GlowingInkItem *glowingInkItem = rack::createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
     // glowingInkItem->module = module;
     // menu->addChild(glowingInkItem);
 }
 
-void AlgomorphLargeWidget::SaveVisualSettingsItem::onAction(const event::Action& e) {
+void AlgomorphLargeWidget::SaveVisualSettingsItem::onAction(const Action& e) {
     // pluginSettings.glowingInkDefault = module->glowingInk;
     pluginSettings.vuLightsDefault = module->vuLights;
     pluginSettings.saveToJson();
@@ -2301,16 +2188,16 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     setModule(module);
     
     if (module)
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge.svg")));
+        setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge.svg")));
     else
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_ModuleBrowser.svg")));
+        setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge_ModuleBrowser.svg")));
 
-    addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-    addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
-    addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
-    addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
-    // ink = createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
+    // ink = rack::createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
     // if (!module->glowingInk)
     //     ink->hide();
     // addChild(ink);
@@ -2328,35 +2215,35 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addChild(auxPanelWidget);
 
     addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON_RING_LIGHT));
-    addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
-    addChild(createParamCentered<DLXScreenButtonLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
+    addParam(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
+    addChild(rack::createParamCentered<DLXScreenButtonLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_LIGHTS + 0));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_INDICATORS + 0));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
-    addChild(createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
+    addChild(rack::createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_LIGHTS + 3));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_INDICATORS + 3));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
-    addChild(createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
+    addChild(rack::createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_LIGHTS + 6));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_INDICATORS + 6));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
-    addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
+    addChild(rack::createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
 
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 20.566)), module, AlgomorphLarge::AUX_INPUTS + 0));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 32.669)), module, AlgomorphLarge::AUX_INPUTS + 1));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 45.147)), module, AlgomorphLarge::AUX_INPUTS + 2));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 57.624)), module, AlgomorphLarge::AUX_INPUTS + 3));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 70.101)), module, AlgomorphLarge::AUX_INPUTS + 4));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 20.566)), module, AlgomorphLarge::AUX_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 32.669)), module, AlgomorphLarge::AUX_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 45.147)), module, AlgomorphLarge::AUX_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 57.624)), module, AlgomorphLarge::AUX_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 70.101)), module, AlgomorphLarge::AUX_INPUTS + 4));
 
-    addParam(createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight<DLXSmallLightKnob>>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
+    addParam(rack::createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight<DLXSmallLightKnob>>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
 
     if (module) {
         for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
-            DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + i);
+            DLXSmallLightKnob* auxKlParam = rack::createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + i);
             if (i != module->knobMode) {
                 auxKlParam->hide();
             }
@@ -2364,29 +2251,29 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
         }
     }
     else {
-            DLXSmallLightKnob* auxKlParam = createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + 0);
+            DLXSmallLightKnob* auxKlParam = rack::createParamCentered<DLXSmallLightKnob>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::AUX_KNOBS + 0);
             addParam(auxKlParam);
     }
 
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 49.946)), module, AlgomorphLarge::PHASE_OUTPUT));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 59.967)), module, AlgomorphLarge::MODULATOR_SUM_OUTPUT));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 70.101)), module, AlgomorphLarge::CARRIER_SUM_OUTPUT));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 49.946)), module, AlgomorphLarge::PHASE_OUTPUT));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 59.967)), module, AlgomorphLarge::MODULATOR_SUM_OUTPUT));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 70.101)), module, AlgomorphLarge::CARRIER_SUM_OUTPUT));
 
     addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_LIGHT));
-    addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
-    addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
+    addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
+    addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
 
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 82.137)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 92.157)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 102.179)), module, AlgomorphLarge::OPERATOR_INPUTS + 1));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 112.199)), module, AlgomorphLarge::OPERATOR_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 82.137)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 92.157)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 102.179)), module, AlgomorphLarge::OPERATOR_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 112.199)), module, AlgomorphLarge::OPERATOR_INPUTS + 0));
 
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 82.137)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 3));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 92.157)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 2));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 102.179)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 1));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 112.199)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 0));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 82.137)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 3));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 92.157)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 2));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 102.179)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 1));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 112.199)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 0));
 
-    ConnectionBgWidget<AlgomorphLarge>* connectionBgWidget = new ConnectionBgWidget<AlgomorphLarge>(OpButtonCenters, ModButtonCenters, module);
+    ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters, module);
     connectionBgWidget->box.pos = OpButtonCenters[3];
     connectionBgWidget->box.size = ModButtonCenters[0].minus(OpButtonCenters[3]);
     addChild(connectionBgWidget);
@@ -2443,15 +2330,15 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], module, AlgomorphLarge::MODULATOR_LIGHTS + 3));
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], module, AlgomorphLarge::MODULATOR_LIGHTS + 0));
 
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[3], module, AlgomorphLarge::OPERATOR_BUTTONS + 3));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[2], module, AlgomorphLarge::OPERATOR_BUTTONS + 2));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[1], module, AlgomorphLarge::OPERATOR_BUTTONS + 1));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[0], module, AlgomorphLarge::OPERATOR_BUTTONS + 0));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[3], module, AlgomorphLarge::OPERATOR_BUTTONS + 3));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[2], module, AlgomorphLarge::OPERATOR_BUTTONS + 2));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[1], module, AlgomorphLarge::OPERATOR_BUTTONS + 1));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[0], module, AlgomorphLarge::OPERATOR_BUTTONS + 0));
 
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[3], module, AlgomorphLarge::MODULATOR_BUTTONS + 3));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[2], module, AlgomorphLarge::MODULATOR_BUTTONS + 2));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[1], module, AlgomorphLarge::MODULATOR_BUTTONS + 1));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[0], module, AlgomorphLarge::MODULATOR_BUTTONS + 0));        
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[3], module, AlgomorphLarge::MODULATOR_BUTTONS + 3));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[2], module, AlgomorphLarge::MODULATOR_BUTTONS + 2));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[1], module, AlgomorphLarge::MODULATOR_BUTTONS + 1));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[0], module, AlgomorphLarge::MODULATOR_BUTTONS + 0));        
 }
 
 void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
@@ -2480,24 +2367,24 @@ void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
 
     menu->addChild(new MenuSeparator());
     
-    ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
+    ToggleModeBItem *toggleModeBItem = rack::createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
     menu->addChild(toggleModeBItem);
     
     menu->addChild(new MenuSeparator());
     
-    SaveAuxInputSettingsItem *saveAuxInputSettingsItem = createMenuItem<SaveAuxInputSettingsItem>("Save AUX input modes as default", CHECKMARK(module->auxInputsAreDefault()));
+    SaveAuxInputSettingsItem *saveAuxInputSettingsItem = rack::createMenuItem<SaveAuxInputSettingsItem>("Save AUX input modes as default", CHECKMARK(module->auxInputsAreDefault()));
     saveAuxInputSettingsItem->module = module;
     menu->addChild(saveAuxInputSettingsItem);
     
-    // SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
-    SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->vuLights == pluginSettings.vuLightsDefault));
+    // SaveVisualSettingsItem *saveVisualSettingsItem = rack::createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    SaveVisualSettingsItem *saveVisualSettingsItem = rack::createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->vuLights == pluginSettings.vuLightsDefault));
     saveVisualSettingsItem->module = module;
     menu->addChild(saveVisualSettingsItem);
 
     // menu->addChild(new MenuSeparator());
 
-    // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+    // DebugItem *debugItem = rack::createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
     // debugItem->module = module;
     // menu->addChild(debugItem);
 }

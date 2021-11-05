@@ -1,7 +1,12 @@
 #pragma once
-#include "plugin.hpp"
 #include "Algomorph.hpp"
 #include "AuxSources.hpp"
+#include <rack.hpp>
+using rack::history::ModuleAction;
+using rack::event::Action;
+using rack::ui::Menu;
+using rack::window::mm2px;
+
 
 struct AlgomorphLarge : Algomorph {
     static constexpr int NUM_AUX_INPUTS = 5;
@@ -50,18 +55,18 @@ struct AlgomorphLarge : Algomorph {
         NUM_LIGHTS
     };
 
-    AuxInput<AlgomorphLarge>* auxInput[NUM_AUX_INPUTS];
+    AuxInput* auxInput[NUM_AUX_INPUTS];
     float scaledAuxVoltage[AuxInputModes::NUM_MODES][16] = {{0.f}};    // store processed (ready-to-use) values from auxInput[]->voltage[][], so they can be remembered if necessary
     bool auxModeFlags[AuxInputModes::NUM_MODES] = {false};             // a mode's flag is set to true when any aux input has that mode active
     int knobMode = AuxKnobModes::MORPH_ATTEN;
 
     float morphPhase[16] = {0.f};                               // Range -5.f -> 5.f or 0.f -> 10.f
 
-    dsp::SchmittTrigger sceneAdvCVTrigger;
-    dsp::SchmittTrigger resetCVTrigger;
+    rack::dsp::SchmittTrigger sceneAdvCVTrigger;
+    rack::dsp::SchmittTrigger resetCVTrigger;
     long clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * APP->engine->getSampleRate());
 
-    dsp::SlewLimiter runClickFilter;
+    rack::dsp::SlewLimiter runClickFilter;
     bool running = true;
 
     float phaseMin = 0.f;
@@ -140,7 +145,7 @@ struct AlgomorphLargeWidget : AlgomorphWidget {
                                                 {mm2px(45.278), mm2px(53.863)}  };
     int activeKnob = 0;
 
-    struct DisallowMultipleModesAction : history::ModuleAction {
+    struct DisallowMultipleModesAction : ModuleAction {
         int auxIndex, channels;
         bool multipleActive = false, enabled[AuxInputModes::NUM_MODES] = {false};
 
@@ -148,89 +153,89 @@ struct AlgomorphLargeWidget : AlgomorphWidget {
         void undo() override;
         void redo() override;
     };
-    struct ResetKnobsAction : history::ModuleAction {
+    struct ResetKnobsAction : ModuleAction {
         float knobValue[AuxKnobModes::NUM_MODES] = {0.f};
 
         ResetKnobsAction();
         void undo() override;
         void redo() override;
     };
-    struct TogglePhaseOutRangeAction : history::ModuleAction {
+    struct TogglePhaseOutRangeAction : ModuleAction {
         TogglePhaseOutRangeAction();
         void undo() override;
         void redo() override;
     };
 
-    struct AlgomorphLargeMenuItem : MenuItem {
+    struct AlgomorphLargeMenuItem : rack::ui::MenuItem {
         AlgomorphLarge* module;
         int auxIndex = -1, mode = -1;
     };
     struct AuxModeItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct ResetOnRunItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct RunSilencerItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct CCWScenesItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct WildModSumItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct AllowMultipleModesItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct SaveAuxInputSettingsItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct KnobModeItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct ResetKnobsItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct PhaseOutRangeItem : AlgomorphLargeMenuItem {
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
     struct ResetSceneItem : AlgomorphLargeMenuItem {
         int scene;
 
-        void onAction(const event::Action &e) override;
+        void onAction(const Action &e) override;
     };
 
     struct WildcardInputMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createWildcardInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex);
+        void createWildcardInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
     };
     struct ShadowInputMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createShadowInputMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex);
+        void createShadowInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
     };
     struct AuxInputModeMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createAuxInputModeMenu(AlgomorphLarge* module, ui::Menu* menu, int auxIndex);
+        void createAuxInputModeMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
     };
     struct AllowMultipleModesMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createAllowMultipleModesMenu(AlgomorphLarge* module, ui::Menu* menu);
+        void createAllowMultipleModesMenu(AlgomorphLarge* module, Menu* menu);
     };
     struct ResetSceneMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createResetSceneMenu(AlgomorphLarge* module, ui::Menu* menu);
+        void createResetSceneMenu(AlgomorphLarge* module, Menu* menu);
     };
     struct AudioSettingsMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createAudioSettingsMenu(AlgomorphLarge* module, ui::Menu* menu);
+        void createAudioSettingsMenu(AlgomorphLarge* module, Menu* menu);
     };
     struct InteractionSettingsMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createInteractionSettingsMenu(AlgomorphLarge* module, ui::Menu* menu);
+        void createInteractionSettingsMenu(AlgomorphLarge* module, Menu* menu);
     };
     struct VisualSettingsMenuItem : AlgomorphLargeMenuItem {
-        void createVisualSettingsMenu(AlgomorphLarge* module, ui::Menu* menu);
+        void createVisualSettingsMenu(AlgomorphLarge* module, Menu* menu);
         Menu* createChildMenu() override;
     };
     struct KnobModeMenuItem : AlgomorphLargeMenuItem {
