@@ -1,5 +1,7 @@
-#include "plugin.hpp"
 #include "GraphStructure.hpp"
+#include "plugin.hpp" // For GRAPH_DATA
+#include <rack.hpp>
+
 
 bool Edge::operator> (const Edge &e) {
     return curveLength > e.curveLength; 

@@ -1,7 +1,7 @@
 #pragma once
 #include <rack.hpp>
-
 using rack::math::Vec;
+
 
 struct GraphData {
     static const float xNodeData[1980][9];

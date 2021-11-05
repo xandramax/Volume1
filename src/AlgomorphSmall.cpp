@@ -1,7 +1,16 @@
-#include "plugin.hpp"
 #include "AlgomorphSmall.hpp"
+#include "AlgomorphHistory.hpp"
+#include "Components.hpp"
 #include "AlgomorphDisplayWidget.hpp"
-#include <bitset>
+#include "ConnectionBgWidget.hpp"
+#include "plugin.hpp" // For constants
+#include <rack.hpp>
+using rack::math::crossfade;
+using rack::construct;
+using rack::app::RACK_GRID_WIDTH;
+using rack::ui::MenuSeparator;
+using rack::ui::MenuLabel;
+
 
 AlgomorphSmall::AlgomorphSmall() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -76,7 +85,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                     if (baseScene != i) {
                         //Switch scene
                         // History
-                        AlgorithmSceneChangeAction<Algomorph>* h = new AlgorithmSceneChangeAction<Algomorph>;
+                        AlgorithmSceneChangeAction* h = new AlgorithmSceneChangeAction;
                         h->moduleId = this->id;
                         h->oldScene = baseScene;
                         h->newScene = i;
@@ -319,7 +328,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
             if (configOp > -1) {
                 if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
                     // History
-                    AlgorithmHorizontalChangeAction<Algomorph>* h = new AlgorithmHorizontalChangeAction<Algomorph>;
+                    AlgorithmHorizontalChangeAction* h = new AlgorithmHorizontalChangeAction;
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = configOp;
@@ -339,7 +348,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                     for (int mod = 0; mod < 3; mod++) {
                         if (modulatorTrigger[threeToFour[configOp][mod]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][mod]].getValue() > 0.f)) {
                             // History
-                            AlgorithmDiagonalChangeAction<Algomorph>* h = new AlgorithmDiagonalChangeAction<Algomorph>;
+                            AlgorithmDiagonalChangeAction* h = new AlgorithmDiagonalChangeAction;
                             h->moduleId = this->id;
                             h->scene = configScene;
                             h->op = configOp;
@@ -364,7 +373,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                 for (int i = 0; i < 4; i++) {
                     if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
                         // History
-                        AlgorithmForcedCarrierChangeAction<Algomorph>* h = new AlgorithmForcedCarrierChangeAction<Algomorph>;
+                        AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
                         h->moduleId = this->id;
                         h->scene = configScene;
                         h->op = i;
@@ -393,7 +402,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                     configMode = true;
                     
                     // History
-                    AlgorithmForcedCarrierChangeAction<Algomorph>* h = new AlgorithmForcedCarrierChangeAction<Algomorph>;
+                    AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = i;
@@ -1168,7 +1177,7 @@ AlgomorphSmallWidget::SetGainLevelAction::SetGainLevelAction() {
 }
 
 void AlgomorphSmallWidget::SetGainLevelAction::undo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1177,7 +1186,7 @@ void AlgomorphSmallWidget::SetGainLevelAction::undo() {
 }
 
 void AlgomorphSmallWidget::SetGainLevelAction::redo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1185,7 +1194,7 @@ void AlgomorphSmallWidget::SetGainLevelAction::redo() {
     m->gain = newGain;
 }
 
-void AlgomorphSmallWidget::SetGainLevelItem::onAction(const event::Action &e) {
+void AlgomorphSmallWidget::SetGainLevelItem::onAction(const rack::event::Action &e) {
     if (module->gain != gain) {
         // History
         SetGainLevelAction* h = new SetGainLevelAction;
@@ -1205,7 +1214,7 @@ Menu* AlgomorphSmallWidget::GainLevelMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(AlgomorphSmall* module, ui::Menu* menu) {
+void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(AlgomorphSmall* module, rack::ui::Menu* menu) {
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+12 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 4.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 4.f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+6 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 2.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 2.f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "0 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 1.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 1.f)));
@@ -1218,7 +1227,7 @@ AlgomorphSmallWidget::SetMorphMultAction::SetMorphMultAction() {
 }
 
 void AlgomorphSmallWidget::SetMorphMultAction::undo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1227,7 +1236,7 @@ void AlgomorphSmallWidget::SetMorphMultAction::undo() {
 }
 
 void AlgomorphSmallWidget::SetMorphMultAction::redo() {
-    app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1235,7 +1244,7 @@ void AlgomorphSmallWidget::SetMorphMultAction::redo() {
     m->morphMult[inputId] = newMult;
 }
 
-void AlgomorphSmallWidget::SetMorphMultItem::onAction(const event::Action &e) {
+void AlgomorphSmallWidget::SetMorphMultItem::onAction(const rack::event::Action &e) {
     if (module->morphMult[inputId] != morphMult) {
         // History
         SetMorphMultAction* h = new SetMorphMultAction;
@@ -1255,7 +1264,7 @@ Menu* AlgomorphSmallWidget::MorphMultMenuItem::createChildMenu() {
     return menu;
 }
 
-void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall* module, ui::Menu* menu, int inputId) {
+void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall* module, rack::ui::Menu* menu, int inputId) {
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "1x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 1.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 1.f)));
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "2x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 2.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 2.f)));
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "3x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 3.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 3.f)));
@@ -1264,14 +1273,14 @@ void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall
 AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     setModule(module);
     
-    setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall.svg")));
+    setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphSmall.svg")));
 
-    addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-    addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
-    addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
-    addChild(createWidget<ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
+    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
-    // ink = createWidget<AlgomorphSmallGlowingInk>(Vec(0,0));
+    // ink = rack::createWidget<AlgomorphSmallGlowingInk>(Vec(0,0));
     // if (!module->glowingInk)
     //     ink->hide();
     // addChild(ink);
@@ -1284,52 +1293,52 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(6.252, 11.631)), mm2px(Vec(38.295, 31.590)), module, AlgomorphSmall::DISPLAY_BACKLIGHT));
 
     addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON_RING_LIGHT));
-    addParam(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
-    addChild(createParamCentered<DLXScreenButtonLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
+    addParam(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
+    addChild(rack::createParamCentered<DLXScreenButtonLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_LIGHTS + 0));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_INDICATORS + 0));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
-    addChild(createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
+    addChild(rack::createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_BUTTONS + 0));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_LIGHTS + 3));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_INDICATORS + 3));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
-    addChild(createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
+    addChild(rack::createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphSmall::SCENE_BUTTONS + 1));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_LIGHTS + 6));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_INDICATORS + 6));
-    addParam(createParamCentered<TL1105>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
-    addChild(createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
+    addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
+    addChild(rack::createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphSmall::SCENE_BUTTONS + 2));
 
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.415, 52.477)), module, AlgomorphSmall::WILDCARD_INPUT));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.415, 52.477)), module, AlgomorphSmall::WILDCARD_INPUT));
 
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(9.687, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 0));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(41.012, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(9.687, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(41.012, 111.785)), module, AlgomorphSmall::MORPH_INPUTS + 1));
 
-    addParam(createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_KNOB));
+    addParam(rack::createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_KNOB));
 
-    DLXMediumLightKnob* morphAttenLightKnob = createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
+    DLXMediumLightKnob* morphAttenLightKnob = rack::createParamCentered<DLXMediumLightKnob>(mm2px(Vec(25.412, 112.356)), module, AlgomorphSmall::MORPH_ATTEN_KNOB);
     morphAttenLightKnob->hide();
     addParam(morphAttenLightKnob);
 
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
 
     addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_LIGHT));
-    addChild(createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
-    addChild(createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
+    addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
+    addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
 
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.703)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.723)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 86.845)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
-    addInput(createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 96.765)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.703)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.723)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 86.845)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 96.765)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
 
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 66.703)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 76.723)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 86.845)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
-    addOutput(createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 96.765)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 66.703)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 76.723)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 86.845)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 96.765)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
 
-    ConnectionBgWidget<AlgomorphSmall>* connectionBgWidget = new ConnectionBgWidget<AlgomorphSmall>(OpButtonCenters, ModButtonCenters, module);
+    ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters, module);
     connectionBgWidget->box.pos = OpButtonCenters[3];
     connectionBgWidget->box.size = ModButtonCenters[0].minus(OpButtonCenters[3]);
     addChild(connectionBgWidget);
@@ -1386,65 +1395,65 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[1], module, AlgomorphSmall::MODULATOR_LIGHTS + 3));
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[0], module, AlgomorphSmall::MODULATOR_LIGHTS + 0));
 
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[3], module, AlgomorphSmall::OPERATOR_BUTTONS + 3));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[2], module, AlgomorphSmall::OPERATOR_BUTTONS + 2));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[1], module, AlgomorphSmall::OPERATOR_BUTTONS + 1));
-    addParam(createParamCentered<DLXPurpleButton>(OpButtonCenters[0], module, AlgomorphSmall::OPERATOR_BUTTONS + 0));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[3], module, AlgomorphSmall::OPERATOR_BUTTONS + 3));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[2], module, AlgomorphSmall::OPERATOR_BUTTONS + 2));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[1], module, AlgomorphSmall::OPERATOR_BUTTONS + 1));
+    addParam(rack::createParamCentered<DLXPurpleButton>(OpButtonCenters[0], module, AlgomorphSmall::OPERATOR_BUTTONS + 0));
 
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[3], module, AlgomorphSmall::MODULATOR_BUTTONS + 3));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[2], module, AlgomorphSmall::MODULATOR_BUTTONS + 2));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[1], module, AlgomorphSmall::MODULATOR_BUTTONS + 1));
-    addParam(createParamCentered<DLXPurpleButton>(ModButtonCenters[0], module, AlgomorphSmall::MODULATOR_BUTTONS + 0));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[3], module, AlgomorphSmall::MODULATOR_BUTTONS + 3));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[2], module, AlgomorphSmall::MODULATOR_BUTTONS + 2));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[1], module, AlgomorphSmall::MODULATOR_BUTTONS + 1));
+    addParam(rack::createParamCentered<DLXPurpleButton>(ModButtonCenters[0], module, AlgomorphSmall::MODULATOR_BUTTONS + 0));
 }
 
 void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
     AlgomorphSmall* module = dynamic_cast<AlgomorphSmall*>(this->module);
 
-    menu->addChild(new MenuSeparator());
+    menu->addChild(new rack::ui::MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio Settings"));
 
     menu->addChild(construct<GainLevelMenuItem>(&MenuItem::text, "Modulator Gain adjustment…", &MenuItem::rightText, std::string(module->gain == 1.f ? "0dB " : module->gain == 2.f ? "+6dB " : module->gain == 4.f ? "+12dB " : module->gain == 0.5f ? "-6dB " : module->gain == 0.25f ? "-12dB " : "err ") + RIGHT_ARROW, &GainLevelMenuItem::module, module));
 
     menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
-    RingMorphItem *ringMorphItem = createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
+    RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
     ringMorphItem->module = module;
     menu->addChild(ringMorphItem);
 
-    menu->addChild(new MenuSeparator());
+    menu->addChild(new rack::ui::MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction Settings"));
 
     menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "CV A multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[0]) + "x " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 0));
     menu->addChild(construct<MorphMultMenuItem>(&MenuItem::text, "CV B multiplier…", &MenuItem::rightText, std::to_string((int)module->morphMult[1]) + "x " + RIGHT_ARROW, &MorphMultMenuItem::module, module, &MorphMultMenuItem::inputId, 1));
 
-    ToggleModeBItem *toggleModeBItem = createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
+    ToggleModeBItem *toggleModeBItem = rack::createMenuItem<ToggleModeBItem>("Alter Ego", CHECKMARK(module->modeB));
     toggleModeBItem->module = module;
     menu->addChild(toggleModeBItem);
     
-    ExitConfigItem *exitConfigItem = createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
+    ExitConfigItem *exitConfigItem = rack::createMenuItem<ExitConfigItem>("Exit Edit Mode after connection", CHECKMARK(module->exitConfigOnConnect));
     exitConfigItem->module = module;
     menu->addChild(exitConfigItem);
 
-    menu->addChild(new MenuSeparator());
+    menu->addChild(new rack::ui::MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual Settings"));
 
 
-    VULightsItem *vuLightsItem = createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
     vuLightsItem->module = module;
     menu->addChild(vuLightsItem);
     
-    // GlowingInkItem *glowingInkItem = createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
+    // GlowingInkItem *glowingInkItem = rack::createMenuItem<GlowingInkItem>("Enable glowing panel ink", CHECKMARK(module->glowingInk));
     // glowingInkItem->module = module;
     // menu->addChild(glowingInkItem);
 
-    // SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
-    SaveVisualSettingsItem *saveVisualSettingsItem = createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->vuLights == pluginSettings.vuLightsDefault));
+    // SaveVisualSettingsItem *saveVisualSettingsItem = rack::createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->glowingInk == pluginSettings.glowingInkDefault && module->vuLights == pluginSettings.vuLightsDefault));
+    SaveVisualSettingsItem *saveVisualSettingsItem = rack::createMenuItem<SaveVisualSettingsItem>("Save visual settings as default", CHECKMARK(module->vuLights == pluginSettings.vuLightsDefault));
     saveVisualSettingsItem->module = module;
     menu->addChild(saveVisualSettingsItem);
 
-    // menu->addChild(new MenuSeparator());
+    // menu->addChild(new rack::ui::MenuSeparator());
 
-    // DebugItem *debugItem = createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
+    // DebugItem *debugItem = rack::createMenuItem<DebugItem>("The system is down", CHECKMARK(module->debug));
     // debugItem->module = module;
     // menu->addChild(debugItem);
 }

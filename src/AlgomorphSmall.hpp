@@ -1,5 +1,8 @@
-#include "plugin.hpp"
+#pragma once
 #include "Algomorph.hpp"
+#include <rack.hpp>
+using rack::window::mm2px;
+
 
 struct AlgomorphSmall : Algomorph {
     static constexpr int NUM_AUX_INPUTS = 5;
@@ -101,7 +104,7 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
                                                 {mm2px(32.968), mm2px(76.591)},
                                                 {mm2px(32.968), mm2px(66.570)}  };
 
-    struct SetGainLevelAction : history::ModuleAction {
+    struct SetGainLevelAction : rack::history::ModuleAction {
         float oldGain, newGain;
 
         SetGainLevelAction();
@@ -109,7 +112,7 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
         void redo() override;
     };
 
-    struct SetMorphMultAction : history::ModuleAction {
+    struct SetMorphMultAction : rack::history::ModuleAction {
         float oldMult, newMult;
         int inputId;
 
@@ -118,29 +121,29 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
         void redo() override;
     };
 
-    struct AlgomorphSmallMenuItem : MenuItem {
+    struct AlgomorphSmallMenuItem : rack::ui::MenuItem {
         AlgomorphSmall* module;
     };
     struct SetGainLevelItem : AlgomorphSmallMenuItem {
         float gain;
 
-        void onAction(const event::Action &e) override;
+        void onAction(const rack::event::Action &e) override;
     };
     struct GainLevelMenuItem : AlgomorphSmallMenuItem {
         Menu* createChildMenu() override;
-        void createGainLevelMenu(AlgomorphSmall* module, ui::Menu* menu);
+        void createGainLevelMenu(AlgomorphSmall* module, rack::ui::Menu* menu);
     };
     struct SetMorphMultItem : AlgomorphSmallMenuItem {
         float morphMult;
         int inputId;
 
-        void onAction(const event::Action &e) override;
+        void onAction(const rack::event::Action &e) override;
     };
     struct MorphMultMenuItem : AlgomorphSmallMenuItem {
         int inputId;
 
         Menu* createChildMenu() override;
-        void createMorphMultMenu(AlgomorphSmall* module, ui::Menu* menu, int inputId);
+        void createMorphMultMenu(AlgomorphSmall* module, rack::ui::Menu* menu, int inputId);
     };
 
     AlgomorphSmallWidget(AlgomorphSmall* module);

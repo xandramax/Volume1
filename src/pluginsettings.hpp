@@ -1,6 +1,7 @@
 #pragma once
 #include "AuxSources.hpp"
 
+
 struct DelexanderVol1Settings {
 	bool glowingInkDefault = false;
 	bool vuLightsDefault = true;

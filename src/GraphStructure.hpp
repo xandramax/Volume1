@@ -1,4 +1,7 @@
 #pragma once
+#include <rack.hpp>
+using rack::math::Vec;
+
 
 struct Node {
     Vec coords;

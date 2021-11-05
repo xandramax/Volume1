@@ -1,6 +1,9 @@
 #include "plugin.hpp"
 #include "Algomorph.hpp"
 #include "AlgomorphDisplayWidget.hpp"
+#include <rack.hpp>
+using rack::math::crossfade;
+
 
 AlgomorphDisplayWidget::AlgoDrawWidget::AlgoDrawWidget(Algomorph* module) {
     this->module = module;
@@ -258,7 +261,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
     if (!module) return;
 
     if (layer == 1) {
-        font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
+        font = APP->window->loadFont(rack::asset::plugin(pluginInstance, fontPath));
 
         //Origin must be updated
         xOrigin = box.size.x / 2.f;
@@ -419,7 +422,7 @@ void AlgomorphDisplayWidget::step() {
 
 void AlgomorphDisplayWidget::draw(const DrawArgs& args) {
     // Rack 2 Beta Light
-    nvgGlobalTint(args.vg, color::WHITE);
+    nvgGlobalTint(args.vg, rack::color::WHITE);
 
     FramebufferWidget::draw(args);
 }
