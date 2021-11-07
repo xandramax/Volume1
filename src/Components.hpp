@@ -65,6 +65,8 @@ struct TDlxMultiLight : TBase {
 		this->addBaseColor(DLXLightPurple);
 		this->addBaseColor(DLXYellow);
 		this->addBaseColor(DLXRed);
+        this->bgColor = SCHEME_DARK_GRAY;
+        this->borderColor = SCHEME_LIGHT_GRAY;
 	}
 };
 typedef TDlxMultiLight<> DLXMultiLight;
@@ -383,7 +385,7 @@ struct DLXRingIndicator : DLXMultiLight {
 
 		nvgBeginPath(args.vg);
 		nvgCircle(args.vg, this->radius, this->radius, RING_BG_STROKEWIDTH);
-		nvgFillColor(args.vg, bgColor);
+		nvgFillColor(args.vg, this->bgColor);
 		nvgFill(args.vg);
 	}
 
@@ -394,7 +396,7 @@ struct DLXRingIndicator : DLXMultiLight {
 		if (this->color.a > 0.0) {
 			nvgBeginPath(args.vg);
 			nvgCircle(args.vg, this->radius, this->radius, RING_LIGHT_STROKEWIDTH);
-			nvgFillColor(args.vg, rack::componentlibrary::SCHEME_WHITE);
+			nvgFillColor(args.vg, this->color);
 			nvgFill(args.vg);
 		}
 	}
