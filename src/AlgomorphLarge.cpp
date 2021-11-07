@@ -836,6 +836,9 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 if (horizontalMarks[configScene].test(i)) {
                     if (modeB) {
                         //Set carrier indicator
+                        // In (config + alter ego) mode, when a selected operator is a forced-carrier,
+                        // the purple indicator should blink on/off whenever the yellow selection indicator blinks off/on,
+                        // regardless of whether it is horizontally marked.
                         if (forcedCarriers[configScene].test(i)) {
                             //Purple light
                             lights[CARRIER_INDICATORS + i * 3].setBrightness(configOp == i ?
@@ -874,6 +877,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     }
                     else {
                         //Set carrier indicator
+                        // In config mode, when a selected operator is both a forced-carrier and disabled,
+                        // the red indicator should blink on/off whenever the yellow selection indicator blinks off/on.
                         if (forcedCarriers[configScene].test(i)) {
                             //Purple light
                             lights[CARRIER_INDICATORS + i * 3].setBrightness(0.f);
@@ -913,6 +918,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else {
                     //Set carrier indicator
+                    // In config mode, if a non-horizontal-marked operator is a forced-carrier,
+                    // the purple indicator should blink on/off whenever the yellow selection indicator blinks off/on.
                     if (forcedCarriers[configScene].test(i)) {
                         //Purple light
                         lights[CARRIER_INDICATORS + i * 3].setBrightness(configOp == i ?
