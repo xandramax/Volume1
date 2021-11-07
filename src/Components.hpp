@@ -79,7 +79,7 @@ struct TDlxScreenMultiLight : TBase {
 		this->addBaseColor(DLXRed);
 	}
 };
-typedef TDlxMultiLight<> DLXScreenMultiLight;
+typedef TDlxScreenMultiLight<> DLXScreenMultiLight;
 
 template < typename TBase = rack::GrayModuleLightWidget >
 struct TBacklight : TBase {
