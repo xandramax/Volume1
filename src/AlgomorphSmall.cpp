@@ -528,25 +528,25 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                         // regardless of whether it is horizontally marked.
                         if (forcedCarriers[configScene].test(i)) {
                             //Purple light
-                            lights[CARRIER_INDICATORS + i * 3].setBrightness(configOp == i ?
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(configOp == i ?
                                 blinkStatus ?
                                     0.f
                                     : INDICATOR_BRIGHTNESS
-                                : INDICATOR_BRIGHTNESS);
+                                : INDICATOR_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                             //Yellow light
-                            lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(configOp == i ?
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
                                 blinkStatus
-                                : 0.f);
+                                : 0.f, args.sampleTime * lightDivider.getDivision());
                             //Red light
-                            lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         else {
                             //Purple light
-                            lights[CARRIER_INDICATORS + i * 3].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Yellow light
-                            lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Red light
-                            lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set op lights
                         //Purple lights
@@ -568,25 +568,25 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                         // the red indicator should blink on/off whenever the yellow selection indicator blinks off/on.
                         if (forcedCarriers[configScene].test(i)) {
                             //Purple light
-                            lights[CARRIER_INDICATORS + i * 3].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Yellow light
-                            lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(configOp == i ?
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
                                 blinkStatus
-                                : 0.f);
+                                : 0.f, args.sampleTime * lightDivider.getDivision());
                             //Red light
-                            lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(configOp == i ?
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(configOp == i ?
                                 blinkStatus ?
                                     0.f
                                     : DEF_RED_BRIGHTNESS
-                                : DEF_RED_BRIGHTNESS);
+                                : DEF_RED_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         }
                         else {
                             //Purple light
-                            lights[CARRIER_INDICATORS + i * 3].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Yellow light
-                            lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                             //Red light
-                            lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(0.f);
+                            lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         }
                         //Set op lights
                         //Purple lights
@@ -609,25 +609,25 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                     // the purple indicator should blink on/off whenever the yellow selection indicator blinks off/on.
                     if (forcedCarriers[configScene].test(i)) {
                         //Purple light
-                        lights[CARRIER_INDICATORS + i * 3].setBrightness(configOp == i ?
+                        lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(configOp == i ?
                             blinkStatus ?
                                 0.f
                                 : INDICATOR_BRIGHTNESS
-                            : INDICATOR_BRIGHTNESS);
+                            : INDICATOR_BRIGHTNESS, args.sampleTime * lightDivider.getDivision());
                         //Yellow light
-                        lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(configOp == i ?
+                        lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(configOp == i ?
                             blinkStatus
-                            : 0.f);
+                            : 0.f, args.sampleTime * lightDivider.getDivision());
                         //Red light
-                        lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(0.f);
+                        lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     else {
                         //Purple light
-                        lights[CARRIER_INDICATORS + i * 3].setBrightness(0.f);
+                        lights[CARRIER_INDICATORS + i * 3].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Yellow light
-                        lights[CARRIER_INDICATORS + i * 3 + 1].setBrightness(0.f);
+                        lights[CARRIER_INDICATORS + i * 3 + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                         //Red light
-                        lights[CARRIER_INDICATORS + i * 3 + 2].setBrightness(0.f);
+                        lights[CARRIER_INDICATORS + i * 3 + 2].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
                     }
                     //Set op lights
                     //Purple lights
