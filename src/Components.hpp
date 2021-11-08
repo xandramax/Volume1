@@ -122,11 +122,11 @@ struct TBacklight : TBase {
 		float h = this->box.size.y + oyradius * 2.f;
 
 		nvgBeginPath(args.vg);
-		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, 3.675f);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, h * 1.5f);
 
 		NVGcolor icol = rack::color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h / 2.f, 3.675f, h, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, h / 2.f, h, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
