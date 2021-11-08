@@ -504,7 +504,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
             //Set purple component to off
             lights[DISPLAY_BACKLIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
             //Set yellow component
-            lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getOutputBrightness(CARRIER_SUM_OUTPUT) / 2048.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
+            lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(getOutputBrightness(CARRIER_SUM_OUTPUT) / 2048.f + .001f / 3.f, args.sampleTime * lightDivider.getDivision());
             //Set edit light
             lights[EDIT_LIGHT].setSmoothBrightness(1.f, args.sampleTime * lightDivider.getDivision());
             //Set scene lights
@@ -751,7 +751,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
             //Set yellow component to off
             lights[DISPLAY_BACKLIGHT + 1].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
             //Set purple component
-            lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getOutputBrightness(CARRIER_SUM_OUTPUT) / 1024.f + 0.014325f, args.sampleTime * lightDivider.getDivision());
+            lights[DISPLAY_BACKLIGHT].setSmoothBrightness(getOutputBrightness(CARRIER_SUM_OUTPUT) / 1024.f + 0.0975f, args.sampleTime * lightDivider.getDivision());
             //Set edit light
             lights[EDIT_LIGHT].setSmoothBrightness(0.f, args.sampleTime * lightDivider.getDivision());
             //Display morphed state
