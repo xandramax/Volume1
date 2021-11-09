@@ -6,6 +6,8 @@ struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
         Algomorph* module;
         alGraph graphs[3];
         int translatedAlgoName[3] = {0};
+        std::bitset<4> horizontalMarks[3] = {0};
+        std::bitset<4> forcedCarriers[3] = {0};
         int scene = 1;
         int morphScene = 1;
         float morph = 0.f;

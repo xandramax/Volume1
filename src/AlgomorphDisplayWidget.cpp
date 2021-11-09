@@ -114,6 +114,19 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
             nvgStrokeWidth(ctx, nodeStroke);
             nvgStroke(ctx);
 
+            if (forcedCarriers[scene].test(i) || forcedCarriers[morphScene].test(i)) {
+                float xOffset = module->rotor.getXoffset(radius);
+                float yOffset = module->rotor.getYoffset(radius);
+                nvgBeginPath(ctx);
+                nvgCircle(ctx,  crossfade(nodeX[0] + xOffset, nodeX[1] + xOffset, morph),
+                                crossfade(nodeY[0] + yOffset, nodeY[1] + yOffset, morph),
+                                radius / 10.f);
+                NVGcolor carrierColor = DLXLightPurple;
+                carrierColor.a = crossfade(forcedCarriers[scene].test(i), forcedCarriers[morphScene].test(i), morph);
+                nvgFillColor(ctx, carrierColor);
+                nvgFill(ctx);
+            }
+
             nvgBeginPath(ctx);
             nvgFontSize(ctx, 11.f);
             nvgFontFaceId(ctx, font->handle);
@@ -277,6 +290,10 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
                     graphs[i].mystery = true;
                 }
             }
+            if (!module->displayHorizontalMarks[i].empty())
+                horizontalMarks[i] = module->displayHorizontalMarks[i].shift();
+            if (!module->displayForcedCarriers[i].empty())
+                forcedCarriers[i] = module->displayForcedCarriers[i].shift();
         }
 
         if (!module->displayScene.empty()) {
@@ -306,6 +323,21 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
                 nvgStrokeColor(args.vg, nodeStrokeColor);
                 nvgStrokeWidth(args.vg, nodeStroke);
                 nvgStroke(args.vg);
+
+                if (forcedCarriers[scene].any()) {
+                    float xOffset = module->rotor.getXoffset(radius);
+                    float yOffset = module->rotor.getYoffset(radius);
+                    nvgBeginPath(args.vg);
+                    for (int i = 0; i < 4; i++) {
+                        if (forcedCarriers[scene].test(i)) {
+                            nvgCircle(args.vg,  graphs[scene].nodes[i].coords.x + xOffset,
+                                            graphs[scene].nodes[i].coords.y + yOffset,
+                                            radius / 10.f);
+                        }
+                    }
+                    nvgFillColor(args.vg, DLXLightPurple);
+                    nvgFill(args.vg);
+                }
 
                 // Draw numbers
                 nvgBeginPath(args.vg);

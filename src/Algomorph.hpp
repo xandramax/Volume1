@@ -25,6 +25,8 @@ struct Algomorph : rack::engine::Module {
     std::bitset<4> forcedCarriers[3]    = {0};                          // If the user forces an operator to act as a carrier, mark it here 
     std::bitset<4> carrier[3]           = {0xF, 0xF, 0xF};              // If an operator is acting as a carrier, whether forced or automatically, mark it here
     std::bitset<4> opsDisabled[3]       = {0};                          // If an operator is disabled, whether forced or automatically, mark it here
+    rack::dsp::RingBuffer<std::bitset<4>, 4> displayHorizontalMarks[3];
+    rack::dsp::RingBuffer<std::bitset<4>, 4> displayForcedCarriers[3];
     
     rack::dsp::RingBuffer<std::bitset<16>, 4> displayAlgoName[3];       // When operators are disabled, remove their mod destinations from here
                                                                         // If a disabled operator is a mod destination, set it to enabled here
