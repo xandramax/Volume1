@@ -46,3 +46,11 @@ struct bitsetCompare {
         return b1.to_ulong() < b2.to_ulong();
 	}
 };
+
+// Sine approximation from Fundamental VCO-1
+template <typename T>
+T sin2pi_pade_05_5_4(T x) {
+	x -= 0.5f;
+	return (T(-6.283185307) * x + T(33.19863968) * simd::pow(x, 3) - T(32.44191367) * simd::pow(x, 5))
+	       / (1 + T(1.296008659) * simd::pow(x, 2) + T(0.7028072946) * simd::pow(x, 4));
+}
