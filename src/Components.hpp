@@ -65,8 +65,6 @@ struct TDlxMultiLight : TBase {
 		this->addBaseColor(DLXLightPurple);
 		this->addBaseColor(DLXYellow);
 		this->addBaseColor(DLXRed);
-        this->bgColor = SCHEME_DARK_GRAY;
-        this->borderColor = SCHEME_LIGHT_GRAY;
 	}
 };
 typedef TDlxMultiLight<> DLXMultiLight;
