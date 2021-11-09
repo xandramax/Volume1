@@ -398,9 +398,10 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
             drawNodes(args.vg, graphs[scene], graphs[morphScene], morph);
         }
 
-        // Draw question mark
+        // Draw error display
         if (module->configMode) {
             if (graphs[scene].mystery) {
+                // Draw question mark
                 nvgBeginPath(args.vg);
                 nvgFontSize(args.vg, 92.f);
                 nvgFontFaceId(args.vg, font->handle);
@@ -409,9 +410,28 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
                 std::string s = "?";
                 char const *id = s.c_str();
                 nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
-                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f + 1.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f + 1.f;
                 nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
+
+                // Draw message
+                nvgBeginPath(args.vg);
+                nvgFontSize(args.vg, 11.f);
+                nvgFontFaceId(args.vg, font->handle);
+                textColor = TEXT_COLOR;
+                nvgFillColor(args.vg, textColor);
+                s = "cannot visualize";
+                id = s.c_str();
+                nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + s.length(), textBounds);
+                xOffset = (textBounds[2] - textBounds[0]) / 2.f - 0.5f;
+                yOffset = (textBounds[3] - textBounds[1]) * 1.315f;
+                nvgText(args.vg, xOrigin - xOffset, yOffset, id, id + s.length());
+                s = "no natural carrier";
+                id = s.c_str();
+                nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + s.length(), textBounds);
+                xOffset = (textBounds[2] - textBounds[0]) / 2.f - 0.5f;
+                yOffset = (textBounds[3] - textBounds[1]) / 1.345f;
+                nvgText(args.vg, xOrigin - xOffset, this->getBox().getBottom() - yOffset, id, id + s.length());
             }
         }
         else {
@@ -429,8 +449,8 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
                 std::string s = "?";
                 char const *id = s.c_str();
                 nvgTextBounds(args.vg, xOrigin, yOrigin, id, id + 1, textBounds);
-                float xOffset = (textBounds[2] - textBounds[0]) / 2.f;
-                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f;
+                float xOffset = (textBounds[2] - textBounds[0]) / 2.f + 1.f;
+                float yOffset = (textBounds[3] - textBounds[1]) / 3.925f + 1.f;
                 nvgText(args.vg, xOrigin - xOffset, yOrigin + yOffset, id, id + 1);
             }
         }
