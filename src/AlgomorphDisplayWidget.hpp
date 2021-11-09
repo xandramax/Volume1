@@ -1,6 +1,8 @@
 #pragma once
 
 
+NVGcolor crossfadeColor(NVGcolor c1, NVGcolor c2, float t);
+
 struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
     struct AlgoDrawWidget : rack::app::LightWidget {
         Algomorph* module;
@@ -19,13 +21,15 @@ struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
         float xOrigin = box.size.x / 2.f;
         float yOrigin = box.size.y / 2.f;
    
-        const NVGcolor NODE_FILL_COLOR = nvgRGBA(0x40, 0x36, 0x4a, 0xff);
+        const NVGcolor NODE_FILL_COLOR = DLXMediumDarkPurple;
+        const NVGcolor FEEDBACK_NODE_COLOR = DLXPurple;
         const NVGcolor NODE_STROKE_COLOR = nvgRGB(26, 26, 26);
         const NVGcolor TEXT_COLOR = nvgRGBA(0xb2, 0xa9, 0xb9, 0xff);
         const NVGcolor EDGE_COLOR = nvgRGBA(0x9a,0x9a,0x6f,0xff);
 
         NVGcolor nodeFillColor = NODE_FILL_COLOR;
         NVGcolor nodeStrokeColor = NODE_STROKE_COLOR;
+        NVGcolor feedbackFillColor = FEEDBACK_NODE_COLOR;
         NVGcolor textColor = TEXT_COLOR;
         NVGcolor edgeColor = EDGE_COLOR;
         float borderStroke = 0.45f;
