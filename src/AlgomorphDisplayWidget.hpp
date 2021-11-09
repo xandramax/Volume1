@@ -24,7 +24,7 @@ struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
         const NVGcolor NODE_FILL_COLOR = DLXMediumDarkPurple;
         const NVGcolor FEEDBACK_NODE_COLOR = DLXPurple;
         const NVGcolor NODE_STROKE_COLOR = nvgRGB(26, 26, 26);
-        const NVGcolor TEXT_COLOR = nvgRGBA(0xb2, 0xa9, 0xb9, 0xff);
+        const NVGcolor TEXT_COLOR = DLXExtraLightPurple;
         const NVGcolor EDGE_COLOR = nvgRGBA(0x9a,0x9a,0x6f,0xff);
 
         NVGcolor nodeFillColor = NODE_FILL_COLOR;

@@ -139,7 +139,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
                 nvgCircle(ctx,  crossfade(nodeX[0] + xOffset, nodeX[1] + xOffset, morph),
                                 crossfade(nodeY[0] + yOffset, nodeY[1] + yOffset, morph),
                                 radius / 10.f);
-                NVGcolor carrierColor = DLXLightPurple;
+                NVGcolor carrierColor = DLXExtraLightPurple;
                 carrierColor.a = crossfade(forcedCarriers[scene].test(i), forcedCarriers[morphScene].test(i), morph);
                 nvgFillColor(ctx, carrierColor);
                 nvgFill(ctx);
@@ -371,7 +371,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
                                             radius / 10.f);
                         }
                     }
-                    nvgFillColor(args.vg, DLXLightPurple);
+                    nvgFillColor(args.vg, DLXExtraLightPurple);
                     nvgFill(args.vg);
                 }
 
