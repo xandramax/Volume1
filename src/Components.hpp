@@ -439,15 +439,15 @@ struct DLXRingIndicator : DLXMultiLight {
         nvgFill(args.vg);
     }
 
-	void drawLayer(const DrawArgs& args, int layer) override {
-		if (layer == 1 && module) {
+    void step() override {
+        if (module) {
             MODULE* module = reinterpret_cast<MODULE*>(this->module);
 			this->xOffset = module->rotor.getXoffset(this->radius);
             this->yOffset = module->rotor.getYoffset(this->radius);
-		}
+        }
 
-		DLXMultiLight::drawLayer(args, layer);
-	}
+        DLXMultiLight::step();
+    }
 };
 
 template < typename MODULE >
