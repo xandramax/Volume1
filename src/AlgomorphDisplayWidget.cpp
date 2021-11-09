@@ -5,6 +5,15 @@
 using rack::math::crossfade;
 
 
+NVGcolor crossfadeColor(NVGcolor c1, NVGcolor c2, float p) {
+	NVGcolor c;
+    c.r = crossfade(c1.r, c2.r, p);
+    c.g = crossfade(c1.g, c2.g, p);
+    c.b = crossfade(c1.b, c2.b, p);
+    c.a = crossfade(c1.a, c2.a, p);
+    return c;
+};
+
 AlgomorphDisplayWidget::AlgoDrawWidget::AlgoDrawWidget(Algomorph* module) {
     this->module = module;
     fontPath = "res/MiriamLibre-Regular.ttf";
@@ -25,6 +34,7 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
         float nodeAlpha[2] = {0.f};
         float textAlpha[2] = {0.f};
         nodeFillColor = NODE_FILL_COLOR;
+        feedbackFillColor = FEEDBACK_NODE_COLOR;
         nodeStrokeColor = NODE_STROKE_COLOR;
         textColor = TEXT_COLOR;
         bool draw = true;
@@ -108,7 +118,15 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
             nvgCircle(ctx,  crossfade(nodeX[0], nodeX[1], morph),
                             crossfade(nodeY[0], nodeY[1], morph),
                             radius);
-            nvgFillColor(ctx, nodeFillColor);
+            if (module->modeB && (horizontalMarks[scene].test(i) || horizontalMarks[morphScene].test(i))) {
+                feedbackFillColor.a = crossfade(nodeAlpha[0], nodeAlpha[1], morph);
+                NVGcolor sceneColor = horizontalMarks[scene].test(i) ? feedbackFillColor : nodeFillColor;
+                NVGcolor morphColor = horizontalMarks[morphScene].test(i) ? feedbackFillColor : nodeFillColor;
+                NVGcolor fillColor = crossfadeColor(sceneColor, morphColor, morph);
+                nvgFillColor(ctx, fillColor);
+            }
+            else
+                nvgFillColor(ctx, nodeFillColor);
             nvgFill(ctx);
             nvgStrokeColor(ctx, nodeStrokeColor);
             nvgStrokeWidth(ctx, nodeStroke);
@@ -313,16 +331,34 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::drawLayer(const Widget::DrawArgs& a
         if (module->configMode) {   //Display state without morph
             if (graphs[scene].numNodes > 0) {
                 // Draw nodes
-                nvgBeginPath(args.vg);
-                for (int i = 0; i < 4; i++) {
-                    if (graphs[scene].nodes[i].id != 404)
-                        nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
+                if (module->modeB && horizontalMarks[scene].any()){
+                    for (int i = 0; i < 4; i++) {
+                        if (graphs[scene].nodes[i].id != 404) {
+                            nvgBeginPath(args.vg);
+                            nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
+                            if (horizontalMarks[scene].test(i))
+                                nvgFillColor(args.vg, feedbackFillColor);
+                            else
+                                nvgFillColor(args.vg, nodeFillColor);
+                            nvgFill(args.vg);
+                            nvgStrokeColor(args.vg, nodeStrokeColor);
+                            nvgStrokeWidth(args.vg, nodeStroke);
+                            nvgStroke(args.vg);
+                        }
+                    }
                 }
-                nvgFillColor(args.vg, nodeFillColor);
-                nvgFill(args.vg);
-                nvgStrokeColor(args.vg, nodeStrokeColor);
-                nvgStrokeWidth(args.vg, nodeStroke);
-                nvgStroke(args.vg);
+                else {
+                    nvgBeginPath(args.vg);
+                    for (int i = 0; i < 4; i++) {
+                        if (graphs[scene].nodes[i].id != 404)
+                            nvgCircle(args.vg, graphs[scene].nodes[i].coords.x, graphs[scene].nodes[i].coords.y, radius);
+                    }
+                    nvgFillColor(args.vg, nodeFillColor);
+                    nvgFill(args.vg);
+                    nvgStrokeColor(args.vg, nodeStrokeColor);
+                    nvgStrokeWidth(args.vg, nodeStroke);
+                    nvgStroke(args.vg);
+                }
 
                 if (forcedCarriers[scene].any()) {
                     float xOffset = module->rotor.getXoffset(radius);
