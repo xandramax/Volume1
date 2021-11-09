@@ -266,6 +266,8 @@ void Algomorph::toggleHorizontalDestination(int scene, int op) {
         if (mismatch)
             toggleDisabled(scene, op);
     }
+    displayHorizontalMarks[scene].push(horizontalMarks[scene]);
+    displayForcedCarriers[scene].push(forcedCarriers[scene]);
 }
 
 void Algomorph::toggleDiagonalDestination(int scene, int op, int mod) {
@@ -304,6 +306,7 @@ bool Algomorph::isCarrier(int scene, int op) {
 void Algomorph::updateCarriers(int scene) {
     for (int op = 0; op < 4; op++)
         carrier[scene].set(op, isCarrier(scene, op));
+    displayForcedCarriers[scene].push(forcedCarriers[scene]);
 }
 
 bool Algomorph::isDisabled(int scene, int op) {
@@ -375,6 +378,8 @@ void Algomorph::updateDisplayAlgo(int scene) {
         }
     }
     displayAlgoName[scene].push(tempDisplayAlgoName);
+    displayHorizontalMarks[scene].push(horizontalMarks[scene]);
+    displayForcedCarriers[scene].push(forcedCarriers[scene]);
 }
 
 void Algomorph::toggleModeB() {
@@ -414,6 +419,7 @@ void Algomorph::toggleForcedCarrier(int scene, int op) {
         if (mismatch)
             toggleDisabled(scene, op);
     }
+    displayForcedCarriers[scene].push(forcedCarriers[scene]);
 }
 
 
