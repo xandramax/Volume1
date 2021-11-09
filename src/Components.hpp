@@ -425,8 +425,8 @@ struct DLXRingIndicator : DLXMultiLight {
         if (color.r == 0.f && color.g == 0.f && color.b == 0.f)
             return;
 
-        math::Vec c = this->box.size.div(2).plus(math::Vec(this->xOffset, this->yOffset));
-        float radius = this->radius;
+        math::Vec c = math::Vec(this->radius, this->radius).plus(math::Vec(this->xOffset, this->yOffset));
+        float radius = RING_LIGHT_STROKEWIDTH;
         float oradius = radius * 5.f;
 
         nvgBeginPath(args.vg);
