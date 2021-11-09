@@ -6,11 +6,11 @@ using rack::window::mm2px;
 
 struct AlgomorphAuxInputPanelWidget : rack::widget::FramebufferWidget {
     struct AlgoDrawWidget : rack::widget::TransparentWidget {
-        const Vec LABEL_BOUNDS[5] = {   mm2px(Vec(4.291, 14.643)).minus(box.pos),
-                                        mm2px(Vec(4.291, 26.682)).minus(box.pos),
-                                        mm2px(Vec(4.291, 39.159)).minus(box.pos),
-                                        mm2px(Vec(4.291, 51.634)).minus(box.pos),
-                                        mm2px(Vec(4.291, 64.178)).minus(box.pos)    };
+        const Vec LABEL_BOUNDS[5] = {   mm2px(Vec(4.291, 13.374)).minus(box.pos),
+                                        mm2px(Vec(4.291, 26.137)).minus(box.pos),
+                                        mm2px(Vec(4.291, 38.901)).minus(box.pos),
+                                        mm2px(Vec(4.291, 51.664)).minus(box.pos),
+                                        mm2px(Vec(4.291, 64.428)).minus(box.pos)    };
 
         rack::engine::Module* module;
         std::string fontPath = "";
