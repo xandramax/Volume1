@@ -1330,15 +1330,15 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
     addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
 
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.703)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.723)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 86.845)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 96.765)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.351)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.673)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 86.994)), module, AlgomorphSmall::OPERATOR_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 97.315)), module, AlgomorphSmall::OPERATOR_INPUTS + 0));
 
-    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 66.703)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
-    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 76.723)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
-    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 86.845)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
-    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 96.765)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 66.351)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 3));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 76.673)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 2));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 86.994)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 1));
+    addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 97.315)), module, AlgomorphSmall::MODULATOR_OUTPUTS + 0));
 
     ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters, module);
     connectionBgWidget->box.pos = OpButtonCenters[3];

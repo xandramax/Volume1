@@ -132,9 +132,9 @@ struct AlgomorphLarge : Algomorph {
 struct AlgomorphLargeWidget : AlgomorphWidget {
     // AlgomorphLargeGlowingInk* ink;
 
-    std::vector<Vec> SceneButtonCenters =   {   {mm2px(63.709), mm2px(18.341)},
-                                                {mm2px(63.709), mm2px(26.519)},
-                                                {mm2px(63.709), mm2px(34.697)}  };
+    std::vector<Vec> SceneButtonCenters =   {   {mm2px(63.842), mm2px(17.924)},
+                                                {mm2px(63.842), mm2px(26.717)},
+                                                {mm2px(63.842), mm2px(35.510)}  };
     std::vector<Vec> OpButtonCenters    =   {   {mm2px(25.578), mm2px(86.926)},
                                                 {mm2px(25.578), mm2px(75.904)},
                                                 {mm2px(25.578), mm2px(64.883)},
