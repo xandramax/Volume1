@@ -357,19 +357,30 @@ TRingLight<TBase>* createRingLightCentered(Vec pos, Module* module, int firstLig
 }
 
 struct RingIndicatorRotor {
-	float angle = 0.f;
+	float phase = 0.f; // 0 to 1
 
 	void step(float deltaTime) {
-		if (angle >= 2.f * M_PI)
-			angle = 0.f;
-		else
-			angle += 4.f * deltaTime;
+        phase += .4f * deltaTime;
+		if (phase > 1.f)
+			phase -= 1.f;
 	}
+
+    float getXoffset(float radius) {
+        return radius * sin2pi_pade_05_5_4(phase);// * M_PI;
+    }
+
+    float getYoffset(float radius) {
+        float cosPhase = phase - .25f;
+        if (cosPhase < 0.f)
+            cosPhase += 1.f;
+        return radius * sin2pi_pade_05_5_4(cosPhase);// * M_PI;
+    }
 };
 
 template < typename MODULE >
 struct DLXRingIndicator : DLXMultiLight {
-	float angle = 0.f;
+	float xOffset = 0.f;
+    float yOffset = 0.f;
 	float transform[6];
 	float radius = 0.f;
 	
@@ -381,12 +392,14 @@ struct DLXRingIndicator : DLXMultiLight {
 		if (!module)
 			return;
 
-		rotate(args);
+        this->bgColor.a = this->color.a;
 
-		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, this->radius, this->radius, RING_BG_STROKEWIDTH);
-		nvgFillColor(args.vg, this->bgColor);
-		nvgFill(args.vg);
+        if (this->color.a > 0.0) {
+            nvgBeginPath(args.vg);
+            nvgCircle(args.vg, this->radius + this->xOffset, this->radius + this->yOffset, RING_BG_STROKEWIDTH);
+            nvgFillColor(args.vg, this->bgColor);
+            nvgFill(args.vg);
+        }
 	}
 
 	void drawLight(const Widget::DrawArgs& args) override {
@@ -395,7 +408,7 @@ struct DLXRingIndicator : DLXMultiLight {
 
 		if (this->color.a > 0.0) {
 			nvgBeginPath(args.vg);
-			nvgCircle(args.vg, this->radius, this->radius, RING_LIGHT_STROKEWIDTH);
+			nvgCircle(args.vg, this->radius + this->xOffset, this->radius + this->yOffset, RING_LIGHT_STROKEWIDTH);
 			nvgFillColor(args.vg, this->color);
 			nvgFill(args.vg);
 		}
@@ -403,24 +416,12 @@ struct DLXRingIndicator : DLXMultiLight {
 
 	void drawLayer(const DrawArgs& args, int layer) override {
 		if (layer == 1 && module) {
-			rotate(args);
+            MODULE* module = reinterpret_cast<MODULE*>(this->module);
+			this->xOffset = module->rotor.getXoffset(this->radius);
+            this->yOffset = module->rotor.getYoffset(this->radius);
 		}
 
 		DLXMultiLight::drawLayer(args, layer);
-	}
-
-	inline void rotate(const DrawArgs& args) {
-		angle = dynamic_cast<MODULE*>(module)->rotor.angle;
-		Vec center = Vec(radius, radius);
-		nvgTransformIdentity(transform);
-		float t[6];
-		nvgTransformTranslate(t, center.x, center.y);
-		nvgTransformPremultiply(transform, t);
-		nvgTransformRotate(t, angle);
-		nvgTransformPremultiply(transform, t);
-		nvgTransformTranslate(t, center.neg().x, center.neg().y);
-		nvgTransformPremultiply(transform, t);
-		nvgTransform(args.vg, transform[0], transform[1], transform[2], transform[3], transform[4], transform[5]);
 	}
 };
 
@@ -476,7 +477,7 @@ struct DLXKnobLight : DLXSvgLight {
         // Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
 		if (args.fb)
 			return;
-            
+
 		const float halo = rack::settings::haloBrightness;
 		if (halo == 0.f)
 			return;
