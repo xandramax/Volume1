@@ -126,7 +126,7 @@ struct TBacklight : TBase {
 
 		NVGcolor icol = rack::color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, h / 4.f, h, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, h / 4.f, h / 2.f, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
