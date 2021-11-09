@@ -2240,11 +2240,11 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
     addChild(rack::createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
 
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 19.768)), module, AlgomorphLarge::AUX_INPUTS + 0));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 32.531)), module, AlgomorphLarge::AUX_INPUTS + 1));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 45.295)), module, AlgomorphLarge::AUX_INPUTS + 2));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 58.058)), module, AlgomorphLarge::AUX_INPUTS + 3));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.278, 70.822)), module, AlgomorphLarge::AUX_INPUTS + 4));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 19.768)), module, AlgomorphLarge::AUX_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 32.531)), module, AlgomorphLarge::AUX_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 45.295)), module, AlgomorphLarge::AUX_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 58.058)), module, AlgomorphLarge::AUX_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 70.822)), module, AlgomorphLarge::AUX_INPUTS + 4));
 
     addParam(rack::createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight<DLXSmallLightKnob>>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
 
@@ -2270,10 +2270,10 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
     addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(35.428, 91.561)), module, AlgomorphLarge::EDIT_BUTTON));
 
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 81.785)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 92.106)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 102.428)), module, AlgomorphLarge::OPERATOR_INPUTS + 1));
-    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.277, 112.749)), module, AlgomorphLarge::OPERATOR_INPUTS + 0));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 81.785)), module, AlgomorphLarge::OPERATOR_INPUTS + 3));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 92.106)), module, AlgomorphLarge::OPERATOR_INPUTS + 2));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 102.428)), module, AlgomorphLarge::OPERATOR_INPUTS + 1));
+    addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 112.749)), module, AlgomorphLarge::OPERATOR_INPUTS + 0));
 
     addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 81.785)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 3));
     addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 92.106)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 2));
