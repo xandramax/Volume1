@@ -23,6 +23,7 @@ const NVGcolor DLXDarkPurple = nvgRGB(0x14, 0x0d, 0x13);
 const NVGcolor DLXMediumDarkPurple = nvgRGB(0x40, 0x36, 0x4a);
 const NVGcolor DLXPurple = nvgRGB(0x60, 0x4c, 0x70);
 const NVGcolor DLXLightPurple = nvgRGB(0x8b, 0x70, 0xa2);
+const NVGcolor DLXExtraLightPurple = nvgRGB(0xbc, 0xad, 0xc9);
 const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
 constexpr float BLINK_INTERVAL = 0.42857142857f;
