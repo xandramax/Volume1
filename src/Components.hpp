@@ -422,7 +422,7 @@ struct DLXRingIndicator : DLXMultiLight {
             return;
 
         // If light is off, rendering the halo gives no effect.
-        if (color.r == 0.f && color.g == 0.f && color.b == 0.f)
+        if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
             return;
 
         math::Vec c = math::Vec(this->radius, this->radius).plus(math::Vec(this->xOffset, this->yOffset));
@@ -432,7 +432,7 @@ struct DLXRingIndicator : DLXMultiLight {
         nvgBeginPath(args.vg);
         nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * oradius, 2 * oradius);
 
-        NVGcolor icol = color::mult(color, halo);
+        NVGcolor icol = color::mult(this->color, halo);
         NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
         NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
         nvgFillPaint(args.vg, paint);
