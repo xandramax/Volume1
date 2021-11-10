@@ -13,6 +13,9 @@ void AlgomorphAuxInputPanelWidget::AlgoDrawWidget::drawLayer(const Widget::DrawA
 
     if (layer == 1) {
         font = APP->window->loadFont(rack::asset::plugin(pluginInstance, fontPath));
+
+        // Scale from max brightness to min brightness, as rack brightness is reduced from one to zero
+        nvgAlpha(args.vg, (1.f - SVG_LIGHT_MIN_ALPHA) * rack::settings::rackBrightness + SVG_LIGHT_MIN_ALPHA);
         
         // Draw labels
         nvgBeginPath(args.vg);
