@@ -92,9 +92,9 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
     // AlgomorphSmallGlowingInk* ink;
     bool morphKnobShown = true;
 
-    std::vector<Vec> SceneButtonCenters =   {   {mm2px(17.090), mm2px(52.345)},
-                                                {mm2px(25.268), mm2px(52.345)},
-                                                {mm2px(33.445), mm2px(52.345)}  };
+    std::vector<Vec> SceneButtonCenters =   {   {mm2px(17.290), mm2px(52.345)},
+                                                {mm2px(25.468), mm2px(52.345)},
+                                                {mm2px(33.645), mm2px(52.345)}  };
     std::vector<Vec> OpButtonCenters    =   {   {mm2px(17.714), mm2px(96.854)},
                                                 {mm2px(17.714), mm2px(86.612)},
                                                 {mm2px(17.714), mm2px(76.591)},
