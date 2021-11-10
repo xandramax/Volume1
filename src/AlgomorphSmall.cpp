@@ -1293,9 +1293,9 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     //Place backlight _above_ in scene in order for brightness to affect screenWidget
     addChild(createBacklight<DLXScreenMultiLight>(mm2px(Vec(6.252, 11.631)), mm2px(Vec(38.295, 31.590)), module, AlgomorphSmall::DISPLAY_BACKLIGHT));
 
-    addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON_RING_LIGHT));
-    addParam(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
-    addChild(rack::createParamCentered<DLXScreenButtonLight>(mm2px(Vec(25.269, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
+    addChild(createRingLightCentered<DLXMultiLight>(mm2px(Vec(25.468, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON_RING_LIGHT));
+    addParam(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.468, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
+    addChild(rack::createParamCentered<DLXScreenButtonLight>(mm2px(Vec(25.468, 61.936)), module, AlgomorphSmall::SCREEN_BUTTON));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_LIGHTS + 0));
     addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], module, AlgomorphSmall::SCENE_INDICATORS + 0));
@@ -1325,9 +1325,9 @@ AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
 
     addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(43.386, 52.477)), module, AlgomorphSmall::CARRIER_SUM_OUTPUT));
 
-    addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_LIGHT));
-    addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
-    addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.269, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
+    addChild(createRingLightCentered<DLXYellowLight>(mm2px(Vec(25.468, 101.489)), module, AlgomorphSmall::EDIT_LIGHT));
+    addChild(rack::createParamCentered<DLXPurpleButton>(mm2px(Vec(25.468, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
+    addChild(rack::createParamCentered<DLXPencilButtonLight>(mm2px(Vec(25.468, 101.489)), module, AlgomorphSmall::EDIT_BUTTON));
 
     addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 66.351)), module, AlgomorphSmall::OPERATOR_INPUTS + 3));
     addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.284, 76.673)), module, AlgomorphSmall::OPERATOR_INPUTS + 2));

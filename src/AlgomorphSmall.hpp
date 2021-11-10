@@ -99,10 +99,10 @@ struct AlgomorphSmallWidget : AlgomorphWidget {
                                                 {mm2px(17.714), mm2px(86.612)},
                                                 {mm2px(17.714), mm2px(76.591)},
                                                 {mm2px(17.714), mm2px(66.570)}  };
-    std::vector<Vec> ModButtonCenters   =   {   {mm2px(32.968), mm2px(96.854)},
-                                                {mm2px(32.968), mm2px(86.612)},
-                                                {mm2px(32.968), mm2px(76.591)},
-                                                {mm2px(32.968), mm2px(66.570)}  };
+    std::vector<Vec> ModButtonCenters   =   {   {mm2px(33.168), mm2px(96.854)},
+                                                {mm2px(33.168), mm2px(86.612)},
+                                                {mm2px(33.168), mm2px(76.591)},
+                                                {mm2px(33.168), mm2px(66.570)}  };
 
     struct SetGainLevelAction : rack::history::ModuleAction {
         float oldGain, newGain;
