@@ -310,7 +310,6 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                     else if (configOp == i) {  
                         //Deselect operator
                         configOp = -1;
-                        configMode = false;
                     }
                     else {
                         configOp = i;
