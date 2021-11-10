@@ -132,15 +132,16 @@ void AlgomorphDisplayWidget::AlgoDrawWidget::renderNodes(NVGcontext* ctx, alGrap
             nvgStrokeWidth(ctx, nodeStroke);
             nvgStroke(ctx);
 
-            if (forcedCarriers[scene].test(i) || forcedCarriers[morphScene].test(i)) {
+            bool sceneCarrierValue = forcedCarriers[scene].test(i) && !graphs[scene].mystery;
+            bool morphCarrierValue = forcedCarriers[morphScene].test(i) && !graphs[morphScene].mystery;
+            if (sceneCarrierValue || morphCarrierValue)  {
                 float xOffset = module->rotor.getXoffset(radius);
                 float yOffset = module->rotor.getYoffset(radius);
                 nvgBeginPath(ctx);
                 nvgCircle(ctx,  crossfade(nodeX[0] + xOffset, nodeX[1] + xOffset, morph),
                                 crossfade(nodeY[0] + yOffset, nodeY[1] + yOffset, morph),
                                 radius / 10.f);
-                NVGcolor carrierColor = DLXExtraLightPurple;
-                carrierColor.a = crossfade(forcedCarriers[scene].test(i), forcedCarriers[morphScene].test(i), morph);
+                NVGcolor carrierColor = color::mult(DLXExtraLightPurple, crossfade(sceneCarrierValue, morphCarrierValue, morph));
                 nvgFillColor(ctx, carrierColor);
                 nvgFill(ctx);
             }
