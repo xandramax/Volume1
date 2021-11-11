@@ -10,6 +10,12 @@ using rack::asset::plugin;
 
 // Component Library
 
+struct DLXGameBitBlack : app::SvgScrew {
+	DLXGameBitBlack() {
+		setSvg(Svg::load(asset::plugin(pluginInstance, "res/GameBitBlack.svg")));
+	}
+};
+
 struct DLXPJ301MPort : rack::componentlibrary::PJ301MPort {
 	void draw(const DrawArgs &args) override {
 		rack::componentlibrary::PJ301MPort::draw(args);

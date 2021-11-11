@@ -2198,10 +2198,10 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     else
         setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge_ModuleBrowser.svg")));
 
-    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
-    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(RACK_GRID_WIDTH, 365)));
-    addChild(rack::createWidget<rack::componentlibrary::ScrewBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
+    addChild(rack::createWidget<DLXGameBitBlack>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(rack::createWidget<DLXGameBitBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
+    addChild(rack::createWidget<DLXGameBitBlack>(Vec(RACK_GRID_WIDTH, 365)));
+    addChild(rack::createWidget<DLXGameBitBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 365)));
 
     // ink = rack::createWidget<AlgomorphLargeGlowingInk>(Vec(0,0));
     // if (!module->glowingInk)
