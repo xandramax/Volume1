@@ -1,5 +1,4 @@
 #include "AlgomorphLarge.hpp"
-#include "AlgomorphHistory.hpp"
 #include "AlgomorphDisplayWidget.hpp"
 #include "AlgomorphAuxInputPanelWidget.hpp"
 #include "ConnectionBgWidget.hpp"
@@ -216,7 +215,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     if (baseScene != i) {
                         //Switch scene
                         // History
-                        AlgorithmSceneChangeAction* h = new AlgorithmSceneChangeAction;
+                        AlgorithmSceneChangeAction<>* h = new AlgorithmSceneChangeAction<>();
                         h->moduleId = this->id;
                         h->oldScene = baseScene;
                         h->newScene = i;
@@ -511,7 +510,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             if (configOp > -1) {
                 if (modulatorTrigger[configOp].process(params[MODULATOR_BUTTONS + configOp].getValue() > 0.f)) {  //Op is connected to itself
                     // History
-                    AlgorithmHorizontalChangeAction* h = new AlgorithmHorizontalChangeAction;
+                    AlgorithmHorizontalChangeAction<>* h = new AlgorithmHorizontalChangeAction<>();
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = configOp;
@@ -529,9 +528,9 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else {
                     for (int mod = 0; mod < 3; mod++) {
-                        if (modulatorTrigger[threeToFour[configOp][mod]].process(params[MODULATOR_BUTTONS + threeToFour[configOp][mod]].getValue() > 0.f)) {
+                        if (modulatorTrigger[relToAbs[configOp][mod]].process(params[MODULATOR_BUTTONS + relToAbs[configOp][mod]].getValue() > 0.f)) {
                             // History
-                            AlgorithmDiagonalChangeAction* h = new AlgorithmDiagonalChangeAction;
+                            AlgorithmDiagonalChangeAction<>* h = new AlgorithmDiagonalChangeAction<>();
                             h->moduleId = this->id;
                             h->scene = configScene;
                             h->op = configOp;
@@ -556,7 +555,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 for (int i = 0; i < 4; i++) {
                     if (modulatorTrigger[i].process(params[MODULATOR_BUTTONS + i].getValue() > 0.f)) {
                         // History
-                        AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
+                        AlgorithmForcedCarrierChangeAction<>* h = new AlgorithmForcedCarrierChangeAction<>();
                         h->moduleId = this->id;
                         h->scene = configScene;
                         h->op = i;
@@ -585,7 +584,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     configMode = true;
                     
                     // History
-                    AlgorithmForcedCarrierChangeAction* h = new AlgorithmForcedCarrierChangeAction;
+                    AlgorithmForcedCarrierChangeAction<>* h = new AlgorithmForcedCarrierChangeAction<>();
                     h->moduleId = this->id;
                     h->scene = configScene;
                     h->op = i;
@@ -692,8 +691,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         }
                         else {
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
-                                modOut[threeToFour[i][j]][c] += routeDiagonalRing(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalRing(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSumRing(args.sampleTime, in[c], i, c);
                             carSumOut[c] += routeSum(args.sampleTime, in[c], i, c);
@@ -705,16 +704,16 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                             modOut[i][c] += routeHorizontalRing(args.sampleTime, in[c], i, c);
                             modOut[i][c] += routeHorizontal(args.sampleTime, in[c], i, c);
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonalRingB(args.sampleTime, in[c], i, j, c);
-                                modOut[threeToFour[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalRingB(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSumRingB(args.sampleTime, in[c], i, c);
                             carSumOut[c] += routeSumB(args.sampleTime, in[c], i, c);
                         }
                         else {
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonalRing(args.sampleTime, in[c], i, j, c);
-                                modOut[threeToFour[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalRing(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSumRing(args.sampleTime, in[c], i, c);
                             carSumOut[c] += routeSum(args.sampleTime, in[c], i, c);
@@ -734,13 +733,13 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         if (modeB) {
                             modOut[i][c] += routeHorizontal(args.sampleTime, in[c], i, c);
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSumB(args.sampleTime, in[c], i, c);
                         }
                         else {
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSum(args.sampleTime, in[c], i, c);
                         }
@@ -750,13 +749,13 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         if (modeB) {
                             modOut[i][c] += routeHorizontal(args.sampleTime, in[c], i, c);
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonalB(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSumB(args.sampleTime, in[c], i, c);
                         }
                         else {
                             for (int j = 0; j < 3; j++) {
-                                modOut[threeToFour[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
+                                modOut[relToAbs[i][j]][c] += routeDiagonal(args.sampleTime, in[c], i, j, c);
                             }
                             carSumOut[c] += routeSum(args.sampleTime, in[c], i, c);
                         }
@@ -957,7 +956,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 if (i != configOp) {
                     //Purple lights
                     lights[MODULATOR_LIGHTS + i * 3].setSmoothBrightness(configOp > -1 ?
-                        algoName[configScene].test(configOp * 3 + fourToThree[configOp][i]) ?
+                        algoName[configScene].test(configOp * 3 + absToRel[configOp][i]) ?
                             blinkStatus ?
                                 0.f
                                 : getOutputBrightness(MODULATOR_OUTPUTS + i)
@@ -965,7 +964,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         : getOutputBrightness(MODULATOR_OUTPUTS + i), args.sampleTime * lightDivider.getDivision());
                     //Yellow lights
                     lights[MODULATOR_LIGHTS + i * 3 + 1].setSmoothBrightness(configOp > -1 ?
-                        (algoName[configScene].test(configOp * 3 + fourToThree[configOp][i]) ?
+                        (algoName[configScene].test(configOp * 3 + absToRel[configOp][i]) ?
                             blinkStatus
                             : 0.f)
                         : 0.f, args.sampleTime * lightDivider.getDivision());
@@ -1187,52 +1186,52 @@ float AlgomorphLarge::routeDiagonal(float sampleTime, float inputVoltage, int op
     float connectionA = algoName[centerMorphScene[c]].test(op * 3 + mod)   * (1.f - relativeMorphMagnitude[c])  * !horizontalMarks[centerMorphScene[c]].test(op);
     float connectionB = algoName[forwardMorphScene[c]].test(op * 3 + mod)  * relativeMorphMagnitude[c]          * !horizontalMarks[forwardMorphScene[c]].test(op);
     float morphedConnection = connectionA + connectionB;
-    modClickGain[op][threeToFour[op][mod]][c] = clickFilterEnabled ? modClickFilters[op][threeToFour[op][mod]][c].process(sampleTime, morphedConnection) : morphedConnection;
-    return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modClickGain[op][threeToFour[op][mod]][c];
+    modClickGain[op][relToAbs[op][mod]][c] = clickFilterEnabled ? modClickFilters[op][relToAbs[op][mod]][c].process(sampleTime, morphedConnection) : morphedConnection;
+    return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modClickGain[op][relToAbs[op][mod]][c];
 }
 
 float AlgomorphLarge::routeDiagonalB(float sampleTime, float inputVoltage, int op, int mod, int c) {
     float connectionA = algoName[centerMorphScene[c]].test(op * 3 + mod)   * (1.f - relativeMorphMagnitude[c]);
     float connectionB = algoName[forwardMorphScene[c]].test(op * 3 + mod)  * relativeMorphMagnitude[c];
     float morphedConnection = connectionA + connectionB;
-    modClickGain[op][threeToFour[op][mod]][c] = clickFilterEnabled ? modClickFilters[op][threeToFour[op][mod]][c].process(sampleTime, morphedConnection) : morphedConnection;
-    return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modClickGain[op][threeToFour[op][mod]][c];
+    modClickGain[op][relToAbs[op][mod]][c] = clickFilterEnabled ? modClickFilters[op][relToAbs[op][mod]][c].process(sampleTime, morphedConnection) : morphedConnection;
+    return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modClickGain[op][relToAbs[op][mod]][c];
 }
 
 float AlgomorphLarge::routeDiagonalRing(float sampleTime, float inputVoltage, int op, int mod, int c) {
     float connection = algoName[backwardMorphScene[c]].test(op * 3 + mod) * relativeMorphMagnitude[c] * !horizontalMarks[backwardMorphScene[c]].test(op);
-    modRingClickGain[op][threeToFour[op][mod]][c] = clickFilterEnabled ? modRingClickFilters[op][threeToFour[op][mod]][c].process(sampleTime, connection) : connection; 
-    return (-inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modRingClickGain[op][threeToFour[op][mod]][c];
+    modRingClickGain[op][relToAbs[op][mod]][c] = clickFilterEnabled ? modRingClickFilters[op][relToAbs[op][mod]][c].process(sampleTime, connection) : connection; 
+    return (-inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modRingClickGain[op][relToAbs[op][mod]][c];
 }
 
 float AlgomorphLarge::routeDiagonalRingB(float sampleTime, float inputVoltage, int op, int mod, int c) {
     float connection = algoName[backwardMorphScene[c]].test(op * 3 + mod) * relativeMorphMagnitude[c];
-    modRingClickGain[op][threeToFour[op][mod]][c] = clickFilterEnabled ? modRingClickFilters[op][threeToFour[op][mod]][c].process(sampleTime, connection) : connection; 
-    return (-inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modRingClickGain[op][threeToFour[op][mod]][c];
+    modRingClickGain[op][relToAbs[op][mod]][c] = clickFilterEnabled ? modRingClickFilters[op][relToAbs[op][mod]][c].process(sampleTime, connection) : connection; 
+    return (-inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * modRingClickGain[op][relToAbs[op][mod]][c];
 }
 
 float AlgomorphLarge::routeSum(float sampleTime, float inputVoltage, int op, int c) {
-    float connection    =   carrier[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])  * !horizontalMarks[centerMorphScene[c]].test(op)
-                        +   carrier[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c]          * !horizontalMarks[forwardMorphScene[c]].test(op);
+    float connection    =   carriers[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])  * !horizontalMarks[centerMorphScene[c]].test(op)
+                        +   carriers[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c]          * !horizontalMarks[forwardMorphScene[c]].test(op);
     sumClickGain[op][c] = clickFilterEnabled ? sumClickFilters[op][c].process(sampleTime, connection) : connection;
     return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * sumClickGain[op][c];
 }
 
 float AlgomorphLarge::routeSumB(float sampleTime, float inputVoltage, int op, int c) {
-    float connection    =   carrier[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])
-                        +   carrier[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c];
+    float connection    =   carriers[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])
+                        +   carriers[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c];
     sumClickGain[op][c] = clickFilterEnabled ? sumClickFilters[op][c].process(sampleTime, connection) : connection;
     return (inputVoltage + scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * sumClickGain[op][c];
 }
 
 float AlgomorphLarge::routeSumRing(float sampleTime, float inputVoltage, int op, int c) {
-    float connection = carrier[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c] * !horizontalMarks[backwardMorphScene[c]].test(op);
+    float connection = carriers[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c] * !horizontalMarks[backwardMorphScene[c]].test(op);
     sumRingClickGain[op][c] = clickFilterEnabled ? sumRingClickFilters[op][c].process(sampleTime, connection) : connection;
     return (-inputVoltage - scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * sumRingClickGain[op][c];
 }
 
 float AlgomorphLarge::routeSumRingB(float sampleTime, float inputVoltage, int op, int c) {
-    float connection = carrier[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c];
+    float connection = carriers[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c];
     sumRingClickGain[op][c] = clickFilterEnabled ? sumRingClickFilters[op][c].process(sampleTime, connection) : connection;
     return (-inputVoltage - scaledAuxVoltage[AuxInputModes::SHADOW + op][c]) * sumRingClickGain[op][c];
 }
@@ -1796,7 +1795,7 @@ void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const Action &e) {
     }
     else {
         // History
-        AllowMultipleModesAction* h = new AllowMultipleModesAction;
+        AllowMultipleModesAction<>* h = new AllowMultipleModesAction<>();
         h->moduleId = module->id;
         h->auxIndex = auxIndex;
 
@@ -1848,7 +1847,7 @@ void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphL
 
 void AlgomorphLargeWidget::ResetOnRunItem::onAction(const Action &e) {
     // History
-    ToggleResetOnRunAction* h = new ToggleResetOnRunAction;
+    ToggleResetOnRunAction<>* h = new ToggleResetOnRunAction<>();
     h->moduleId = module->id;
 
     module->resetOnRun ^= true;
@@ -1858,7 +1857,7 @@ void AlgomorphLargeWidget::ResetOnRunItem::onAction(const Action &e) {
 
 void AlgomorphLargeWidget::RunSilencerItem::onAction(const Action &e) {
     // History
-    ToggleRunSilencerAction* h = new ToggleRunSilencerAction;
+    ToggleRunSilencerAction<>* h = new ToggleRunSilencerAction<>();
     h->moduleId = module->id;
 
     module->runSilencer ^= true;
@@ -1869,7 +1868,7 @@ void AlgomorphLargeWidget::RunSilencerItem::onAction(const Action &e) {
 void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
     if (module->auxInput[auxIndex]->modeIsActive[mode]) {
         // History
-        AuxInputUnsetAction* h = new AuxInputUnsetAction;
+        AuxInputUnsetAction<>* h = new AuxInputUnsetAction<>();
         h->moduleId = module->id;
         h->auxIndex = auxIndex;
         h->mode = mode;
@@ -1885,7 +1884,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
     else {
         if (module->auxInput[auxIndex]->allowMultipleModes) {
             // History
-            AuxInputSetAction* h = new AuxInputSetAction;
+            AuxInputSetAction<>* h = new AuxInputSetAction<>();
             h->moduleId = module->id;
             h->auxIndex = auxIndex;
             h->mode = mode;
@@ -1897,7 +1896,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
         }
         else {
             // History
-            AuxInputSwitchAction* h = new AuxInputSwitchAction;
+            AuxInputSwitchAction<>* h = new AuxInputSwitchAction<>();
             h->moduleId = module->id;
             h->auxIndex = auxIndex;
             h->oldMode = module->auxInput[auxIndex]->lastSetMode;
@@ -1960,7 +1959,7 @@ void AlgomorphLargeWidget::SaveAuxInputSettingsItem::onAction(const Action& e) {
 
 void AlgomorphLargeWidget::ResetSceneItem::onAction(const Action &e) {
     // History
-    ResetSceneAction* h = new ResetSceneAction;
+    ResetSceneAction<>* h = new ResetSceneAction<>();
     h->moduleId = module->id;
     h->oldResetScene = module->resetScene;
     h->newResetScene = scene;
@@ -1990,7 +1989,7 @@ Menu* AlgomorphLargeWidget::AudioSettingsMenuItem::createChildMenu() {
 
 void AlgomorphLargeWidget::WildModSumItem::onAction(const Action &e) {
     // History
-    ToggleWildModSumAction* h = new ToggleWildModSumAction;
+    ToggleWildModSumAction<>* h = new ToggleWildModSumAction<>();
     h->moduleId = module->id;
 
     module->wildModIsSummed ^= true;
@@ -2016,7 +2015,7 @@ void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(Algomo
 
 void AlgomorphLargeWidget::CCWScenesItem::onAction(const Action &e) {
     // History
-    ToggleCCWSceneSelectionAction* h = new ToggleCCWSceneSelectionAction;
+    ToggleCCWSceneSelectionAction<>* h = new ToggleCCWSceneSelectionAction<>();
     h->moduleId = module->id;
 
     module->ccwSceneSelection ^= true;
@@ -2050,7 +2049,7 @@ void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSetting
 
 void AlgomorphLargeWidget::KnobModeItem::onAction(const Action &e) {
     // History
-    KnobModeAction* h = new KnobModeAction;
+    KnobModeAction<>* h = new KnobModeAction<>();
     h->moduleId = module->id;
     h->oldKnobMode = module->knobMode;
     h->newKnobMode = mode;
@@ -2184,12 +2183,6 @@ void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(Algo
     // menu->addChild(glowingInkItem);
 }
 
-void AlgomorphLargeWidget::SaveVisualSettingsItem::onAction(const Action& e) {
-    // pluginSettings.glowingInkDefault = module->glowingInk;
-    pluginSettings.vuLightsDefault = module->vuLights;
-    pluginSettings.saveToJson();
-}
-
 AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     setModule(module);
     
@@ -2208,7 +2201,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     //     ink->hide();
     // addChild(ink);
 
-    AlgomorphDisplayWidget* screenWidget = new AlgomorphDisplayWidget(module);
+    AlgomorphDisplayWidget<>* screenWidget = new AlgomorphDisplayWidget<>(module);
     screenWidget->box.pos = mm2px(Vec(16.411, 11.631));
     screenWidget->box.size = mm2px(Vec(38.295, 31.590));
     addChild(screenWidget);
@@ -2225,17 +2218,17 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addChild(rack::createParamCentered<DLXScreenButtonLight>(mm2px(Vec(35.428, 49.297)), module, AlgomorphLarge::SCREEN_BUTTON));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_LIGHTS + 0));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_INDICATORS + 0));
+    addChild(createRingIndicatorCentered<Algomorph<>>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_INDICATORS + 0));
     addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
     addChild(rack::createParamCentered<DLX1ButtonLight>(SceneButtonCenters[0], module, AlgomorphLarge::SCENE_BUTTONS + 0));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_LIGHTS + 3));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_INDICATORS + 3));
+    addChild(createRingIndicatorCentered<Algomorph<>>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_INDICATORS + 3));
     addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
     addChild(rack::createParamCentered<DLX2ButtonLight>(SceneButtonCenters[1], module, AlgomorphLarge::SCENE_BUTTONS + 1));
 
     addChild(createRingLightCentered<DLXMultiLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_LIGHTS + 6));
-    addChild(createRingIndicatorCentered<Algomorph>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_INDICATORS + 6));
+    addChild(createRingIndicatorCentered<Algomorph<>>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_INDICATORS + 6));
     addParam(rack::createParamCentered<rack::componentlibrary::TL1105>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
     addChild(rack::createParamCentered<DLX3ButtonLight>(SceneButtonCenters[2], module, AlgomorphLarge::SCENE_BUTTONS + 2));
 
@@ -2279,7 +2272,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 102.428)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 1));
     addOutput(rack::createOutputCentered<DLXPJ301MPort>(mm2px(Vec(63.842, 112.749)), module, AlgomorphLarge::MODULATOR_OUTPUTS + 0));
 
-    ConnectionBgWidget* connectionBgWidget = new ConnectionBgWidget(OpButtonCenters, ModButtonCenters, module);
+    ConnectionBgWidget<>* connectionBgWidget = new ConnectionBgWidget<>(OpButtonCenters, ModButtonCenters, module);
     connectionBgWidget->box.pos = OpButtonCenters[3];
     connectionBgWidget->box.size = ModButtonCenters[0].minus(OpButtonCenters[3]);
     addChild(connectionBgWidget);
@@ -2326,10 +2319,10 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[1], module, AlgomorphLarge::OPERATOR_LIGHTS + 3));
     addChild(createRingLightCentered<DLXMultiLight>(OpButtonCenters[0], module, AlgomorphLarge::OPERATOR_LIGHTS + 0));
 
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[3], module, AlgomorphLarge::CARRIER_INDICATORS + 9));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[2], module, AlgomorphLarge::CARRIER_INDICATORS + 6));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[1], module, AlgomorphLarge::CARRIER_INDICATORS + 3));
-    addChild(createRingIndicatorCentered<Algomorph>(OpButtonCenters[0], module, AlgomorphLarge::CARRIER_INDICATORS + 0));
+    addChild(createRingIndicatorCentered<Algomorph<>>(OpButtonCenters[3], module, AlgomorphLarge::CARRIER_INDICATORS + 9));
+    addChild(createRingIndicatorCentered<Algomorph<>>(OpButtonCenters[2], module, AlgomorphLarge::CARRIER_INDICATORS + 6));
+    addChild(createRingIndicatorCentered<Algomorph<>>(OpButtonCenters[1], module, AlgomorphLarge::CARRIER_INDICATORS + 3));
+    addChild(createRingIndicatorCentered<Algomorph<>>(OpButtonCenters[0], module, AlgomorphLarge::CARRIER_INDICATORS + 0));
 
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[3], module, AlgomorphLarge::MODULATOR_LIGHTS + 9));
     addChild(createRingLightCentered<DLXMultiLight>(ModButtonCenters[2], module, AlgomorphLarge::MODULATOR_LIGHTS + 6));

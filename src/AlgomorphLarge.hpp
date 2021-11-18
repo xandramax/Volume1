@@ -8,7 +8,7 @@ using rack::ui::Menu;
 using rack::window::mm2px;
 
 
-struct AlgomorphLarge : Algomorph {
+struct AlgomorphLarge : Algomorph<> {
     static constexpr int NUM_AUX_INPUTS = 5;
 
     enum ParamIds {
@@ -128,8 +128,7 @@ struct AlgomorphLarge : Algomorph {
 // };
 
 /// Panel Widget
-
-struct AlgomorphLargeWidget : AlgomorphWidget {
+struct AlgomorphLargeWidget : AlgomorphWidget<> {
     // AlgomorphLargeGlowingInk* ink;
 
     std::vector<Vec> SceneButtonCenters =   {   {mm2px(63.842), mm2px(17.924)},
@@ -246,4 +245,246 @@ struct AlgomorphLargeWidget : AlgomorphWidget {
     void appendContextMenu(Menu* menu) override;
     void setKnobMode(int mode);
     void step() override;
+};
+
+
+// Undo/Redo
+
+template < int OPS = 4, int SCENES = 3 >
+struct ResetSceneAction : ModuleAction {
+	int oldResetScene, newResetScene;
+
+	ResetSceneAction()  {
+		name = "Delexander Algomorph change reset scene";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->resetScene = oldResetScene;
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->resetScene = newResetScene;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct ToggleCCWSceneSelectionAction : ModuleAction {
+	ToggleCCWSceneSelectionAction() {
+		name = "Delexander Algomorph toggle CCW scene selection";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->ccwSceneSelection ^= true;
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->ccwSceneSelection ^= true;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct ToggleWildModSumAction : ModuleAction {
+	ToggleWildModSumAction() {
+		name = "Delexander Algomorph toggle wildcard mod summing";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->wildModIsSummed ^= true;
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->wildModIsSummed ^= true;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct ToggleResetOnRunAction : ModuleAction {
+	ToggleResetOnRunAction() {
+		name = "Delexander Algomorph toggle reset on run";
+	};
+    void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->resetOnRun ^= true;
+	};
+    void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->resetOnRun ^= true;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct ToggleRunSilencerAction : ModuleAction {
+	ToggleRunSilencerAction() {
+		name = "Delexander Algomorph toggle run silencer";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->runSilencer ^= true;
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->runSilencer ^= true;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct KnobModeAction : ModuleAction {
+    int oldKnobMode, newKnobMode;
+
+	KnobModeAction() {
+		name = "Delexander Algomorph knob mode";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->knobMode = oldKnobMode;
+	};
+    void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->knobMode = newKnobMode;
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct AuxInputSetAction : ModuleAction {
+    int auxIndex, mode, channels;
+
+	AuxInputSetAction() {
+		name = "Delexander Algomorph AUX In mode set";
+	}
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->unsetAuxMode(auxIndex, mode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
+		m->rescaleVoltage(mode, channels);
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->setMode(mode);
+		m->rescaleVoltage(mode, channels);
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct AuxInputSwitchAction : ModuleAction {
+	int auxIndex, oldMode, newMode, channels;
+
+	AuxInputSwitchAction()  {
+		name = "Delexander Algomorph AUX In mode switch";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->unsetAuxMode(auxIndex, newMode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[newMode][c] = m->auxInput[auxIndex]->defVoltage[newMode];
+		m->rescaleVoltage(newMode, channels);
+		m->auxInput[auxIndex]->setMode(oldMode);
+		m->rescaleVoltage(oldMode, channels);
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->unsetAuxMode(auxIndex, oldMode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[oldMode][c] = m->auxInput[auxIndex]->defVoltage[oldMode];
+		m->rescaleVoltage(oldMode, channels);
+		m->auxInput[auxIndex]->setMode(newMode);
+		m->rescaleVoltage(newMode, channels);
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct AuxInputUnsetAction : ModuleAction {
+    int auxIndex, mode, channels;
+
+	AuxInputUnsetAction() {
+		name = "Delexander Algomorph AUX In mode unset";
+	}
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->setMode(mode);
+		m->rescaleVoltage(mode, channels);
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->unsetAuxMode(auxIndex, mode);
+		for (int c = 0; c < channels; c++)
+			m->auxInput[auxIndex]->voltage[mode][c] = m->auxInput[auxIndex]->defVoltage[mode];
+		m->rescaleVoltage(mode, channels);
+	};
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct AllowMultipleModesAction : ModuleAction {
+	int auxIndex;
+	AllowMultipleModesAction() {
+		name = "Delexander Algomorph allow multiple modes";
+	};
+	void undo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->allowMultipleModes = false;
+	};
+	void redo() override {
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		assert(mw);
+		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
+		assert(m);
+		m->auxInput[auxIndex]->allowMultipleModes = true;
+	};
 };

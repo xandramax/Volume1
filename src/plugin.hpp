@@ -4,7 +4,6 @@
 #include "pluginsettings.hpp"
 #include "GraphStructure.hpp"
 #include "GraphData.hpp"
-#include "AlgomorphHistory.hpp"
 
 
 using namespace rack;
@@ -26,6 +25,7 @@ const NVGcolor DLXLightPurple = nvgRGB(0x8b, 0x70, 0xa2);
 const NVGcolor DLXExtraLightPurple = nvgRGB(0xbc, 0xad, 0xc9);
 const NVGcolor DLXRed = nvgRGB(0xae, 0x34, 0x58);
 const NVGcolor DLXYellow = nvgRGB(0xa9, 0xa9, 0x83);
+constexpr int CHANNELS = 16;
 constexpr float BLINK_INTERVAL = 0.42857142857f;
 constexpr float DEF_CLICK_FILTER_SLEW = 3750.f;
 constexpr float FIVE_D_TWO = 5.f / 2.f;
@@ -57,3 +57,12 @@ T sin2pi_pade_05_5_4(T x) {
 	return (T(-6.283185307) * x + T(33.19863968) * simd::pow(x, 3) - T(32.44191367) * simd::pow(x, 5))
 	       / (1 + T(1.296008659) * simd::pow(x, 2) + T(0.7028072946) * simd::pow(x, 4));
 }
+
+inline NVGcolor crossfadeColor(NVGcolor c1, NVGcolor c2, float p) {
+	NVGcolor c;
+    c.r = crossfade(c1.r, c2.r, p);
+    c.g = crossfade(c1.g, c2.g, p);
+    c.b = crossfade(c1.b, c2.b, p);
+    c.a = crossfade(c1.a, c2.a, p);
+    return c;
+};
