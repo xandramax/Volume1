@@ -4,7 +4,7 @@
 using rack::window::mm2px;
 
 
-struct AlgomorphSmall : Algomorph {
+struct AlgomorphSmall : Algomorph<> {
     static constexpr int NUM_AUX_INPUTS = 5;
 
     enum ParamIds {
@@ -88,7 +88,7 @@ struct AlgomorphSmall : Algomorph {
 
 /// Panel Widget
 
-struct AlgomorphSmallWidget : AlgomorphWidget {
+struct AlgomorphSmallWidget : AlgomorphWidget<> {
     // AlgomorphSmallGlowingInk* ink;
     bool morphKnobShown = true;
 
