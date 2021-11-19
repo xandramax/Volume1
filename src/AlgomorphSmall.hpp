@@ -5,8 +5,6 @@ using rack::window::mm2px;
 
 
 struct AlgomorphSmall : Algomorph<> {
-    static constexpr int NUM_AUX_INPUTS = 5;
-
     enum ParamIds {
         ENUMS(OPERATOR_BUTTONS, 4),
         ENUMS(MODULATOR_BUTTONS, 4),
