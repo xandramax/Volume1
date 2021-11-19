@@ -46,7 +46,7 @@ AlgomorphLarge::AlgomorphLarge() {
     for (int i = 0; i < 3; i++) {
         configButton(SCENE_BUTTONS + i, "Algorithm " + std::to_string(i + 1) + " button");
     }
-    configButton(EDIT_BUTTON, "Edit button");
+    configButton(EDIT_BUTTON, "Algorithm Edit button");
     configButton(SCREEN_BUTTON, "Screen button (out of service)");
 
     for (int i = 0; i < 4; i++)
