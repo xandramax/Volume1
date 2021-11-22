@@ -638,19 +638,19 @@ struct DLXLightKnob : rack::app::SvgKnob {
 template <typename TKnobLight = DLXLargeKnobLight>
 struct DLXLargeLightKnob : DLXLightKnob<TKnobLight> {
 	DLXLargeLightKnob() {
-		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundHugeBlackKnob-bg.svg")));
+		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundHugeBlackKnob_bg.svg")));
 	}
 };
 
 struct DLXMediumLightKnob : DLXLightKnob<DLXMediumKnobLight> {
 	DLXMediumLightKnob() {
-		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundLargeBlackKnob-bg.svg")));
+		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundLargeBlackKnob_bg.svg")));
 	}
 };
 
 struct DLXSmallLightKnob : DLXLightKnob<DLXSmallKnobLight> {
 	DLXSmallLightKnob() {
-		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundSmallBlackKnob-bg.svg")));
+		this->setSvg(Svg::load(rack::asset::system("res/ComponentLibrary/RoundSmallBlackKnob_bg.svg")));
 	}
 };
 
