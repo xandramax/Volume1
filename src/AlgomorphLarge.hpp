@@ -64,7 +64,7 @@ struct AlgomorphLarge : Algomorph<> {
 
     rack::dsp::SchmittTrigger sceneAdvCVTrigger;
     rack::dsp::SchmittTrigger resetCVTrigger;
-    long clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * APP->engine->getSampleRate());
+    long clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * contextGet()->engine->getSampleRate());
 
     rack::dsp::SlewLimiter runClickFilter;
     bool running = true;
@@ -118,7 +118,7 @@ struct AlgomorphLarge : Algomorph<> {
 
 // struct AlgomorphLargeGlowingInk : SvgLight {
 // 	AlgomorphLargeGlowingInk() {
-// 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_GlowingInk.svg")));
+// 		setSvg(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphLarge_GlowingInk.svg")));
 // 	}
 
 //     void draw(const DrawArgs& args) override {
@@ -258,14 +258,14 @@ struct ResetSceneAction : ModuleAction {
 		name = "Delexandra Algomorph change reset scene";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->resetScene = oldResetScene;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -279,14 +279,14 @@ struct ToggleCCWSceneSelectionAction : ModuleAction {
 		name = "Delexandra Algomorph toggle CCW scene selection";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->ccwSceneSelection ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -300,14 +300,14 @@ struct ToggleWildModSumAction : ModuleAction {
 		name = "Delexandra Algomorph toggle wildcard mod summing";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->wildModIsSummed ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -321,14 +321,14 @@ struct ToggleResetOnRunAction : ModuleAction {
 		name = "Delexandra Algomorph toggle reset on run";
 	};
     void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->resetOnRun ^= true;
 	};
     void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -342,14 +342,14 @@ struct ToggleRunSilencerAction : ModuleAction {
 		name = "Delexandra Algomorph toggle run silencer";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->runSilencer ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -365,14 +365,14 @@ struct KnobModeAction : ModuleAction {
 		name = "Delexandra Algomorph knob mode";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->knobMode = oldKnobMode;
 	};
     void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -388,7 +388,7 @@ struct AuxInputSetAction : ModuleAction {
 		name = "Delexandra Algomorph AUX In mode set";
 	}
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -398,7 +398,7 @@ struct AuxInputSetAction : ModuleAction {
 		m->rescaleVoltage(mode, channels);
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -415,7 +415,7 @@ struct AuxInputSwitchAction : ModuleAction {
 		name = "Delexandra Algomorph AUX In mode switch";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -427,7 +427,7 @@ struct AuxInputSwitchAction : ModuleAction {
 		m->rescaleVoltage(oldMode, channels);
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -448,7 +448,7 @@ struct AuxInputUnsetAction : ModuleAction {
 		name = "Delexandra Algomorph AUX In mode unset";
 	}
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -456,7 +456,7 @@ struct AuxInputUnsetAction : ModuleAction {
 		m->rescaleVoltage(mode, channels);
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
@@ -474,14 +474,14 @@ struct AllowMultipleModesAction : ModuleAction {
 		name = "Delexandra Algomorph allow multiple modes";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);
 		m->auxInput[auxIndex]->allowMultipleModes = false;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
 		assert(mw);
 		AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
 		assert(m);

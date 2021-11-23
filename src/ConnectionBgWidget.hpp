@@ -30,7 +30,7 @@ struct InitializeCurrentAlgorithmItem : MenuItem {
 		module->initializeAlgorithm(scene);
 		module->graphDirty = true;
 
-		APP->history->push(h);
+		contextGet()->history->push(h);
 	};
 };
 
@@ -52,7 +52,7 @@ struct InitializeAllAlgorithmsItem : MenuItem {
 
 		module->graphDirty = true;
 
-		APP->history->push(h);
+		contextGet()->history->push(h);
 	};
 };
 
@@ -80,7 +80,7 @@ struct RandomizeCurrentAlgorithmItem : MenuItem {
 		h->newOpsDisabled = module->opsDisabled[scene].to_ullong();
 		h->newForcedCarriers = module->forcedCarriers[scene].to_ullong();
 
-		APP->history->push(h);
+		contextGet()->history->push(h);
 	};
 };
 
@@ -111,7 +111,7 @@ struct RandomizeAllAlgorithmsItem : MenuItem {
 			h->newForcedCarriers[scene] = module->forcedCarriers[scene].to_ullong();
 		}
 
-		APP->history->push(h);
+		contextGet()->history->push(h);
 	};
 };
 

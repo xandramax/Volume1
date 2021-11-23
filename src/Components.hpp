@@ -725,49 +725,49 @@ struct DLXSvgSwitchBloomLight : rack::app::SvgSwitch {
 struct DLXPencilButtonLight : DLXSvgSwitchBloomLight {
 	DLXPencilButtonLight() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_0.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_PencilButtonLight_1.svg")));
 	}
 };
 
 struct DLXScreenButtonLight : DLXSvgSwitchBloomLight {
 	DLXScreenButtonLight() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_0.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_ScreenButtonLight_1.svg")));
 	}
 };
 
 struct DLX1ButtonLight : DLXSvgSwitchBloomLight {
 	DLX1ButtonLight() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_0.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_1b_light_1.svg")));
 	}
 };
 
 struct DLX2ButtonLight : DLXSvgSwitchBloomLight {
 	DLX2ButtonLight() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_0.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_2b_light_1.svg")));
 	}
 };
 
 struct DLX3ButtonLight : DLXSvgSwitchBloomLight {
 	DLX3ButtonLight() {
 		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
-		addHaloFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
+		addFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_0.svg")));
+		addHaloFrame(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/DLX_3b_light_1.svg")));
 	}
 };
