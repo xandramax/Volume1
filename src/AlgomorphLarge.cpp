@@ -222,7 +222,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                         
                         baseScene = i;
 
-                        APP->history->push(h);
+                        contextGet()->history->push(h);
 
                     }
                 }
@@ -517,7 +517,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
                     toggleHorizontalDestination(configScene, configOp);
 
-                    APP->history->push(h);
+                    contextGet()->history->push(h);
 
                     if (exitConfigOnConnect) {
                         configMode = false;
@@ -538,7 +538,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
                             toggleDiagonalDestination(configScene, configOp, mod);
                             
-                            APP->history->push(h);
+                            contextGet()->history->push(h);
 
                             if (exitConfigOnConnect) {
                                 configMode = false;
@@ -562,7 +562,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
                         toggleForcedCarrier(configScene, i);
 
-                        APP->history->push(h);
+                        contextGet()->history->push(h);
                         
                         graphDirty = true;
                         break;
@@ -591,7 +591,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
                     toggleForcedCarrier(configScene, i);
 
-                    APP->history->push(h);
+                    contextGet()->history->push(h);
                     
                     graphDirty = true;
                     break;
@@ -1364,7 +1364,7 @@ void AlgomorphLarge::rescaleVoltages(int channels) {
 }
 
 void AlgomorphLarge::initRun() {
-    clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * APP->engine->getSampleRate());
+    clockIgnoreOnReset = (long) (CLOCK_IGNORE_DURATION * contextGet()->engine->getSampleRate());
     baseScene = resetScene;
 }
 
@@ -1734,7 +1734,7 @@ AlgomorphLargeWidget::DisallowMultipleModesAction::DisallowMultipleModesAction()
 }
 
 void AlgomorphLargeWidget::DisallowMultipleModesAction::undo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -1751,7 +1751,7 @@ void AlgomorphLargeWidget::DisallowMultipleModesAction::undo() {
 }
 
 void AlgomorphLargeWidget::DisallowMultipleModesAction::redo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -1791,7 +1791,7 @@ void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const Action &e) {
         }
         module->auxInput[auxIndex]->allowMultipleModes = false;
 
-        APP->history->push(h);
+        contextGet()->history->push(h);
     }
     else {
         // History
@@ -1801,7 +1801,7 @@ void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const Action &e) {
 
         module->auxInput[auxIndex]->allowMultipleModes = true;
 
-        APP->history->push(h);
+        contextGet()->history->push(h);
     }
 }
 
@@ -1852,7 +1852,7 @@ void AlgomorphLargeWidget::ResetOnRunItem::onAction(const Action &e) {
 
     module->resetOnRun ^= true;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 void AlgomorphLargeWidget::RunSilencerItem::onAction(const Action &e) {
@@ -1862,7 +1862,7 @@ void AlgomorphLargeWidget::RunSilencerItem::onAction(const Action &e) {
 
     module->runSilencer ^= true;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
@@ -1879,7 +1879,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
             module->auxInput[auxIndex]->voltage[mode][c] = module->auxInput[auxIndex]->defVoltage[mode];
         module->rescaleVoltage(mode, h->channels);
 
-        APP->history->push(h);
+        contextGet()->history->push(h);
     }
     else {
         if (module->auxInput[auxIndex]->allowMultipleModes) {
@@ -1892,7 +1892,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
 
             module->auxInput[auxIndex]->setMode(mode);
 
-            APP->history->push(h);
+            contextGet()->history->push(h);
         }
         else {
             // History
@@ -1909,7 +1909,7 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
             module->rescaleVoltage(h->oldMode, h->channels);
             module->auxInput[auxIndex]->setMode(mode);
 
-            APP->history->push(h);
+            contextGet()->history->push(h);
         }
     }
 }
@@ -1966,7 +1966,7 @@ void AlgomorphLargeWidget::ResetSceneItem::onAction(const Action &e) {
 
     module->resetScene = scene;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 Menu* AlgomorphLargeWidget::ResetSceneMenuItem::createChildMenu() {
@@ -1994,7 +1994,7 @@ void AlgomorphLargeWidget::WildModSumItem::onAction(const Action &e) {
 
     module->wildModIsSummed ^= true;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(AlgomorphLarge* module, Menu* menu) {
@@ -2020,7 +2020,7 @@ void AlgomorphLargeWidget::CCWScenesItem::onAction(const Action &e) {
 
     module->ccwSceneSelection ^= true;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 Menu* AlgomorphLargeWidget::InteractionSettingsMenuItem::createChildMenu() {
@@ -2056,7 +2056,7 @@ void AlgomorphLargeWidget::KnobModeItem::onAction(const Action &e) {
 
     module->knobMode = mode;
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 /// Reset Knobs Menu Item
@@ -2066,7 +2066,7 @@ AlgomorphLargeWidget::ResetKnobsAction::ResetKnobsAction() {
 }
 
 void AlgomorphLargeWidget::ResetKnobsAction::undo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2075,7 +2075,7 @@ void AlgomorphLargeWidget::ResetKnobsAction::undo() {
 }
 
 void AlgomorphLargeWidget::ResetKnobsAction::redo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2093,7 +2093,7 @@ void AlgomorphLargeWidget::ResetKnobsItem::onAction(const Action &e) {
         module->params[AlgomorphLarge::AUX_KNOBS + i].setValue(DEF_KNOB_VALUES[i]);
     }
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 AlgomorphLargeWidget::TogglePhaseOutRangeAction::TogglePhaseOutRangeAction() {
@@ -2101,7 +2101,7 @@ AlgomorphLargeWidget::TogglePhaseOutRangeAction::TogglePhaseOutRangeAction() {
 }
 
 void AlgomorphLargeWidget::TogglePhaseOutRangeAction::undo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2116,7 +2116,7 @@ void AlgomorphLargeWidget::TogglePhaseOutRangeAction::undo() {
 }
 
 void AlgomorphLargeWidget::TogglePhaseOutRangeAction::redo() {
-    ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphLarge* m = dynamic_cast<AlgomorphLarge*>(mw->module);
     assert(m);
@@ -2144,7 +2144,7 @@ void AlgomorphLargeWidget::PhaseOutRangeItem::onAction(const Action &e) {
         module->phaseMax = 10.f;
     }
 
-    APP->history->push(h);
+    contextGet()->history->push(h);
 }
 
 Menu* AlgomorphLargeWidget::KnobModeMenuItem::createChildMenu() {
@@ -2187,9 +2187,9 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     setModule(module);
     
     if (module)
-        setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge.svg")));
+        setPanel(contextGet()->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge.svg")));
     else
-        setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge_ModuleBrowser.svg")));
+        setPanel(contextGet()->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphLarge_ModuleBrowser.svg")));
 
     addChild(rack::createWidget<DLXGameBitBlack>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(rack::createWidget<DLXGameBitBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));

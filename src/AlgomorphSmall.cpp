@@ -90,7 +90,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
                         
                         baseScene = i;
 
-                        APP->history->push(h);
+                        contextGet()->history->push(h);
 
                     }
                 }
@@ -332,7 +332,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
 
                     toggleHorizontalDestination(configScene, configOp);
 
-                    APP->history->push(h);
+                    contextGet()->history->push(h);
 
                     if (exitConfigOnConnect) {
                         configMode = false;
@@ -353,7 +353,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
 
                             toggleDiagonalDestination(configScene, configOp, mod);
                             
-                            APP->history->push(h);
+                            contextGet()->history->push(h);
 
                             if (exitConfigOnConnect) {
                                 configMode = false;
@@ -377,7 +377,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
 
                         toggleForcedCarrier(configScene, i);
 
-                        APP->history->push(h);
+                        contextGet()->history->push(h);
                         
                         graphDirty = true;
                         break;
@@ -406,7 +406,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
 
                     toggleForcedCarrier(configScene, i);
 
-                    APP->history->push(h);
+                    contextGet()->history->push(h);
                     
                     graphDirty = true;
                     break;
@@ -1176,7 +1176,7 @@ AlgomorphSmallWidget::SetGainLevelAction::SetGainLevelAction() {
 }
 
 void AlgomorphSmallWidget::SetGainLevelAction::undo() {
-    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1185,7 +1185,7 @@ void AlgomorphSmallWidget::SetGainLevelAction::undo() {
 }
 
 void AlgomorphSmallWidget::SetGainLevelAction::redo() {
-    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1203,7 +1203,7 @@ void AlgomorphSmallWidget::SetGainLevelItem::onAction(const rack::event::Action 
         
         module->gain = gain;
 
-        APP->history->push(h);
+        contextGet()->history->push(h);
     }
 }
 
@@ -1226,7 +1226,7 @@ AlgomorphSmallWidget::SetMorphMultAction::SetMorphMultAction() {
 }
 
 void AlgomorphSmallWidget::SetMorphMultAction::undo() {
-    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1235,7 +1235,7 @@ void AlgomorphSmallWidget::SetMorphMultAction::undo() {
 }
 
 void AlgomorphSmallWidget::SetMorphMultAction::redo() {
-    rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+    rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
     assert(mw);
     AlgomorphSmall* m = dynamic_cast<AlgomorphSmall*>(mw->module);
     assert(m);
@@ -1253,7 +1253,7 @@ void AlgomorphSmallWidget::SetMorphMultItem::onAction(const rack::event::Action 
         
         module->morphMult[inputId] = morphMult;
 
-        APP->history->push(h);
+        contextGet()->history->push(h);
     }
 }
 
@@ -1272,7 +1272,7 @@ void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall
 AlgomorphSmallWidget::AlgomorphSmallWidget(AlgomorphSmall* module) {
     setModule(module);
     
-    setPanel(APP->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphSmall.svg")));
+    setPanel(contextGet()->window->loadSvg(rack::asset::plugin(pluginInstance, "res/AlgomorphSmall.svg")));
 
     addChild(rack::createWidget<DLXGameBitBlack>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(rack::createWidget<DLXGameBitBlack>(Vec(box.size.x - RACK_GRID_WIDTH * 2, 0)));
