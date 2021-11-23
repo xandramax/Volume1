@@ -323,7 +323,7 @@ struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
             if (!module) return;
 
             if (layer == 1) {
-                font = contextGet()->window->loadFont(rack::asset::plugin(pluginInstance, fontPath));
+                font = APP->window->loadFont(rack::asset::plugin(pluginInstance, fontPath));
 
                 //Origin must be updated
                 xOrigin = box.size.x / 2.f;

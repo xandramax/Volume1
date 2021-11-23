@@ -521,7 +521,7 @@ struct AlgorithmDiagonalChangeAction : ModuleAction {
 		name = "Delexander Algomorph diagonal connection";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -531,7 +531,7 @@ struct AlgorithmDiagonalChangeAction : ModuleAction {
 		m->graphDirty = true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -550,7 +550,7 @@ struct AlgorithmHorizontalChangeAction : ModuleAction {
 		name = "Delexander Algomorph horizontal connection";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -560,7 +560,7 @@ struct AlgorithmHorizontalChangeAction : ModuleAction {
 		m->graphDirty = true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -579,7 +579,7 @@ struct AlgorithmForcedCarrierChangeAction : ModuleAction {
 		name = "Delexander Algomorph forced carrier";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -587,7 +587,7 @@ struct AlgorithmForcedCarrierChangeAction : ModuleAction {
 		m->toggleForcedCarrier(scene, op);
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -604,7 +604,7 @@ struct AlgorithmSceneChangeAction : ModuleAction {
 		name = "Delexander Algomorph base scene";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -612,7 +612,7 @@ struct AlgorithmSceneChangeAction : ModuleAction {
 		m->graphDirty = true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -627,7 +627,7 @@ struct ToggleModeBAction : ModuleAction {
 		name = "Delexander Algomorph toggle mode B";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -637,7 +637,7 @@ struct ToggleModeBAction : ModuleAction {
 		m->graphDirty = true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -654,14 +654,14 @@ struct ToggleRingMorphAction : ModuleAction {
 		name = "Delexander Algomorph toggle ring morph";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->ringMorph ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -675,14 +675,14 @@ struct ToggleRandomizeRingMorphAction : ModuleAction {
 		name = "Delexander Algomorph toggle randomize ring morph";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->randomRingMorph ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -696,14 +696,14 @@ struct ToggleExitConfigOnConnectAction : ModuleAction {
 		name = "Delexander Algomorph toggle exit config on connect";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->exitConfigOnConnect ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -717,14 +717,14 @@ struct ToggleClickFilterAction : ModuleAction {
 		name = "Delexander Algomorph toggle click filter";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->clickFilterEnabled ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -739,14 +739,14 @@ struct ToggleGlowingInkAction : ModuleAction {
 		name = "Delexander Algomorph toggle glowing ink";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->glowingInk ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -760,14 +760,14 @@ struct ToggleVULightsAction : ModuleAction {
 		name = "Delexander Algomorph toggle VU lights";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->vuLights ^= true;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -783,14 +783,14 @@ struct SetClickFilterAction : ModuleAction {
 		name = "Delexander Algomorph set click filter slew";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
 		m->clickFilterSlew = oldSlew;
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -808,7 +808,7 @@ struct RandomizeCurrentAlgorithmAction : ModuleAction {
 		name = "Delexander Algomorph randomize current algorithm";
 	};
     void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -819,7 +819,7 @@ struct RandomizeCurrentAlgorithmAction : ModuleAction {
 		m->updateDisplayAlgo(scene);
 	};
     void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -840,7 +840,7 @@ struct RandomizeAllAlgorithmsAction : ModuleAction {
 		name = "Delexander Algomorph randomize all algorithms";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -853,7 +853,7 @@ struct RandomizeAllAlgorithmsAction : ModuleAction {
 		}
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -875,7 +875,7 @@ struct InitializeCurrentAlgorithmAction : ModuleAction {
 		name = "Delexander Algomorph initialize current algorithm";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -886,7 +886,7 @@ struct InitializeCurrentAlgorithmAction : ModuleAction {
 		m->updateDisplayAlgo(scene);
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -906,7 +906,7 @@ struct InitializeAllAlgorithmsAction : ModuleAction {
 		name = "Delexander Algomorph initialize all algorithms";
 	};
 	void undo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -919,7 +919,7 @@ struct InitializeAllAlgorithmsAction : ModuleAction {
 		}
 	};
 	void redo() override {
-		rack::app::ModuleWidget* mw = contextGet()->scene->rack->getModule(moduleId);
+		rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
 		assert(mw);
 		Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
 		assert(m);
@@ -953,7 +953,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->toggleModeB();
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
 
             this->module->graphDirty = true;
         };
@@ -966,7 +966,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->ringMorph ^= true;
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
         };
     };
     struct ExitConfigItem : AlgomorphMenuItem<OPS, SCENES> {
@@ -977,7 +977,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->exitConfigOnConnect ^= true;
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
         };
     };
 
@@ -989,7 +989,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->clickFilterEnabled ^= true;
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
         };
     };
 
@@ -1001,7 +1001,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->vuLights ^= true;
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
         };
     };
     struct GlowingInkItem : AlgomorphMenuItem<OPS, SCENES> {
@@ -1012,7 +1012,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
 
             this->module->glowingInk ^= true;
 
-            contextGet()->history->push(h);
+            APP->history->push(h);
         };
     };
     struct DebugItem : AlgomorphMenuItem<OPS, SCENES> {
@@ -1128,7 +1128,7 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
                 h->oldSlew = oldValue;
                 h->newSlew = quantity->getValue();
 
-                contextGet()->history->push(h);
+                APP->history->push(h);
             }    
         };
     };
