@@ -314,6 +314,8 @@ struct TRingLight : TBase {
 		if (this->color.r == 0.f && this->color.g == 0.f && this->color.b == 0.f)
 			return;
 
+		nvgShapeAntiAlias(args.vg, false);
+
 		Vec c = this->box.size.div(2);
 
 		// Outer halo
@@ -321,8 +323,8 @@ struct TRingLight : TBase {
 		float oradius = RING_LIGHT_STROKEWIDTH * 9.125f + this->radius;
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * (oradius), 2 * (oradius));
-		nvgPathWinding(args.vg, NVG_HOLE);
 		nvgCircle(args.vg, c.x, c.y, this->radius);
+		nvgPathWinding(args.vg, NVG_HOLE);
 		NVGcolor icol = rack::color::mult(this->color, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
 		NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, icol, ocol);
@@ -513,6 +515,8 @@ struct DLXKnobLight : DLXSvgLight {
 		if (halo == 0.f)
 			return;
 
+		nvgShapeAntiAlias(args.vg, false);
+
 		Vec c = this->box.size.div(2);
 
 		nvgGlobalAlpha(args.vg, 1.f/3.f);
@@ -538,8 +542,8 @@ struct DLXKnobLight : DLXSvgLight {
 		oradius = RING_LIGHT_STROKEWIDTH * 9.125f + radius;
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * (oradius), 2 * (oradius));
-		nvgPathWinding(args.vg, NVG_HOLE);
 		nvgCircle(args.vg, c.x, c.y, radius);
+		nvgPathWinding(args.vg, NVG_HOLE);
 		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
