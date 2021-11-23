@@ -75,7 +75,7 @@ struct AlgomorphSmall : Algomorph<> {
 
 // struct AlgomorphSmallGlowingInk : SvgLight {
 // 	AlgomorphSmallGlowingInk() {
-// 		setSvg(contextGet()->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall_GlowingInk.svg")));
+// 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/AlgomorphSmall_GlowingInk.svg")));
 // 	}
 
 //     void draw(const DrawArgs& args) override {
