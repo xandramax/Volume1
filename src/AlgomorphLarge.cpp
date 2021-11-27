@@ -2238,7 +2238,7 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
     addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 58.058)), module, AlgomorphLarge::AUX_INPUTS + 3));
     addInput(rack::createInputCentered<DLXPJ301MPort>(mm2px(Vec(7.285, 70.822)), module, AlgomorphLarge::AUX_INPUTS + 4));
 
-    addParam(rack::createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight<DLXSmallLightKnob>>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
+    addParam(rack::createParamCentered<DLXLargeLightKnob<DLXDonutLargeKnobLight>>(mm2px(Vec(35.559, 107.553)), module, AlgomorphLarge::MORPH_KNOB));
 
     if (module) {
         for (int i = 0; i < AuxKnobModes::NUM_MODES; i++) {
