@@ -4,14 +4,13 @@
   "version": "2.0.0",
   "license": "GPL-3.0-only",
   "brand": "Delexander",
-  "author": "Delexander Collective",
+  "author": "Delexander LLC",
   "authorEmail": "delexander.modules@gmail.com",
 	"authorUrl": "https://github.com/Delexander",
   "pluginUrl": "https://github.com/Delexander/Volume1",
 	"sourceUrl": "https://github.com/Delexander/Volume1.git",
 	"manualUrl": "https://github.com/Delexander/Volume1/blob/v1/README.md",
 	"changelogUrl": "https://github.com/Delexander/Volume1/blob/v1/CHANGELOG.md",
-	"donateUrl": "https://www.buymeacoffee.com/delexander",
   "modules": [
     {
 			"slug": "Algomorph",
