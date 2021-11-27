@@ -17,11 +17,11 @@ Both modules also feature a display for graph visualization. The display contain
 When being used for FM synthesis, pairing with oscillators (operators) capable of linear FM is recommended. For example:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * Fundamental [WT-VCO](https://library.vcvrack.com/Fundamental/VCO2)
+* KauntenjaDSP [Mini Boss](https://library.vcvrack.com/KautenjaDSP-PotatoChips/MiniBoss)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
 * Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
-* KauntenjaDSP [Mini Boss](https://github.com/Kautenja/PotatoChips/releases/tag/1.10.0)
 
 # Quickstart:
 * Connect the output of up to four operators to the Operator Inputs. Configure their modulation-depths and frequency ratios.   
