@@ -23,15 +23,15 @@ When being used for FM synthesis, pairing with oscillators (operators) capable o
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
 * KauntenjaDSP [Mini Boss](https://github.com/Kautenja/PotatoChips/releases/tag/1.10.0)
 
-# Instructions:
-* Connect the output of up to four operators to the Operator Inputs. Configure their modulation-depths and frequency ratios (refer to the oscillator manual).   
-* Connect the same number of Modulation Outputs from Algomorph to the linear FM inputs of the operators.  
+# Quickstart:
+* Connect the output of up to four operators to the Operator Inputs. Configure their modulation-depths and frequency ratios.   
+* Connect the Modulation Outputs of Algomorph to the linear FM inputs of the operators.  
 * Connect the Carrier Sum output to your audio device or a mixer.  
 * Press an Operator Button followed by a Modulation Button to connect one operator to another. Repeat until you have built a desired algorithm.  
 * After you have finished building your algorithm, press Algorithm Button 1 or 3 to build a new algorithm.
 * Once finished, press the Edit button to exit Edit Mode 
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
-* The CV input can also be used instead of (or in addition to) the knob, accepting +/- 5V
+* The CV input can also be used in addition to the knob, accepting +/- 5V
 * Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a designated carrier for the current algorithm.
 * To randomize only the algorithms or only a single algorithm, and not any of the knobs, right click on the connection area to find the Algorithm Randomization menu.
