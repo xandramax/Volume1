@@ -17,5 +17,3 @@
 * Add explanatory message when viewing a non-visualizable algorithm in Edit Mode
 * Glowing panel ink has been removed
 * **New module**: *Algomorph Advance*  is officially released
- * Includes dynamic tooltips on the assignable inputs, check it out!
-
