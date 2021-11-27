@@ -577,24 +577,64 @@ struct DLXSmallKnobLight : DLXKnobLight {
 	}
 };
 
-template <typename THoleMask>
-struct DLXDonutLargeKnobLight : DLXLargeKnobLight {
-	float hole_radius = 0.f;
+// The ratio of the height of a RoundSmallBlackKnob to the heught of a RoundHugeBlackKnob
+constexpr float HOLE_RATIO = 22.67581f / 53.85937f;
+
+struct DLXDonutLargeKnobLight : DLXKnobLight {
 
 	DLXDonutLargeKnobLight() {
-		//Create knob to extract radius
-		THoleMask* mask = new THoleMask();
-		hole_radius = mask->sw->box.size.x / 2.f;
-		mask->requestDelete();
+		setSvg(Svg::load(asset::plugin(pluginInstance, "res/DonutRoundHugeBlackKnob.svg")));
 	}
 
-	void drawLayer(const DrawArgs& args, int layer) override {
-		DLXLargeKnobLight::drawLayer(args, layer);
+	void drawHalo(const DrawArgs& args) override {
+        // Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+		if (args.fb)
+			return;
 
-		//Cut hole
-		nvgGlobalCompositeOperation(args.vg, NVG_DESTINATION_OUT);
+		const float halo = rack::settings::haloBrightness;
+		if (halo == 0.f)
+			return;
+
+		nvgShapeAntiAlias(args.vg, false);
+
+		Vec c = this->box.size.div(2);
+
+		nvgGlobalAlpha(args.vg, 1.f/3.f);
+
+		// Indicator halo
+		float radius = LINE_LIGHT_STROKEWIDTH * 1.5f;
+		float oradius = radius * 1.5f;
+		float x = c.x - oradius - radius * 0.5f;
+		float y = -oradius - radius;
+		float w = radius + oradius * 2.f;
+		float h = (c.y * HOLE_RATIO) + oradius * 2.f;
 		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, this->getBox().size.x / 2.f, this->getBox().size.x / 2.f, hole_radius);
+		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, w * 1.5f);
+		NVGcolor icol = rack::color::mult(rack::componentlibrary::SCHEME_LIGHT_GRAY, halo);
+		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+
+		// Outer halo
+		radius = c.x;
+		float iradius = RING_LIGHT_STROKEWIDTH + radius;
+		oradius = RING_LIGHT_STROKEWIDTH * 9.125f + radius;
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * (oradius), 2 * (oradius));
+		nvgCircle(args.vg, c.x, c.y, radius);
+		nvgPathWinding(args.vg, NVG_HOLE);
+		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, icol, ocol);
+		nvgFillPaint(args.vg, paint);
+		nvgFill(args.vg);
+
+		// Inner halo
+		iradius = -RING_LIGHT_STROKEWIDTH * 11.f + radius;
+		oradius = radius;
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, c.x, c.y, radius);
+		paint = nvgRadialGradient(args.vg, c.x, c.y, iradius, oradius, ocol, icol);
+		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 	}
 };
