@@ -519,7 +519,7 @@ struct DLXKnobLight : DLXSvgLight {
 
 		Vec c = this->box.size.div(2);
 
-		nvgGlobalAlpha(args.vg, 1.f/3.f);
+		nvgGlobalAlpha(args.vg, 2.f/9.f);
 
 		// Indicator halo
 		float radius = LINE_LIGHT_STROKEWIDTH * 1.5f;
@@ -532,7 +532,7 @@ struct DLXKnobLight : DLXSvgLight {
 		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, w * 1.5f);
 		NVGcolor icol = rack::color::mult(rack::componentlibrary::SCHEME_LIGHT_GRAY, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w * 0.5, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 
@@ -599,7 +599,7 @@ struct DLXDonutLargeKnobLight : DLXKnobLight {
 
 		Vec c = this->box.size.div(2);
 
-		nvgGlobalAlpha(args.vg, 1.f/3.f);
+		nvgGlobalAlpha(args.vg, 2.f/9.f);
 
 		// Indicator halo
 		float radius = LINE_LIGHT_STROKEWIDTH * 1.5f;
@@ -612,7 +612,7 @@ struct DLXDonutLargeKnobLight : DLXKnobLight {
 		nvgRoundedRect(args.vg, x - w, y - h, w * 3.f, h * 3.f, w * 1.5f);
 		NVGcolor icol = rack::color::mult(rack::componentlibrary::SCHEME_LIGHT_GRAY, halo);
 		NVGcolor ocol = nvgRGBA(0, 0, 0, 0);
-		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w, icol, ocol);
+		NVGpaint paint = nvgBoxGradient(args.vg, x, y, w, h, w * 0.5f, w * 0.5f, icol, ocol);
 		nvgFillPaint(args.vg, paint);
 		nvgFill(args.vg);
 
