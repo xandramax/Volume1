@@ -314,10 +314,9 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     }
 
     // Update relative morph magnitude and scenes
-    float lightRelativeMorphMagnitude[16] = {0.f};
     if (!ringMorph) {
         for (int c = 0; c < channels; c++) {
-            relativeMorphMagnitude[c] = lightRelativeMorphMagnitude[c] = morph[c];
+            relativeMorphMagnitude[c] = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] < 1.f) {
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
@@ -326,31 +325,26 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else if (morph[c] == 1.f) {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                 }
                 else if (morph[c] < 2.f) {
                     relativeMorphMagnitude[c] -= 1.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
                 else if (morph[c] == 2.f) {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                 }
                 else if (morph[c] < 3.f) {
                     relativeMorphMagnitude[c] -= 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                 }
                 else {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
             }
@@ -358,7 +352,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
             else {
                 relativeMorphMagnitude[c] *= -1.f;
-                lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                 if (morph[c] > -1.f) {
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
@@ -366,31 +359,26 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else if (morph[c] == -1.f) {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                 }
                 else if (morph[c] > -2.f) {
                     relativeMorphMagnitude[c] -= 1.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
                 else if (morph[c] == -2.f) {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                 }
                 else if (morph[c] < 3.f) {
                     relativeMorphMagnitude[c] -= 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                 }
                 else {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
             }
@@ -398,7 +386,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     }
     else {
         for (int c = 0; c < channels; c++) {
-            relativeMorphMagnitude[c] = lightRelativeMorphMagnitude[c] = morph[c];
+            relativeMorphMagnitude[c] = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] <= 1.f) {
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
@@ -407,19 +395,16 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else if (morph[c] < 2.f) {
                     relativeMorphMagnitude[c] -= (relativeMorphMagnitude[c] - 1.f) * 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                 }
                 else if (morph[c] == 2.f) {
                     relativeMorphMagnitude[c] = 0.f;
-                    lightRelativeMorphMagnitude[c] = 1.f;
                     centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                 }
                 else {
                     relativeMorphMagnitude[c] -= (relativeMorphMagnitude[c] - 1.f) * 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
@@ -429,7 +414,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 centerMorphScene[c] = forwardMorphScene[c] = backwardMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
             else {
                 relativeMorphMagnitude[c] *= -1.f;
-                lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                 if (morph[c] >= -1.f) {
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
@@ -437,7 +421,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else if (morph[c] > -2.f) {
                     relativeMorphMagnitude[c] -= (relativeMorphMagnitude[c] - 1.f) * 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
@@ -448,7 +431,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                 }
                 else {
                     relativeMorphMagnitude[c] -= (relativeMorphMagnitude[c] - 1.f) * 2.f;
-                    lightRelativeMorphMagnitude[c] = relativeMorphMagnitude[c];
                     centerMorphScene[c] = (baseScene + sceneOffset[c]) % 3;
                     forwardMorphScene[c] = (baseScene + sceneOffset[c] + 1) % 3;
                     backwardMorphScene[c] = (baseScene + sceneOffset[c] + 2) % 3;
@@ -1080,9 +1062,9 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                     : 0.f, args.sampleTime * lightDivider.getDivision());
             }
             //Set center morph scene light's purple component depending on morph
-            lights[SCENE_LIGHTS + centerMorphScene[0] * 3].setSmoothBrightness(1.f - lightRelativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
+            lights[SCENE_LIGHTS + centerMorphScene[0] * 3].setSmoothBrightness(1.f - relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
             //Set morph target light's purple component depending on morph
-            lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(lightRelativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
+            lights[SCENE_LIGHTS + forwardMorphScene[0] * 3].setSmoothBrightness(relativeMorphMagnitude[0], args.sampleTime * lightDivider.getDivision());
             //Set op/mod lights and carrier indicators
             updateSceneBrightnesses();
             for (int i = 0; i < 4; i++) {
