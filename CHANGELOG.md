@@ -23,3 +23,6 @@
  * This mode is now default. Old patches will remain as they were
  * Modulator Sum averaging accounts for morph and is polyphonic
 * Improve context menu label clarity
+
+### v2.1.1
+* Adjust averaging of Modulator Sum output
