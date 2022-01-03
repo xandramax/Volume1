@@ -7,7 +7,7 @@
 ### v1.0.2
 * Fix additional display issue
 
-## V2.0
+## v2.0
 * *Display button now lights up when pressed!* 
 * Add display visualization for designated-carriers  
 * Add display visualization for self-routing in Alter Ego mode  
@@ -17,3 +17,9 @@
 * Add explanatory message when viewing a non-visualizable algorithm in Edit Mode
 * Glowing panel ink has been removed
 * **New module**: *Algomorph Advance*  is officially released
+
+## v2.1
+* Add "Average Mode" for Carrier Sum and Modulator Sum outputs
+ * This mode is now default. Old patches will remain as they were
+ * Modulator Sum averaging accounts for morph and is polyphonic
+* Improve context menu label clarity
