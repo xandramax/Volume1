@@ -14,6 +14,10 @@ struct Algomorph : rack::engine::Module {
     float relativeMorphMagnitude[CHANNELS] = { morph[0] };              // Range 0.f -> 1.f
     rack::dsp::RingBuffer<float, 4> displayMorph;
 
+    int operators = 0;                                                  // Number of connected operators
+    int modulators[SCENES] = {0};                                       // Number of connected modulators for each scene
+    int channels = 1;                                                   // Max channels of operator inputs
+
     int baseScene = -1;                                                 // Center the Morph knob on saved algorithm 0, 1, or 2
     int centerMorphScene[CHANNELS]    = { baseScene };
     int forwardMorphScene[CHANNELS]   = { (baseScene + 1) % 3 };
@@ -83,6 +87,7 @@ struct Algomorph : rack::engine::Module {
     int absToRel[OPS][OPS] = {{0}};      // Modulator ID conversion ([op][x] = y, where x is 0..3 and y is 0..2)
 
     //User settings
+    bool avgMode = true;    
     bool clickFilterEnabled = true;
     bool ringMorph = false;
     bool randomRingMorph = false;
@@ -135,6 +140,7 @@ struct Algomorph : rack::engine::Module {
     void onReset() override {
         for (int scene = 0; scene < SCENES; scene++) {
             algoName[scene].reset();
+            modulators[scene] = 0;
             for (int op = 0; op < OPS; op++) {
                 horizontalMarks[scene].set(op, false);
                 forcedCarriers[scene].set(op, false);
@@ -143,6 +149,7 @@ struct Algomorph : rack::engine::Module {
             }
             updateDisplayAlgo(scene);
         }
+
 
         configMode = false;
         configOp = -1;
@@ -352,15 +359,20 @@ struct Algomorph : rack::engine::Module {
             bool mismatch = opsDisabled[scene].test(op) ^ isDisabled(scene, op);
             if (mismatch)
                 toggleDisabled(scene, op);
+            if (horizontalMarks[scene].test(op))
+                modulators[scene]++;
+            else
+                modulators[scene]--;
         }
         displayHorizontalMarks[scene].push(horizontalMarks[scene]);
         displayForcedCarriers[scene].push(forcedCarriers[scene]);
     };
 
     void toggleDiagonalDestination(int scene, int op, int mod) {
-        algoName[scene].flip(op * (OPS - 1) + mod);
+        int opIndex = op * (OPS - 1) + mod;
+        algoName[scene].flip(opIndex);
         if (!modeB) {
-            if (algoName[scene].test(op * (OPS - 1) + mod))
+            if (algoName[scene].test(opIndex))
                 carriers[scene].set(op, forcedCarriers[scene].test(op));
             else
                 carriers[scene].set(op, isCarrier(scene, op));
@@ -372,6 +384,10 @@ struct Algomorph : rack::engine::Module {
         }
         if (!opsDisabled[scene].test(op))
             updateDisplayAlgo(scene);
+        if (algoName[scene].test(opIndex))
+            modulators[scene]++;
+        else
+            modulators[scene]--;
     };
 
     bool isCarrier(int scene, int op) {
@@ -394,6 +410,18 @@ struct Algomorph : rack::engine::Module {
         for (int op = 0; op < OPS; op++)
             carriers[scene].set(op, isCarrier(scene, op));
         displayForcedCarriers[scene].push(forcedCarriers[scene]);
+    };
+
+    void updateModulators(int scene) {
+        modulators[scene] = 0;
+        for (int op = 0; op < OPS; op++) {
+            for (int mod = 0; mod < OPS - 1; mod++) {
+                if (algoName[scene].test(op * (OPS - 1) + mod)) {
+                    modulators[scene]++;
+                    break;
+                }
+            }
+        }
     };
 
     bool isDisabled(int scene, int op) {
@@ -476,8 +504,10 @@ struct Algomorph : rack::engine::Module {
                 for (int op = 0; op < OPS; op++) {
                     carriers[scene].set(op, forcedCarriers[scene].test(op));
                     bool mismatch = opsDisabled[scene].test(op) ^ isDisabled(scene, op);
-                    if (mismatch)
+                    if (mismatch) {     // Operator is horizontally connected
                         toggleDisabled(scene, op);
+                        modulators[scene]++;
+                    }
                 }
             }
         }
@@ -485,8 +515,10 @@ struct Algomorph : rack::engine::Module {
             for (int scene = 0; scene < SCENES; scene++) {
                 for (int op = 0; op < OPS; op++) {
                     bool mismatch = opsDisabled[scene].test(op) ^ isDisabled(scene, op);
-                    if (mismatch)
+                    if (mismatch) {   // Operator is horizontally connected
                         toggleDisabled(scene, op);
+                        modulators[scene]--;
+                    }
                 }
                 // Check carrier status after above loop is complete
                 for (int op = 0; op < OPS; op++)
@@ -731,6 +763,27 @@ struct ToggleClickFilterAction : ModuleAction {
 		m->clickFilterEnabled ^= true;
 	};
 
+};
+
+template < int OPS = 4, int SCENES = 3 >
+struct ToggleAverageModeAction : ModuleAction {
+    ToggleAverageModeAction() {
+        name = "Delexander Algomorph toggle average mode";
+    };
+    void undo() override {
+        rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+        assert(mw);
+        Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
+        assert(m);
+        m->avgMode ^= true;
+    }
+    void redo() override {
+        rack::app::ModuleWidget* mw = APP->scene->rack->getModule(moduleId);
+        assert(mw);
+        Algomorph<OPS, SCENES>* m = dynamic_cast<Algomorph<OPS, SCENES>*>(mw->module);
+        assert(m);
+        m->avgMode ^= true;
+    }
 };
 
 template < int OPS = 4, int SCENES = 3 >
@@ -993,6 +1046,18 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
         };
     };
 
+    struct AverageModeItem : AlgomorphMenuItem<OPS, SCENES> {
+        void onAction(const Action &e) override {
+            // History
+            ToggleAverageModeAction<OPS, SCENES>* h = new ToggleAverageModeAction<OPS, SCENES>;
+            h->moduleId = this->module->id;
+
+            this->module->avgMode ^= true;
+
+            APP->history->push(h);
+        };
+    };
+
     struct VULightsItem : AlgomorphMenuItem<OPS, SCENES> {
         void onAction(const Action &e) override {
             // History
@@ -1029,32 +1094,30 @@ struct AlgomorphWidget : rack::app::ModuleWidget {
     };
 
     // Sub-menus
-    struct AudioSettingsMenuItem : AlgomorphMenuItem<OPS, SCENES> {
-        void createAudioSettingsMenu(Algomorph<OPS, SCENES>* module, Menu* menu) {
-            menu->addChild(rack::construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (this->module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
+    void createAudioSettingsMenu(Algomorph<OPS, SCENES>* module, Menu* menu) {
+        menu->addChild(rack::construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
 
-            RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(this->module->ringMorph));
-            ringMorphItem->module = module;
-            menu->addChild(ringMorphItem);
-        };
-        Menu* createChildMenu() override {
-            Menu* menu = new Menu;
-            createAudioSettingsMenu(this->module, menu);
-            return menu;
-        };
+        RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Ring Morph", CHECKMARK(module->ringMorph));
+        ringMorphItem->module = module;
+        menu->addChild(ringMorphItem);
+
+        AverageModeItem *averageModeItem = rack::createMenuItem<AverageModeItem>("Average Sum output", CHECKMARK(module->avgMode));
+        averageModeItem->module = module;
+        menu->addChild(averageModeItem);
     };
+
     struct ClickFilterMenuItem : AlgomorphMenuItem<OPS, SCENES> {
-        void createClickFilterMenu(Algomorph<OPS, SCENES>* module, Menu* menu) {
+        void createClickFilterMenu(Menu* menu) {
             ClickFilterEnabledItem *clickFilterEnabledItem = rack::createMenuItem<ClickFilterEnabledItem>("Disable Click Filter", CHECKMARK(!this->module->clickFilterEnabled));
-            clickFilterEnabledItem->module = module;
+            clickFilterEnabledItem->module = this->module;
             menu->addChild(clickFilterEnabledItem);
-            ClickFilterSlider* clickFilterSlider = new ClickFilterSlider(module);
+            ClickFilterSlider* clickFilterSlider = new ClickFilterSlider(this->module);
             clickFilterSlider->box.size.x = 200.0;
             menu->addChild(clickFilterSlider);
         };
         Menu* createChildMenu() override {
             Menu* menu = new Menu;
-            createClickFilterMenu(this->module, menu);
+            createClickFilterMenu(menu);
             return menu;
         };
     };

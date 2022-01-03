@@ -207,34 +207,35 @@ struct AlgomorphLargeWidget : AlgomorphWidget<> {
 
     struct WildcardInputMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createWildcardInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
+        void createWildcardInputMenu(Menu* menu, int auxIndex);
     };
     struct ShadowInputMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createShadowInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
+        void createShadowInputMenu(Menu* menu, int auxIndex);
     };
     struct AuxInputModeMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createAuxInputModeMenu(AlgomorphLarge* module, Menu* menu, int auxIndex);
+        void createAuxInputModeMenu(Menu* menu, int auxIndex);
     };
     struct AllowMultipleModesMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createAllowMultipleModesMenu(AlgomorphLarge* module, Menu* menu);
+        void createAllowMultipleModesMenu(Menu* menu);
     };
     struct ResetSceneMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createResetSceneMenu(AlgomorphLarge* module, Menu* menu);
+        void createResetSceneMenu(Menu* menu);
     };
-    struct AudioSettingsMenuItem : AlgomorphLargeMenuItem {
+    struct LargeAudioSettingsMenuItem : AlgomorphLargeMenuItem {
+        AlgomorphLargeWidget* mw;
+        void createLargeAudioSettingsMenu(Menu* menu);
         Menu* createChildMenu() override;
-        void createAudioSettingsMenu(AlgomorphLarge* module, Menu* menu);
     };
     struct InteractionSettingsMenuItem : AlgomorphLargeMenuItem {
         Menu* createChildMenu() override;
-        void createInteractionSettingsMenu(AlgomorphLarge* module, Menu* menu);
+        void createInteractionSettingsMenu(Menu* menu);
     };
     struct VisualSettingsMenuItem : AlgomorphLargeMenuItem {
-        void createVisualSettingsMenu(AlgomorphLarge* module, Menu* menu);
+        void createVisualSettingsMenu(Menu* menu);
         Menu* createChildMenu() override;
     };
     struct KnobModeMenuItem : AlgomorphLargeMenuItem {

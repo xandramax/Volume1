@@ -128,7 +128,6 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     float modSumOut[16] = {0.f};                            // Modulator sum output channels
     float phaseOut[16] = {0.f};                             // Phase output channels
     int sceneOffset[16] = {0};                              // Offset to the base scene
-    int channels = 1;                                       // Max channels of operator inputs
     bool processCV = cvDivider.process();
 
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
@@ -146,15 +145,20 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         }
     }
 
-    //Determine polyphony count
+    this->operators = 0;
     for (int i = 0; i < 4; i++) {
-        if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
-            channels = inputs[OPERATOR_INPUTS + i].getChannels();
-        if (channels < inputs[AUX_INPUTS + i].getChannels())
-            channels = inputs[AUX_INPUTS + i].getChannels();
+        //Determine polyphony count
+        if (this->channels < inputs[OPERATOR_INPUTS + i].getChannels()) 
+            this->channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        if (this->channels < inputs[AUX_INPUTS + i].getChannels())
+            this->channels = inputs[AUX_INPUTS + i].getChannels();
+
+        //Update operator count
+        if (inputs[OPERATOR_INPUTS + i].isConnected())
+            this->operators++;
     }
     for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++)
-        auxInput[auxIndex]->channels = channels;
+        auxInput[auxIndex]->channels = this->channels;
 
     if (processCV) {
         for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
@@ -233,8 +237,8 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
     //Update scene offset
     if (auxModeFlags[AuxInputModes::SCENE_OFFSET])
-        rescaleVoltage(AuxInputModes::SCENE_OFFSET, channels);
-    for (int c = 0; c < channels; c++) {
+        rescaleVoltage(AuxInputModes::SCENE_OFFSET, this->channels);
+    for (int c = 0; c < this->channels; c++) {
         float sceneOffsetVoltage = scaledAuxVoltage[AuxInputModes::SCENE_OFFSET][c];
         if (sceneOffsetVoltage > FIVE_D_THREE)
             sceneOffset[c] += 1;
@@ -244,13 +248,13 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
     //  Update morph status
     if (auxModeFlags[AuxInputModes::MORPH_ATTEN])
-        rescaleVoltage(AuxInputModes::MORPH_ATTEN, channels);
+        rescaleVoltage(AuxInputModes::MORPH_ATTEN, this->channels);
     if (auxModeFlags[AuxInputModes::DOUBLE_MORPH_ATTEN])
-        rescaleVoltage(AuxInputModes::DOUBLE_MORPH_ATTEN, channels);
+        rescaleVoltage(AuxInputModes::DOUBLE_MORPH_ATTEN, this->channels);
     if (auxModeFlags[AuxInputModes::TRIPLE_MORPH_ATTEN])
-        rescaleVoltage(AuxInputModes::TRIPLE_MORPH_ATTEN, channels);
+        rescaleVoltage(AuxInputModes::TRIPLE_MORPH_ATTEN, this->channels);
     float morphAttenuversion[16] = {0.f};
-    for (int c = 0; c < channels; c++) {
+    for (int c = 0; c < this->channels; c++) {
         morphAttenuversion[c] = scaledAuxVoltage[AuxInputModes::MORPH_ATTEN][c]
                                 * scaledAuxVoltage[AuxInputModes::DOUBLE_MORPH_ATTEN][c]
                                 * scaledAuxVoltage[AuxInputModes::TRIPLE_MORPH_ATTEN][c]
@@ -259,11 +263,11 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
                                 * params[AUX_KNOBS + AuxKnobModes::TRIPLE_MORPH_ATTEN].getValue();
     }
     if (auxModeFlags[AuxInputModes::MORPH])
-        rescaleVoltage(AuxInputModes::MORPH, channels);
+        rescaleVoltage(AuxInputModes::MORPH, this->channels);
     if (auxModeFlags[AuxInputModes::DOUBLE_MORPH])
-        rescaleVoltage(AuxInputModes::DOUBLE_MORPH, channels);
+        rescaleVoltage(AuxInputModes::DOUBLE_MORPH, this->channels);
     if (auxModeFlags[AuxInputModes::TRIPLE_MORPH])
-        rescaleVoltage(AuxInputModes::TRIPLE_MORPH, channels);
+        rescaleVoltage(AuxInputModes::TRIPLE_MORPH, this->channels);
     // Only redraw display if morph on channel 1 has changed
     float newMorph0 =   + params[MORPH_KNOB].getValue()
                         + params[AUX_KNOBS + AuxKnobModes::MORPH].getValue()
@@ -290,7 +294,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         graphDirty = true;
     }
     // morph[0] was just processed, so start this loop with [1]
-    for (int c = 1; c < channels; c++) {
+    for (int c = 1; c < this->channels; c++) {
         morph[c] =  + params[MORPH_KNOB].getValue()
                     + params[AUX_KNOBS + AuxKnobModes::MORPH].getValue()
                     + params[AUX_KNOBS + AuxKnobModes::DOUBLE_MORPH].getValue()
@@ -315,7 +319,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
 
     // Update relative morph magnitude and scenes
     if (!ringMorph) {
-        for (int c = 0; c < channels; c++) {
+        for (int c = 0; c < this->channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] < 1.f) {
@@ -385,7 +389,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         }
     }
     else {
-        for (int c = 0; c < channels; c++) {
+        for (int c = 0; c < this->channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] <= 1.f) {
@@ -597,14 +601,14 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         if (auxModeFlags[AuxInputModes::CLICK_FILTER]) {
             for (int auxIndex = 0; auxIndex < NUM_AUX_INPUTS; auxIndex++) {
                 if (auxInput[auxIndex]->modeIsActive[AuxInputModes::CLICK_FILTER]) {
-                    rescaleVoltage(AuxInputModes::CLICK_FILTER, channels);
+                    rescaleVoltage(AuxInputModes::CLICK_FILTER, this->channels);
                     break;
                 }
             }
         }
 
 
-        for (int c = 0; c < channels; c++) {
+        for (int c = 0; c < this->channels; c++) {
             float clickFilterResult = clickFilterSlew * params[AUX_KNOBS + AuxKnobModes::CLICK_FILTER].getValue();
             
             clickFilterResult *= scaledAuxVoltage[AuxInputModes::CLICK_FILTER][c];
@@ -634,27 +638,27 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     else
         runClickFilterGain = 1.f;
     if (auxModeFlags[AuxInputModes::MOD_ATTEN])
-        rescaleVoltage(AuxInputModes::MOD_ATTEN, channels);
+        rescaleVoltage(AuxInputModes::MOD_ATTEN, this->channels);
     if (auxModeFlags[AuxInputModes::SUM_ATTEN])
-        rescaleVoltage(AuxInputModes::SUM_ATTEN, channels);
+        rescaleVoltage(AuxInputModes::SUM_ATTEN, this->channels);
     float modGain = params[AUX_KNOBS + AuxKnobModes::MOD_GAIN].getValue();
     float sumGain = params[AUX_KNOBS + AuxKnobModes::SUM_GAIN].getValue();
     float wildcardModGain = params[AUX_KNOBS + AuxKnobModes::WILDCARD_MOD_GAIN].getValue();
     float modAttenuversion[16] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
     if (auxModeFlags[AuxInputModes::MOD_ATTEN]) {
-        for (int c = 0; c < channels; c++)
+        for (int c = 0; c < this->channels; c++)
             modAttenuversion[c] *= scaledAuxVoltage[AuxInputModes::MOD_ATTEN][c];
     }
     float sumAttenuversion[16] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
     if (auxModeFlags[AuxInputModes::SUM_ATTEN]) {
-        for (int c = 0; c < channels; c++)
+        for (int c = 0; c < this->channels; c++)
             sumAttenuversion[c] *= scaledAuxVoltage[AuxInputModes::SUM_ATTEN][c];
     }
     for (int i = 0; i < 4; i++) {
         if (auxModeFlags[AuxInputModes::SHADOW + i])
-            scaleAuxShadow(args.sampleTime, i, channels);
+            scaleAuxShadow(args.sampleTime, i, this->channels);
     }
-    for (int c = 0; c < channels; c++) {
+    for (int c = 0; c < this->channels; c++) {
         if (ringMorph) {
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
@@ -773,20 +777,46 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
     //Set outputs
     for (int i = 0; i < 4; i++) {
         if (outputs[MODULATOR_OUTPUTS + i].isConnected()) {
-            outputs[MODULATOR_OUTPUTS + i].setChannels(channels);
+            outputs[MODULATOR_OUTPUTS + i].setChannels(this->channels);
             outputs[MODULATOR_OUTPUTS + i].writeVoltages(modOut[i]);
         }
     }
-    if (outputs[CARRIER_SUM_OUTPUT].isConnected()) {
-        outputs[CARRIER_SUM_OUTPUT].setChannels(channels);
-        outputs[CARRIER_SUM_OUTPUT].writeVoltages(carSumOut);
+    if (avgMode) {
+        if (outputs[CARRIER_SUM_OUTPUT].isConnected()) {
+            if (this->operators > 0) {
+                outputs[CARRIER_SUM_OUTPUT].setChannels(this->channels);
+                for (int c = 0; c < this->channels; c++)
+                    outputs[CARRIER_SUM_OUTPUT].setVoltage(carSumOut[c] / this->operators, c);
+            }
+            else
+                outputs[CARRIER_SUM_OUTPUT].setVoltage(0);
+        }
+        if (outputs[MODULATOR_SUM_OUTPUT].isConnected()) {
+            outputs[MODULATOR_SUM_OUTPUT].setChannels(this->channels);
+            for (int c = 0; c < this->channels; c++) {
+                int centerModulators = modulators[centerMorphScene[c]];
+                int forwardModulators = modulators[forwardMorphScene[c]];
+                float centerOut = 0.f, forwardOut = 0.f;
+                if (centerModulators > 0)
+                    centerOut = modSumOut[c] / centerModulators;
+                if (forwardModulators > 0)
+                    forwardOut = modSumOut[c] / forwardModulators;
+                outputs[MODULATOR_SUM_OUTPUT].setVoltage(crossfade(centerOut, forwardOut, relativeMorphMagnitude[c]), c);
+            }
+        }
     }
-    if (outputs[MODULATOR_SUM_OUTPUT].isConnected()) {
-        outputs[MODULATOR_SUM_OUTPUT].setChannels(channels);
-        outputs[MODULATOR_SUM_OUTPUT].writeVoltages(modSumOut);
+    else {
+        if (outputs[CARRIER_SUM_OUTPUT].isConnected()) {
+            outputs[CARRIER_SUM_OUTPUT].setChannels(this->channels);
+            outputs[CARRIER_SUM_OUTPUT].writeVoltages(carSumOut);
+        }
+        if (outputs[MODULATOR_SUM_OUTPUT].isConnected()) {
+            outputs[MODULATOR_SUM_OUTPUT].setChannels(this->channels);
+            outputs[MODULATOR_SUM_OUTPUT].writeVoltages(modSumOut);
+        }
     }
     if (outputs[PHASE_OUTPUT].isConnected()) {
-        outputs[PHASE_OUTPUT].setChannels(channels);
+        outputs[PHASE_OUTPUT].setChannels(this->channels);
         outputs[PHASE_OUTPUT].writeVoltages(phaseOut);
     }
 
@@ -1473,6 +1503,7 @@ json_t* AlgomorphLarge::dataToJson() {
     json_object_set_new(rootJ, "Wildcard Modulator Summing Enabled", json_boolean(wildModIsSummed));
     json_object_set_new(rootJ, "Reset on Run", json_boolean(resetOnRun));
     json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
+    json_object_set_new(rootJ, "Average Mode", json_boolean(avgMode));
     // json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
     
@@ -1596,6 +1627,12 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
     if (clickFilterEnabled)
         this->clickFilterEnabled = json_boolean_value(clickFilterEnabled);
 
+    auto avgMode = json_object_get(rootJ, "Average Mode");
+    if (avgMode)
+        this->avgMode = json_boolean_value(avgMode);
+    else    // set to false to support patches from old versions
+        this->avgMode = false;
+
     // auto glowingInk = json_object_get(rootJ, "Glowing Ink");
     // if (glowingInk)
     //     this->glowingInk = json_boolean_value(glowingInk);
@@ -1678,9 +1715,10 @@ void AlgomorphLarge::dataFromJson(json_t* rootJ) {
         }
     }
 
-    // Update carriers, disabled status, and display algorithm
+    // Update carriers, modulators, disabled status, and display algorithm
     for (int scene = 0; scene < 3; scene++) {
         updateCarriers(scene);
+        updateModulators(scene);
         updateOpsDisabled(scene);
         updateDisplayAlgo(scene);
     }
@@ -1789,11 +1827,11 @@ void AlgomorphLargeWidget::AllowMultipleModesItem::onAction(const Action &e) {
 
 Menu* AlgomorphLargeWidget::AllowMultipleModesMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createAllowMultipleModesMenu(module, menu);
+    createAllowMultipleModesMenu(menu);
     return menu;
 }
 
-void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(AlgomorphLarge* module, Menu* menu) {
+void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesMenu(Menu* menu) {
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 1", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 0, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[0]->allowMultipleModes)));
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 2", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 1, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[1]->allowMultipleModes)));
     menu->addChild(construct<AllowMultipleModesItem>(&MenuItem::text, "AUX 3", &AllowMultipleModesItem::module, module, &AllowMultipleModesItem::auxIndex, 2, &AllowMultipleModesItem::rightText, CHECKMARK(module->auxInput[2]->allowMultipleModes)));
@@ -1805,11 +1843,11 @@ void AlgomorphLargeWidget::AllowMultipleModesMenuItem::createAllowMultipleModesM
 
 Menu* AlgomorphLargeWidget::WildcardInputMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createWildcardInputMenu(module, menu, auxIndex);
+    createWildcardInputMenu(menu, auxIndex);
     return menu;
 }
 
-void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(Menu* menu, int auxIndex) {
     for (int i = AuxInputModes::WILDCARD_MOD; i <= AuxInputModes::WILDCARD_SUM; i++)
         menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
 }
@@ -1818,11 +1856,11 @@ void AlgomorphLargeWidget::WildcardInputMenuItem::createWildcardInputMenu(Algomo
 
 Menu* AlgomorphLargeWidget::ShadowInputMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createShadowInputMenu(module, menu, auxIndex);
+    createShadowInputMenu(menu, auxIndex);
     return menu;
 }
 
-void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::ShadowInputMenuItem::createShadowInputMenu(Menu* menu, int auxIndex) {
     for (int i = AuxInputModes::SHADOW; i <= AuxInputModes::SHADOW + 3; i++)
         menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[i], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[i]), &AuxModeItem::mode, i));
 }
@@ -1898,11 +1936,11 @@ void AlgomorphLargeWidget::AuxModeItem::onAction(const Action &e) {
 
 Menu* AlgomorphLargeWidget::AuxInputModeMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createAuxInputModeMenu(module, menu, auxIndex);
+    createAuxInputModeMenu(menu, auxIndex);
     return menu;
 }
 
-void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(AlgomorphLarge* module, Menu* menu, int auxIndex) {
+void AlgomorphLargeWidget::AuxInputModeMenuItem::createAuxInputModeMenu(Menu* menu, int auxIndex) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio Input"));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_MOD], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_MOD]), &AuxModeItem::mode, AuxInputModes::WILDCARD_MOD));
     menu->addChild(construct<AuxModeItem>(&MenuItem::text, AuxInputModeLabels[AuxInputModes::WILDCARD_SUM], &AuxModeItem::module, module, &AuxModeItem::auxIndex, auxIndex, &AuxModeItem::rightText, CHECKMARK(module->auxInput[auxIndex]->modeIsActive[AuxInputModes::WILDCARD_SUM]), &AuxModeItem::mode, AuxInputModes::WILDCARD_SUM));
@@ -1953,20 +1991,14 @@ void AlgomorphLargeWidget::ResetSceneItem::onAction(const Action &e) {
 
 Menu* AlgomorphLargeWidget::ResetSceneMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createResetSceneMenu(module, menu);
+    createResetSceneMenu(menu);
     return menu;
 }
 
-void AlgomorphLargeWidget::ResetSceneMenuItem::createResetSceneMenu(AlgomorphLarge* module, Menu* menu) {
+void AlgomorphLargeWidget::ResetSceneMenuItem::createResetSceneMenu(Menu* menu) {
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "3", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 2), &ResetSceneItem::scene, 2));
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "2", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 1), &ResetSceneItem::scene, 1));
     menu->addChild(construct<ResetSceneItem>(&MenuItem::text, "1", &ResetSceneItem::module, module, &ResetSceneItem::rightText, CHECKMARK(module->resetScene == 0), &ResetSceneItem::scene, 0));
-}
-
-Menu* AlgomorphLargeWidget::AudioSettingsMenuItem::createChildMenu() {
-    Menu* menu = new Menu;
-    createAudioSettingsMenu(module, menu);
-    return menu;
 }
 
 void AlgomorphLargeWidget::WildModSumItem::onAction(const Action &e) {
@@ -1979,20 +2011,24 @@ void AlgomorphLargeWidget::WildModSumItem::onAction(const Action &e) {
     APP->history->push(h);
 }
 
-void AlgomorphLargeWidget::AudioSettingsMenuItem::createAudioSettingsMenu(AlgomorphLarge* module, Menu* menu) {
-    menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
+void AlgomorphLargeWidget::LargeAudioSettingsMenuItem::createLargeAudioSettingsMenu(Menu* menu) {   
+    auto module = reinterpret_cast<AlgomorphLarge*>(this->module);
 
-    RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
-    ringMorphItem->module = module;
-    menu->addChild(ringMorphItem);
+    mw->createAudioSettingsMenu(module, menu);
 
-    RunSilencerItem *runSilencerItem = rack::createMenuItem<RunSilencerItem>("Route audio when not running", CHECKMARK(!module->runSilencer));
+    RunSilencerItem *runSilencerItem = rack::createMenuItem<RunSilencerItem>("Run Trigger toggles audio", CHECKMARK(module->runSilencer));
     runSilencerItem->module = module;
     menu->addChild(runSilencerItem);
 
-    WildModSumItem *wildModSumItem = rack::createMenuItem<WildModSumItem>("Add Wildcard Mod to Mod Sum", CHECKMARK(module->wildModIsSummed));
+    WildModSumItem *wildModSumItem = rack::createMenuItem<WildModSumItem>("Mod Sum excludes Wildcard", CHECKMARK(!module->wildModIsSummed));
     wildModSumItem->module = module;
     menu->addChild(wildModSumItem);
+}
+
+Menu* AlgomorphLargeWidget::LargeAudioSettingsMenuItem::createChildMenu() {
+    Menu* menu = new Menu;
+    createLargeAudioSettingsMenu(menu);
+    return menu;
 }
 
 void AlgomorphLargeWidget::CCWScenesItem::onAction(const Action &e) {
@@ -2007,11 +2043,11 @@ void AlgomorphLargeWidget::CCWScenesItem::onAction(const Action &e) {
 
 Menu* AlgomorphLargeWidget::InteractionSettingsMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createInteractionSettingsMenu(module, menu);
+    createInteractionSettingsMenu(menu);
     return menu;
 }
 
-void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSettingsMenu(AlgomorphLarge* module, Menu* menu) {
+void AlgomorphLargeWidget::InteractionSettingsMenuItem::createInteractionSettingsMenu(Menu* menu) {
     menu->addChild(construct<AllowMultipleModesMenuItem>(&MenuItem::text, "Multi-function inputs…", &MenuItem::rightText, std::string(module->auxInput[0]->allowMultipleModes ? "AUX 1" : "") + std::string(module->auxInput[1]->allowMultipleModes ? " AUX 2" : "") + std::string(module->auxInput[2]->allowMultipleModes ? " AUX 3" : "") + std::string(module->auxInput[3]->allowMultipleModes ? " AUX 4" : "") + std::string(module->auxInput[4]->allowMultipleModes ? " AUX 5" : "") + ((!module->auxInput[0]->allowMultipleModes && !module->auxInput[1]->allowMultipleModes && !module->auxInput[2]->allowMultipleModes && !module->auxInput[3]->allowMultipleModes && !module->auxInput[4]->allowMultipleModes) ? "None" : "") + " " + RIGHT_ARROW, &AllowMultipleModesMenuItem::module, module));
 
     menu->addChild(construct<ResetSceneMenuItem>(&MenuItem::text, "Destination on reset…", &MenuItem::rightText, std::to_string(module->resetScene + 1) + " " + RIGHT_ARROW, &ResetSceneMenuItem::module, module));
@@ -2151,12 +2187,12 @@ Menu* AlgomorphLargeWidget::KnobModeMenuItem::createChildMenu() {
 
 Menu* AlgomorphLargeWidget::VisualSettingsMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createVisualSettingsMenu(module, menu);
+    createVisualSettingsMenu(menu);
     return menu;
 }
 
-void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(AlgomorphLarge* module, Menu* menu) {  
-    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+void AlgomorphLargeWidget::VisualSettingsMenuItem::createVisualSettingsMenu(Menu* menu) {  
+    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("VU lighting", CHECKMARK(module->vuLights));
     vuLightsItem->module = module;
     menu->addChild(vuLightsItem);
     
@@ -2325,7 +2361,6 @@ AlgomorphLargeWidget::AlgomorphLargeWidget(AlgomorphLarge* module) {
 void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
     AlgomorphLarge* module = dynamic_cast<AlgomorphLarge*>(this->module);
 
-
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "AUX Knob"));
     menu->addChild(construct<KnobModeMenuItem>(&MenuItem::text, "Function…", &MenuItem::rightText, AuxKnobModeLabels[module->knobMode] + " " + RIGHT_ARROW, &KnobModeMenuItem::module, module));
@@ -2342,7 +2377,7 @@ void AlgomorphLargeWidget::appendContextMenu(Menu* menu) {
     menu->addChild(new MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Settings"));
     menu->addChild(construct<PhaseOutRangeItem>(&MenuItem::text, "Phase output range", &MenuItem::rightText, module->phaseMin == 0.f ? "0-10V" : "+/-5V", &PhaseOutRangeItem::module, module));
-    menu->addChild(construct<AudioSettingsMenuItem>(&MenuItem::text, "Audio…", &MenuItem::rightText, RIGHT_ARROW, &AudioSettingsMenuItem::module, module));
+    menu->addChild(construct<LargeAudioSettingsMenuItem>(&MenuItem::text, "Audio…", &MenuItem::rightText, RIGHT_ARROW, &LargeAudioSettingsMenuItem::module, module, &LargeAudioSettingsMenuItem::mw, this));
     menu->addChild(construct<InteractionSettingsMenuItem>(&MenuItem::text, "Interaction…", &MenuItem::rightText, RIGHT_ARROW, &InteractionSettingsMenuItem::module, module));
     menu->addChild(construct<VisualSettingsMenuItem>(&MenuItem::text, "Visual…", &MenuItem::rightText, RIGHT_ARROW, &VisualSettingsMenuItem::module, module));
 
