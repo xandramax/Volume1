@@ -53,13 +53,17 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     float in[16] = {0.f};                                   // Operator input channels
     float modOut[4][16] = {{0.f}};                          // Modulator outputs & channels
     float sumOut[16] = {0.f};                               // Sum output channels
-    int channels = 1;                                       // Max channels of operator inputs
     bool processCV = cvDivider.process();
 
+    this->operators = 0;
     //Determine polyphony count
     for (int i = 0; i < 4; i++) {
-        if (channels < inputs[OPERATOR_INPUTS + i].getChannels())
-            channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        if (this->channels < inputs[OPERATOR_INPUTS + i].getChannels())
+            this->channels = inputs[OPERATOR_INPUTS + i].getChannels();
+        
+        //Update operator count
+        if (inputs[OPERATOR_INPUTS + i].isConnected())
+            this->operators++;
     }
 
     if (processCV) {
@@ -117,7 +121,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
         graphDirty = true;
     }
     // morph[0] was just processed, so start this loop with [1]
-    for (int c = 1; c < channels; c++) {
+    for (int c = 1; c < this->channels; c++) {
         morph[c] =  + morphFromKnob
                     + (inputs[MORPH_INPUTS + 0].getPolyVoltage(c) * morphMult[0]
                     + inputs[MORPH_INPUTS + 1].getPolyVoltage(c) * morphMult[1])
@@ -130,7 +134,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
 
     // Update relative morph magnitude and scenes
     if (!ringMorph) {
-        for (int c = 0; c < channels; c++) {
+        for (int c = 0; c < this->channels; c++) {
             relativeMorphMagnitude[c]  = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] < 1.f) {
@@ -200,7 +204,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
         }
     }
     else {
-        for (int c = 0; c < channels; c++) {
+        for (int c = 0; c < this->channels; c++) {
             relativeMorphMagnitude[c] = morph[c];
             if (morph[c] > 0.f) {
                 if (morph[c] <= 1.f) {
@@ -409,7 +413,7 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     
     //Get operator input channel then route to modulation output channel or to sum output channel
     float wildcardMod[16] = {0.f};
-    for (int c = 0; c < channels; c++) {
+    for (int c = 0; c < this->channels; c++) {
         if (ringMorph) {
             for (int i = 0; i < 4; i++) {
                 if (inputs[OPERATOR_INPUTS + i].isConnected()) {
@@ -467,13 +471,19 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     //Set outputs
     for (int i = 0; i < 4; i++) {
         if (outputs[MODULATOR_OUTPUTS + i].isConnected()) {
-            outputs[MODULATOR_OUTPUTS + i].setChannels(channels);
+            outputs[MODULATOR_OUTPUTS + i].setChannels(this->channels);
             outputs[MODULATOR_OUTPUTS + i].writeVoltages(modOut[i]);
         }
     }
     if (outputs[CARRIER_SUM_OUTPUT].isConnected()) {
-        outputs[CARRIER_SUM_OUTPUT].setChannels(channels);
-        outputs[CARRIER_SUM_OUTPUT].writeVoltages(sumOut);
+        outputs[CARRIER_SUM_OUTPUT].setChannels(this->channels);
+        if (avgMode) {
+            for (int c = 0; c < this->channels; c++) {
+                outputs[CARRIER_SUM_OUTPUT].setVoltage(sumOut[c] / this->operators, c);
+            }
+        }
+        else
+            outputs[CARRIER_SUM_OUTPUT].writeVoltages(sumOut);
     }
 
     //Set lights
@@ -1008,6 +1018,7 @@ json_t* AlgomorphSmall::dataToJson() {
     json_object_set_new(rootJ, "Randomize Ring Morph", json_boolean(randomRingMorph));
     json_object_set_new(rootJ, "Auto Exit", json_boolean(exitConfigOnConnect));
     json_object_set_new(rootJ, "Click Filter Enabled", json_boolean(clickFilterEnabled));
+    json_object_set_new(rootJ, "Average Mode", json_boolean(avgMode));
     // json_object_set_new(rootJ, "Glowing Ink", json_boolean(glowingInk));
     json_object_set_new(rootJ, "VU Lights", json_boolean(vuLights));
     json_object_set_new(rootJ, "Mod Gain", json_real(gain));
@@ -1078,6 +1089,12 @@ void AlgomorphSmall::dataFromJson(json_t* rootJ) {
     if (clickFilterEnabled)
         this->clickFilterEnabled = json_boolean_value(clickFilterEnabled);
 
+    auto avgMode = json_object_get(rootJ, "Average Mode");
+    if (avgMode)
+        this->avgMode = json_boolean_value(avgMode);
+    else    // set to false to support patches from old versions
+        this->avgMode = false;
+
     // auto glowingInk = json_object_get(rootJ, "Glowing Ink");
     // if (glowingInk)
     //     this->glowingInk = json_boolean_value(glowingInk);
@@ -1122,10 +1139,11 @@ void AlgomorphSmall::dataFromJson(json_t* rootJ) {
         }
     }
 
-    // Update disabled status, carriers, and display algorithm
+    // Update disabled status, carriers, modulators, and display algorithm
     for (int scene = 0; scene < 3; scene++) {
         updateOpsDisabled(scene);
         updateCarriers(scene);
+        updateModulators(scene);
         updateDisplayAlgo(scene);
     }
 
@@ -1191,11 +1209,11 @@ void AlgomorphSmallWidget::SetGainLevelItem::onAction(const rack::event::Action 
 
 Menu* AlgomorphSmallWidget::GainLevelMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createGainLevelMenu(module, menu);
+    createGainLevelMenu(menu);
     return menu;
 }
 
-void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(AlgomorphSmall* module, rack::ui::Menu* menu) {
+void AlgomorphSmallWidget::GainLevelMenuItem::createGainLevelMenu(rack::ui::Menu* menu) {
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+12 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 4.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 4.f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "+6 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 2.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 2.f)));
     menu->addChild(construct<SetGainLevelItem>(&MenuItem::text, "0 dB", &SetGainLevelItem::module, module, &SetGainLevelItem::gain, 1.f, &SetGainLevelItem::rightText, CHECKMARK(module->gain == 1.f)));
@@ -1241,11 +1259,11 @@ void AlgomorphSmallWidget::SetMorphMultItem::onAction(const rack::event::Action 
 
 Menu* AlgomorphSmallWidget::MorphMultMenuItem::createChildMenu() {
     Menu* menu = new Menu;
-    createMorphMultMenu(module, menu, inputId);
+    createMorphMultMenu(menu, inputId);
     return menu;
 }
 
-void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(AlgomorphSmall* module, rack::ui::Menu* menu, int inputId) {
+void AlgomorphSmallWidget::MorphMultMenuItem::createMorphMultMenu(rack::ui::Menu* menu, int inputId) {
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "1x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 1.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 1.f)));
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "2x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 2.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 2.f)));
     menu->addChild(construct<SetMorphMultItem>(&MenuItem::text, "3x", &SetMorphMultItem::module, module, &SetMorphMultItem::inputId, inputId, &SetMorphMultItem::morphMult, 3.f, &SetMorphMultItem::rightText, CHECKMARK(module->morphMult[inputId] == 3.f)));
@@ -1394,12 +1412,8 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Audio Settings"));
 
     menu->addChild(construct<GainLevelMenuItem>(&MenuItem::text, "Modulator Gain adjustment…", &MenuItem::rightText, std::string(module->gain == 1.f ? "0dB " : module->gain == 2.f ? "+6dB " : module->gain == 4.f ? "+12dB " : module->gain == 0.5f ? "-6dB " : module->gain == 0.25f ? "-12dB " : "err ") + RIGHT_ARROW, &GainLevelMenuItem::module, module));
-
-    menu->addChild(construct<ClickFilterMenuItem>(&MenuItem::text, "Click Filter…", &MenuItem::rightText, (module->clickFilterEnabled ? "Enabled ▸" : "Disabled ▸"), &ClickFilterMenuItem::module, module));
-
-    RingMorphItem *ringMorphItem = rack::createMenuItem<RingMorphItem>("Enable Ring Morph", CHECKMARK(module->ringMorph));
-    ringMorphItem->module = module;
-    menu->addChild(ringMorphItem);
+    
+    AlgomorphWidget::createAudioSettingsMenu(module, menu);
 
     menu->addChild(new rack::ui::MenuSeparator());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interaction Settings"));
@@ -1419,7 +1433,7 @@ void AlgomorphSmallWidget::appendContextMenu(Menu* menu) {
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Visual Settings"));
 
 
-    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("Disable VU lighting", CHECKMARK(!module->vuLights));
+    VULightsItem *vuLightsItem = rack::createMenuItem<VULightsItem>("VU lighting", CHECKMARK(module->vuLights));
     vuLightsItem->module = module;
     menu->addChild(vuLightsItem);
     
@@ -1447,10 +1461,8 @@ void AlgomorphSmallWidget::step() {
             if (morphKnobShown) {
                 DLXMediumLightKnob* morphKnob = dynamic_cast<DLXMediumLightKnob*>(getParam(AlgomorphSmall::MORPH_KNOB));
                 morphKnob->hide();
-                // morphKnob->sibling->hide();
                 DLXMediumLightKnob* morphAtten = dynamic_cast<DLXMediumLightKnob*>(getParam(AlgomorphSmall::MORPH_ATTEN_KNOB));
                 morphAtten->show();
-                // morphAtten->sibling->show();
                 morphKnobShown = false;
             }
         }
@@ -1458,10 +1470,8 @@ void AlgomorphSmallWidget::step() {
             if (!morphKnobShown) {
                 DLXMediumLightKnob* morphAtten = dynamic_cast<DLXMediumLightKnob*>(getParam(AlgomorphSmall::MORPH_ATTEN_KNOB));
                 morphAtten->hide();
-                // morphAtten->sibling->hide();
                 DLXMediumLightKnob* morphKnob = dynamic_cast<DLXMediumLightKnob*>(getParam(AlgomorphSmall::MORPH_KNOB));
                 morphKnob->show();
-                // morphKnob->sibling->show();
                 morphKnobShown = true;
             }
         }

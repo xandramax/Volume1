@@ -129,7 +129,7 @@ struct AlgomorphSmallWidget : AlgomorphWidget<> {
     };
     struct GainLevelMenuItem : AlgomorphSmallMenuItem {
         Menu* createChildMenu() override;
-        void createGainLevelMenu(AlgomorphSmall* module, rack::ui::Menu* menu);
+        void createGainLevelMenu(rack::ui::Menu* menu);
     };
     struct SetMorphMultItem : AlgomorphSmallMenuItem {
         float morphMult;
@@ -141,7 +141,7 @@ struct AlgomorphSmallWidget : AlgomorphWidget<> {
         int inputId;
 
         Menu* createChildMenu() override;
-        void createMorphMultMenu(AlgomorphSmall* module, rack::ui::Menu* menu, int inputId);
+        void createMorphMultMenu(rack::ui::Menu* menu, int inputId);
     };
 
     AlgomorphSmallWidget(AlgomorphSmall* module);
