@@ -796,12 +796,21 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
             for (int c = 0; c < this->channels; c++) {
                 int centerModulators = modulators[centerMorphScene[c]];
                 int forwardModulators = modulators[forwardMorphScene[c]];
+                float morphModulators = 0.f;
                 float centerOut = 0.f, forwardOut = 0.f;
-                if (centerModulators > 0)
-                    centerOut = modSumOut[c] / centerModulators;
-                if (forwardModulators > 0)
-                    forwardOut = modSumOut[c] / forwardModulators;
-                outputs[MODULATOR_SUM_OUTPUT].setVoltage(crossfade(centerOut, forwardOut, relativeMorphMagnitude[c]), c);
+                if (centerModulators && forwardModulators) {
+                    morphModulators = crossfade(centerModulators, forwardModulators, relativeMorphMagnitude[c]);
+                    outputs[MODULATOR_SUM_OUTPUT].setVoltage(modSumOut[c] / morphModulators, c);
+                }
+                else {
+                    if (centerModulators > 0)
+                        centerOut = modSumOut[c] / centerModulators;
+                    if (forwardModulators > 0)
+                        forwardOut = modSumOut[c] / forwardModulators;
+                    outputs[MODULATOR_SUM_OUTPUT].setVoltage(crossfade(centerOut, forwardOut, relativeMorphMagnitude[c]), c);
+                }
+                // if (processCV)
+                //     DEBUG("Modulators center: %d, forward: %d, morph: %f", centerModulators, forwardModulators, morphModulators);
             }
         }
     }
