@@ -139,17 +139,8 @@ struct Algomorph : rack::engine::Module {
 
     void onReset() override {
         for (int scene = 0; scene < SCENES; scene++) {
-            algoName[scene].reset();
-            modulators[scene] = 0;
-            for (int op = 0; op < OPS; op++) {
-                horizontalMarks[scene].set(op, false);
-                forcedCarriers[scene].set(op, false);
-                carriers[scene].set(op, true);
-                opsDisabled[scene].set(op, false);
-            }
-            updateDisplayAlgo(scene);
+            initializeAlgorithm(scene);
         }
-
 
         configMode = false;
         configOp = -1;
@@ -271,9 +262,13 @@ struct Algomorph : rack::engine::Module {
 
     void initializeAlgorithm(int scene) {
         algoName[scene].reset();
-        horizontalMarks[scene].reset();
-        opsDisabled[scene].reset();
-        forcedCarriers[scene].reset();
+        modulators[scene] = 0;
+        for (int op = 0; op < OPS; op++) {
+            horizontalMarks[scene].set(op, false);
+            forcedCarriers[scene].set(op, false);
+            carriers[scene].set(op, true);
+            opsDisabled[scene].set(op, false);
+        }
         updateDisplayAlgo(scene);
         graphDirty = true;
     };
