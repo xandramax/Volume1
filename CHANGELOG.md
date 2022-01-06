@@ -29,5 +29,6 @@
 
 ### v2.1.2
 * Fix error in averaging of Carrier Sum output
+ * Carrier Sum averaging now accounts for morph and is polyphonic
 * Fix "Initialize Algorithm(s)" context menu actions
-* Fix minor display crossfading issue regarding Carrier Indicators
+* Fix minor display issue regarding crossfading Carrier Indicators
