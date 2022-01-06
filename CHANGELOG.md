@@ -32,3 +32,6 @@
  * Carrier Sum averaging now accounts for morph and is polyphonic
 * Fix "Initialize Algorithm(s)" context menu actions
 * Fix minor display issue regarding crossfading Carrier Indicators
+
+### v2.1.3
+* Fix polyphony issue (allow the channel-count to decrement)
