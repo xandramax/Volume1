@@ -55,16 +55,14 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
     float sumOut[16] = {0.f};                               // Sum output channels
     bool processCV = cvDivider.process();
 
-    this->operators = 0;
     //Determine polyphony count
     for (int i = 0; i < 4; i++) {
         if (this->channels < inputs[OPERATOR_INPUTS + i].getChannels())
             this->channels = inputs[OPERATOR_INPUTS + i].getChannels();
-        
-        //Update operator count
-        if (inputs[OPERATOR_INPUTS + i].isConnected())
-            this->operators++;
     }
+
+    for (int c = 0; c < this->channels; c++)
+        totalCarSumConnection[c] = 0.f;
 
     if (processCV) {
         //Check to change scene
@@ -479,7 +477,19 @@ void AlgomorphSmall::process(const ProcessArgs& args) {
         outputs[CARRIER_SUM_OUTPUT].setChannels(this->channels);
         if (avgMode) {
             for (int c = 0; c < this->channels; c++) {
-                outputs[CARRIER_SUM_OUTPUT].setVoltage(sumOut[c] / this->operators, c);
+                if (totalCarSumConnection[c] == 0) {
+                    outputs[CARRIER_SUM_OUTPUT].setVoltage(0.f, c);
+                }
+                else {
+                    if (carriers[centerMorphScene[c]].count() > 0 && carriers[forwardMorphScene[c]].count() > 0)
+                        outputs[CARRIER_SUM_OUTPUT].setVoltage(sumOut[c] / totalCarSumConnection[c], c);
+                    else {
+                        if (carriers[centerMorphScene[c]].count() == 0)
+                            outputs[CARRIER_SUM_OUTPUT].setVoltage(sumOut[c] * (1.f / totalCarSumConnection[c]) * relativeMorphMagnitude[c], c);
+                        else
+                            outputs[CARRIER_SUM_OUTPUT].setVoltage(sumOut[c] * (1.f / totalCarSumConnection[c]) * (1.f - relativeMorphMagnitude[c]), c);
+                    }
+                }
             }
         }
         else
@@ -889,6 +899,7 @@ float AlgomorphSmall::routeSum(float sampleTime, float inputVoltage, int op, int
     float connection    =   carriers[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])  * !horizontalMarks[centerMorphScene[c]].test(op)
                         +   carriers[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c]          * !horizontalMarks[forwardMorphScene[c]].test(op);
     sumClickGain[op][c] = clickFilterEnabled ? sumClickFilters[op][c].process(sampleTime, connection) : connection;
+    totalCarSumConnection[c] += sumClickGain[op][c];
     return inputVoltage * sumClickGain[op][c];
 }
 
@@ -896,18 +907,21 @@ float AlgomorphSmall::routeSumB(float sampleTime, float inputVoltage, int op, in
     float connection    =   carriers[centerMorphScene[c]].test(op)     * (1.f - relativeMorphMagnitude[c])
                         +   carriers[forwardMorphScene[c]].test(op)    * relativeMorphMagnitude[c];
     sumClickGain[op][c] = clickFilterEnabled ? sumClickFilters[op][c].process(sampleTime, connection) : connection;
+    totalCarSumConnection[c] += sumClickGain[op][c];
     return inputVoltage * sumClickGain[op][c];
 }
 
 float AlgomorphSmall::routeSumRing(float sampleTime, float inputVoltage, int op, int c) {
     float connection = carriers[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c] * !horizontalMarks[backwardMorphScene[c]].test(op);
     sumRingClickGain[op][c] = clickFilterEnabled ? sumRingClickFilters[op][c].process(sampleTime, connection) : connection;
+    totalCarSumConnection[c] += sumClickGain[op][c];
     return -inputVoltage * sumRingClickGain[op][c];
 }
 
 float AlgomorphSmall::routeSumRingB(float sampleTime, float inputVoltage, int op, int c) {
     float connection = carriers[backwardMorphScene[c]].test(op) * relativeMorphMagnitude[c];
     sumRingClickGain[op][c] = clickFilterEnabled ? sumRingClickFilters[op][c].process(sampleTime, connection) : connection;
+    totalCarSumConnection[c] += sumClickGain[op][c];
     return -inputVoltage * sumRingClickGain[op][c];
 }
 

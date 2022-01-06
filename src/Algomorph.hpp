@@ -14,8 +14,8 @@ struct Algomorph : rack::engine::Module {
     float relativeMorphMagnitude[CHANNELS] = { morph[0] };              // Range 0.f -> 1.f
     rack::dsp::RingBuffer<float, 4> displayMorph;
 
-    int operators = 0;                                                  // Number of connected operators
     int modulators[SCENES] = {0};                                       // Number of connected modulators for each scene
+    float totalCarSumConnection[CHANNELS] = {0.f};                      // Total of all fractional connections to the carrier sum output (0..4)
     int channels = 1;                                                   // Max channels of operator inputs
 
     int baseScene = -1;                                                 // Center the Morph knob on saved algorithm 0, 1, or 2
