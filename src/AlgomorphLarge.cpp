@@ -145,7 +145,7 @@ void AlgomorphLarge::process(const ProcessArgs& args) {
         }
     }
 
-    this->channels = 0;
+    this->channels = 1;
     for (int i = 0; i < 4; i++) {
         //Determine polyphony count
         if (this->channels < inputs[OPERATOR_INPUTS + i].getChannels()) 
