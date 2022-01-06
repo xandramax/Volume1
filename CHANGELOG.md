@@ -1,11 +1,11 @@
 ## v1.0
-* Initial release of Algomorph Pocket. 
+Initial release of Algomorph Pocket. 
   
-### v1.0.1
-* Fix issue with the display  
+* #### v1.0.1
+ * Fix display issue  
 
-### v1.0.2
-* Fix additional display issue
+* #### v1.0.2
+ * Fix additional display issue
 
 ## v2.0
 * *Display button now lights up when pressed!* 
@@ -24,14 +24,17 @@
   * Modulator Sum averaging accounts for morph and is polyphonic
 * Improve context menu label clarity
 
-### v2.1.1
+#### v2.1.1
 * Adjust averaging of Modulator Sum output
 
-### v2.1.2
+#### v2.1.2
 * Fix error in averaging of Carrier Sum output
   * Carrier Sum averaging now accounts for morph and is polyphonic
 * Fix "Initialize Algorithm(s)" context menu actions
 * Fix minor display issue regarding crossfading Carrier Indicators
 
-### v2.1.3
+#### v2.1.3
 * Fix polyphony issue (allow the channel-count to decrement)
+
+#### v2.1.4
+* Fix behavior when all Operator (& AUX) inputs are disconnected
