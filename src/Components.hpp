@@ -577,7 +577,7 @@ struct DLXSmallKnobLight : DLXKnobLight {
 	}
 };
 
-// The ratio of the height of a RoundSmallBlackKnob to the heught of a RoundHugeBlackKnob
+// The ratio of the height of a RoundSmallBlackKnob to the height of a RoundHugeBlackKnob
 constexpr float HOLE_RATIO = 4.145f / 7.123f;
 
 struct DLXDonutLargeKnobLight : DLXKnobLight {
