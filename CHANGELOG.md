@@ -26,3 +26,8 @@
 
 ### v2.1.1
 * Adjust averaging of Modulator Sum output
+
+### v2.1.2
+* Fix error in averaging of Carrier Sum output
+* Fix "Initialize Algorithm(s)" context menu actions
+* Fix minor display crossfading issue regarding Carrier Indicators
