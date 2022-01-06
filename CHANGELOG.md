@@ -16,7 +16,7 @@
 * Add support for Rack v2 bloom setting to ring lights, ring indicators, line lights, and knob lights  
 * Add explanatory message when viewing a non-visualizable algorithm in Edit Mode
 * Glowing panel ink has been removed
-* **New module**: *Algomorph Advance*  is officially released
+* **New module**: *Algomorph Advance* is officially released
 
 ## v2.1
 * Add "Average Mode" for Carrier Sum and Modulator Sum outputs
