@@ -20,8 +20,8 @@
 
 ## v2.1
 * Add "Average Mode" for Carrier Sum and Modulator Sum outputs
- * This mode is now default. Old patches will remain as they were
- * Modulator Sum averaging accounts for morph and is polyphonic
+  * This mode is now default. Old patches will remain as they were
+  * Modulator Sum averaging accounts for morph and is polyphonic
 * Improve context menu label clarity
 
 ### v2.1.1
@@ -29,7 +29,7 @@
 
 ### v2.1.2
 * Fix error in averaging of Carrier Sum output
- * Carrier Sum averaging now accounts for morph and is polyphonic
+  * Carrier Sum averaging now accounts for morph and is polyphonic
 * Fix "Initialize Algorithm(s)" context menu actions
 * Fix minor display issue regarding crossfading Carrier Indicators
 
