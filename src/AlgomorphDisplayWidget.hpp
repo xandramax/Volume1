@@ -171,7 +171,7 @@ struct AlgomorphDisplayWidget : rack::widget::FramebufferWidget {
                         nvgCircle(ctx,  crossfade(nodeX[0] + xOffset, nodeX[1] + xOffset, morph),
                                         crossfade(nodeY[0] + yOffset, nodeY[1] + yOffset, morph),
                                         radius / 10.f);
-                        NVGcolor carrierColor = color::mult(DLXExtraLightPurple, crossfade(sceneCarrierValue, morphCarrierValue, morph));
+                        NVGcolor carrierColor = color::alpha(DLXExtraLightPurple, crossfade(sceneCarrierValue, morphCarrierValue, morph));
                         nvgFillColor(ctx, carrierColor);
                         nvgFill(ctx);
                     }
