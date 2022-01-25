@@ -19,6 +19,7 @@ When being used for FM synthesis, pairing with oscillators (operators) capable o
 * Fundamental [WT-VCO](https://library.vcvrack.com/Fundamental/VCO2)
 * KauntenjaDSP [Mini Boss](https://library.vcvrack.com/KautenjaDSP-PotatoChips/MiniBoss)
 * NYSTHI [µOPERATOR](https://library.vcvrack.com/NYSTHI/OP)/[TZOP](https://library.vcvrack.com/NYSTHI/TZOP)
+* RPJ [Pigeon Plink](https://library.vcvrack.com/RPJ/PigeonPlink)
 * Squinky Labs [Kitchen Sink](https://library.vcvrack.com/squinkylabs-plug1/squinkylabs-wvco)
 * Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
