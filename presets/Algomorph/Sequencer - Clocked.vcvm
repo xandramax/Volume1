@@ -1,7 +1,6 @@
 {
   "id": 4002,
-  "plugin": "FM-Delexander2",
-  "version": "1.0.0",
+  "plugin": "DelexanderVol1",
   "model": "Algomorph",
   "data": {
     "Aux Inputs: Last Set Mode": [
