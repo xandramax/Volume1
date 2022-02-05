@@ -38,3 +38,6 @@ Initial release of Algomorph Pocket.
 
 #### v2.1.4
 * Fix behavior when all Operator (& AUX) inputs are disconnected
+
+#### v2.1.5
+* Fix factory presets in Algomorph Advance
