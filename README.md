@@ -24,6 +24,9 @@ When being used for FM synthesis, pairing with oscillators (operators) capable o
 * Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
 
+In addition to the quickstart guide included below, there is a video overview of the basics available from Jakub Ciupinski on his YouTube channel:
+https://www.youtube.com/watch?v=AhxCv6AoOt4
+
 # Quickstart:
 * Connect the output of up to four operators to the Operator Inputs. Configure their modulation-depths and frequency ratios.   
 * Connect the Modulation Outputs of Algomorph to the linear FM inputs of the operators.  
