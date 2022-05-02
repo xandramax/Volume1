@@ -266,8 +266,8 @@ struct Algomorph : rack::engine::Module {
         for (int op = 0; op < OPS; op++) {
             horizontalMarks[scene].set(op, false);
             forcedCarriers[scene].set(op, false);
-            carriers[scene].set(op, true);
-            opsDisabled[scene].set(op, false);
+            carriers[scene].set(op, !modeB);
+            opsDisabled[scene].set(op, modeB);
         }
         updateDisplayAlgo(scene);
         graphDirty = true;
