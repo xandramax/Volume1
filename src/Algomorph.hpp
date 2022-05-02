@@ -138,10 +138,6 @@ struct Algomorph : rack::engine::Module {
     };
 
     void onReset() override {
-        for (int scene = 0; scene < SCENES; scene++) {
-            initializeAlgorithm(scene);
-        }
-
         configMode = false;
         configOp = -1;
         configScene = std::floor(SCENES + 1 / 2.f);
@@ -174,6 +170,10 @@ struct Algomorph : rack::engine::Module {
         blinkStatus = true;
         blinkTimer = BLINK_INTERVAL;
         graphDirty = true;
+
+        for (int scene = 0; scene < SCENES; scene++) {
+            initializeAlgorithm(scene);
+        }
     };
 
     void randomizeAlgorithm(int scene) {
