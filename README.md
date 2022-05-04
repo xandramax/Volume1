@@ -8,11 +8,11 @@ Both modules are designed principally for use in FM synthesis; each can be used 
 
 ![Algomorph and Algomorph Pocket](<res/Algomorph_SoloImage.png>)
 
-**Algomorph Pocket** and **Advance** are capable of storing 3 routing states (algorithms) and crossfading between them via knob or control voltage.
+**Algomorph Pocket** and **Algomorph Advance** are capable of storing 3 routing states (algorithms) and crossfading between them via knob or control voltage.
 
 Both modules feature intelligent routing which automatically assigns an operator to the *Carrier* output if that operator is not routed to any other operators.
 
-Both modules also feature a display for graph visualization. The display contains 1980 hardcoded algorithms which correspond to a set typical for FM synthesizers: it is able to display any algorithm which contains at least one natural carrier. This display is also capable of crossfading between algorithms.
+Both modules also feature a display for graph visualization. The display contains 1980 hardcoded algorithms which correspond to a set typical for FM synthesizers: it is able to display any algorithm which contains at least one natural carrier. This display tracks the module's state continuously, even while morphing.
 
 When being used for FM synthesis, pairing with oscillators (operators) capable of linear FM is recommended. For example:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
@@ -44,4 +44,6 @@ https://www.youtube.com/watch?v=AhxCv6AoOt4
 
 The display graphics are generated using a combination of dot-language enumeration of the problem space, rendering to SVG via [GraphViz](https://graphviz.org/), and conversion to CSV with [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/).
 
-Thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack and Eurorack communities. Without their work, Algomorph would not be possible.
+Many thanks to those who have been testing new versions of Volume 1 prior to release.
+
+Additional thanks go out to the all the developers, educators, and artists who have contributed to the VCV Rack and Eurorack communities. Without their work, Algomorph would not be possible.
