@@ -12,9 +12,9 @@ Both modules are designed principally for use in FM synthesis; each can be used 
 
 Both modules feature intelligent routing which automatically assigns an operator to the *Carrier* output if that operator is not routed to any other operators.
 
-Both modules also feature a display for graph visualization. The display contains 1980 hardcoded algorithms which correspond to a set typical for FM synthesizers: it is able to display any algorithm which contains at least one natural carrier. This display tracks the module's state continuously, even while morphing.
+Both modules also feature a display for graph visualization. The display contains 1980 hardcoded algorithms which correspond to a set typical for FM synthesizers: it is able to display any algorithm which contains at least one natural carrier (i.e. a carrier which is not also a modulator). This display tracks the module's state continuously, even while morphing.
 
-When being used for FM synthesis, pairing with oscillators (operators) capable of linear FM is recommended. For example:
+When being used for FM synthesis, it is recommended to pair with oscillators (operators) capable of phase modulation or linear FM. For example:
 * Bogaudio [FM-OP](https://library.vcvrack.com/Bogaudio/Bogaudio-FMOp)
 * Fundamental [WT-VCO](https://library.vcvrack.com/Fundamental/VCO2)
 * KauntenjaDSP [Mini Boss](https://library.vcvrack.com/KautenjaDSP-PotatoChips/MiniBoss)
@@ -24,7 +24,7 @@ When being used for FM synthesis, pairing with oscillators (operators) capable o
 * Submarine [PO-204](https://library.vcvrack.com/SubmarineFree/PO-204)
 * Valley Audio [Terrorform](https://library.vcvrack.com/Valley/Terrorform)
 
-In addition to the quickstart guide included below, there is a video overview of the basics available from Jakub Ciupinski on his YouTube channel:
+In addition to the quickstart guide found below, an overview of the basics can be found in this video from Jakub Ciupinski:
 https://www.youtube.com/watch?v=AhxCv6AoOt4
 
 # Quickstart:
@@ -36,7 +36,7 @@ https://www.youtube.com/watch?v=AhxCv6AoOt4
 * Once finished, press the Edit button to exit Edit Mode 
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
 * The CV input can also be used in addition to the knob, accepting +/- 5V
-* Connecting an operator to its own modulation output will disable that operator, silencing its output and removing it from the Sum output for that algorithm.
+* Connecting an operator to its own modulation output will disable that operator, silencing disconnecting it from all modulation outputs and sum outputs for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a designated carrier for the current algorithm.
 * To randomize only the algorithms or only a single algorithm, and not any of the knobs, right click on the connection area to find the Algorithm Randomization menu.
 
