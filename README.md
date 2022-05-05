@@ -36,7 +36,7 @@ https://www.youtube.com/watch?v=AhxCv6AoOt4
 * Once finished, press the Edit button to exit Edit Mode 
 * The Morph knob allows for crossfading between the stored algorithms. 12 o'clock is the currently selected algorithm, while 7 o'clock is one algorithm to the left and 5 o'clock is one algorithm to the right.  
 * The CV input can also be used in addition to the knob, accepting +/- 5V
-* Connecting an operator to its own modulation output will disable that operator, silencing disconnecting it from all modulation outputs and sum outputs for that algorithm.
+* Connecting an operator to its own modulation output will disable that operator, disconnecting it from all modulation outputs and sum outputs for that algorithm.
 * To force an operator to act as carrier even when it is acting as a modulator, press its corresponding modulator button while the operator is not selected. A rotating indicator light will confirm the operator is now a designated carrier for the current algorithm.
 * To randomize only the algorithms or only a single algorithm, and not any of the knobs, right click on the connection area to find the Algorithm Randomization menu.
 
